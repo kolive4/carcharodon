@@ -6,7 +6,7 @@
 #' @param ... other arguments passed to read_stars
 #' @return same stars object pipe-able
 read_covar <- function(filename, 
-                       path = get_path("covars"),
+                       path = here::here("data", "covars"),
                        ...){
   stars::read_stars(file.path(path, filename), ...)
 }

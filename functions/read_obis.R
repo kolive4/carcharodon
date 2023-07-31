@@ -9,13 +9,13 @@
 read_obis = function(species = "Carcharodon carcharias", 
                      refresh = FALSE,
                      dwc = TRUE){
-  filename = get_path(paste0(species[1], ".csv.gz"))
+  filename = file_name(species[1])
   if (!file.exists(filename) || refresh == TRUE) {
     x = fetch_obis(scientificname = species)
   }
   else{
     #x <- readr::read_csv(filename, show_col_types = FALSE)
-    x = tidytable::fread.(filename) |>
+    x = tidytable::fread(filename) |>
       dplyr::as_tibble()
   }
   if (dwc) x <- as_dwc(x)

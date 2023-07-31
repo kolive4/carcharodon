@@ -5,7 +5,7 @@
 #' @param path str, path to where file is stored
 #' @return true/false
 covars_exists <- function(filename,
-                          path = get_path("covars")){
+                          path = here::here("data", "covars")){
   file = file.path(path, filename)
   file.exists(file)
 } 

@@ -7,7 +7,7 @@
 #' @param template data frame defining minimal fields 
 #' @return tibble, possibly empty if a species is not found
 fetch_obis <- function(scientificname = 'Carcharodon carcharias', 
-                       save_file = file_name(scientificname),
+                       save_file = file_name(scientificname, path = here::here("data", "obis")),
                        template = species_template(),
                        ...){
   

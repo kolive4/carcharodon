@@ -8,7 +8,7 @@
 file_name <- function(x = 'Carcharodon carcharias', 
                       ext = '.csv.gz', 
                       sep = "_", 
-                      path = get_path()){
+                      path = get_path("obis")){
   
   x = tolower(x)
   x = gsub(" ", sep, x, fixed = TRUE)

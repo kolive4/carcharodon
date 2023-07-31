@@ -6,10 +6,10 @@
 #' @param strip character or NA, if character then strip this pattern. Ignored
 #'   if full.names is \code{TRUE}
 #' @return character names (possibly filenames)
-list_obis <- function(path = get_path("obis"), 
+list_covars <- function(path = get_path("covars"), 
                       full.names = FALSE,
-                      strip = c(NA, ".csv.gz")[2]){
-  ff <- list.files(path, pattern = "^.*\\.csv", full.names = full.names)
+                      strip = c(NA, ".tif")[2]){
+  ff <- list.files(path, pattern = "^.*\\.tif", full.names = full.names)
   if (!full.names && !is.na(strip[1])){
     ff <- sub(strip, "", ff, fixed = TRUE)
   }

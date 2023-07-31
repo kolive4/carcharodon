@@ -8,7 +8,7 @@
 #' @return same stars object pipe-able
 write_covar <- function(x, 
                         filename, 
-                        path = get_path("covars"),
+                        path = here::here("data", "covars"),
                         ...){
   stars::write_stars(x, dsn = file.path(path, filename), ...)
 }
