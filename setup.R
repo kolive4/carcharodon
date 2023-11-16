@@ -10,7 +10,7 @@
 
 installed = rownames(installed.packages())
 
-cran_packages = c("rlang", "tidytable", "dplyr", "readr", "ggplot2", "robis", "rappdirs", "mapr",
+cran_packages = c("rlang", "dplyr", "readr", "ggplot2", "robis", "rappdirs", "mapr",
                   "ncmeta", "stars", "rlist", "RColorBrewer", "sf", "twinkle",
                   "ENMeval", "here")
 ix = (cran_packages %in% installed)
@@ -21,7 +21,8 @@ for (package in cran_packages[!ix]) {
 
 github_packages = c("cofbb" = "BigelowLab", 
                     "topotools" = "BigelowLab",
-                    "maxnet" = "BigelowLab")
+                    "maxnet" = "BigelowLab",
+                    "maxnetic" = "BigelowLab")
 ix = names(github_packages) %in% installed
 for (package in names(github_packages[!ix])) {
   remotes::install_github(sprintf("%s/%s", github_packages[package], package))

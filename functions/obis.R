@@ -75,6 +75,7 @@ fetch_obis <- function(scientificname = 'Carcharodon carcharias',
   
   #x <- try(robis::occurrence(scientificname = scientificname[1], fields = names(template), ...))
   x <- try(robis::occurrence(scientificname = scientificname[1], ...)) |>
+    readr::write_csv(file_name(scientificname, ext = "-raw.csv.gz"))|>
     dplyr::select(dplyr::any_of(names(template)))
   if (!inherits(x, 'try-error') && nrow(x) > 0){
     x <- dplyr::mutate(x, dplyr::across(dplyr::everything(), as.character)) |>
@@ -120,17 +121,31 @@ list_obis <- function(path = get_path("obis"),
 #' @return data frame in the form of a tibble
 read_obis = function(species = "Carcharodon carcharias", 
                      refresh = FALSE,
-                     dwc = TRUE){
+                     dwc = TRUE,
+                     form = c("table", "sf")[1]){
   filename = file_name(species[1])
   if (!file.exists(filename) || refresh == TRUE) {
-    x = fetch_obis(scientificname = species)
+    x = fetch_obis(scientificname = species) |>
+      dplyr::distinct()
   }
   else{
     #x <- readr::read_csv(filename, show_col_types = FALSE)
-    x = tidytable::fread(filename) |>
-      dplyr::as_tibble()
+    x = readr::read_csv(filename, 
+                        col_types = readr::cols(
+                          id = readr::col_character(),
+                          scientificName = readr::col_character(),
+                          eventDate = readr::col_date(format = ""),
+                          basisOfRecord = readr::col_character(),
+                          decimalLongitude = readr::col_double(),
+                          decimalLatitude = readr::col_double(),
+                          depth = readr::col_double(),
+                          sst = readr::col_double(),
+                          sss = readr::col_double()
+                        )) |>
+      dplyr::distinct()
   }
   if (dwc) x <- as_dwc(x)
+  if (form == "sf") x <- sf::st_as_sf(x, coords = c("decimalLongitude", "decimalLatitude"), crs = 4326)
   return(x)
 }
 
@@ -224,6 +239,7 @@ as_dwc <- function(x, template = template_dwc(n=1)){
 species_template <- function(n = 1, eventDate_type = c("character", "date")[1]){
   x <- dplyr::tibble(
     id                 = paste("void", seq_len(n), sep = "_"),
+    occurrenceID       = "",
     scientificName     = "",
     eventDate          = "",
     basisOfRecord      = "",

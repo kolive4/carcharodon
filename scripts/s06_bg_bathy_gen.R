@@ -60,10 +60,12 @@ plot(masked)
 #plot(etopo[total_buf])
 # plot(gebco[total_buf])
 
-# attribute depth for background df and shark occ df
-depth = stars::st_extract(masked, at = bg) # issues here maybe masked isnt a stars or bg isnt read as an sf, sfc, or matrix
-bg = dplyr::mutate(bg, depth = depth$z) |>
-  write_sf(file.path("/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/data/covars", "depth_bg.gpkg"))
+# attribute depth and temperature for background df and shark occ df
+depth = stars::st_extract(masked, at = bg) 
+obpg_sst = stars::st_extract(envs[1], at = bg) 
+bg = dplyr::mutate(bg, depth = depth$z) |> # new issue here
+  dplyr::mutate(bg, obpg_sst = obpg_sst$climatology) |>
+  write_sf(file.path("/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/data/covars", "covar_bg.gpkg"))
 glimpse(bg)
 plot(bg["depth"], pch = ".")
 
@@ -71,16 +73,19 @@ shark_depth = st_extract(masked, at = shark_occs)
 shark_occs = dplyr::mutate(shark_occs, depth = shark_depth$z) |>
   write_sf(file.path("/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/data/covars", "depth_shark.gpkg"))
 glimpse(shark_occs)
+shark_occs.sf <- sf::st_transform(shark_occs, crs = eckertIV)
 plot(shark_occs["depth"], pch = ".")
 
 gseal_depth = st_extract(masked, at = grey_seal_occs)
 grey_seal_occs = dplyr::mutate(grey_seal_occs, depth = gseal_depth$z) |>
   write_sf(file.path("/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/data/covars", "depth_gseal.gpkg"))
 glimpse(grey_seal_occs)
+gseal_occs.sf <- sf::st_transform(grey_seal_occs, crs = eckertIV)
 plot(grey_seal_occs["depth"], pch = ".")
 
 hseal_depth = st_extract(masked, at = harbor_seal_occs)
 harbor_seal_occs = dplyr::mutate(harbor_seal_occs, depth = hseal_depth$z) |>
   write_sf(file.path("/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/data/covars", "depth_hseal.gpkg"))
 glimpse(harbor_seal_occs)
+hseal_occs.sf <- sf::st_transform(harbor_seal_occs, crs = eckertIV)
 plot(harbor_seal_occs["depth"], pch = ".")
