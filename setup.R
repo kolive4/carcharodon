@@ -22,7 +22,8 @@ for (package in cran_packages[!ix]) {
 github_packages = c("cofbb" = "BigelowLab", 
                     "topotools" = "BigelowLab",
                     "maxnet" = "BigelowLab",
-                    "maxnetic" = "BigelowLab")
+                    "maxnetic" = "BigelowLab",
+                    "brickman" = "BigelowLab")
 ix = names(github_packages) %in% installed
 for (package in names(github_packages[!ix])) {
   remotes::install_github(sprintf("%s/%s", github_packages[package], package))
