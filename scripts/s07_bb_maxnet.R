@@ -141,7 +141,7 @@ winter_hseal = seasonality(njgb_hseal, season = "winter")|>
   na.omit()
 plot_obis(winter_hseal, what = "mapview")
 
-#----
+# seasonal bg ----
 njgb_bg = read_sf(get_path("covars", "covar_bg.gpkg")) |>
   st_crop(bb) |>
   filter(date > earliest_date) |>

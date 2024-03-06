@@ -1,6 +1,7 @@
 (spp <- list_obis())
 
 bb <- cofbb::get_bb("nwa2", "sf")
+shark_box = cofbb::get_bb("gom_carcharodon", form = "sf")
 
 wshark <- read_obis(spp[2], dwc = TRUE) |>
   distinct() |>
@@ -8,9 +9,27 @@ wshark <- read_obis(spp[2], dwc = TRUE) |>
   dplyr::mutate(month = format(eventDate, "%m") |>
                   as.numeric())
 
-shark_recent <- dplyr::filter(wshark, eventDate > as.Date("2003-01-01")) |>
-  sf::st_crop(bb) |>
+shark_recent <- dplyr::filter(wshark, eventDate > as.Date("2000-01-01")) |>
+  sf::st_crop(shark_box) |>
   sf::write_sf(file.path("/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/data/obis", "shark_recent_occs.gpkg"))
+
+apr_shark <- shark_recent |>
+  dplyr::filter(month == 4)
+may_shark <- shark_recent |>
+  dplyr::filter(month == 5)
+jun_shark <- shark_recent |>
+  dplyr::filter(month == 6)
+jul_shark <- shark_recent |>
+  dplyr::filter(month == 7)
+aug_shark <- shark_recent |>
+  dplyr::filter(month == 8)
+sep_shark <- shark_recent |>
+  dplyr::filter(month == 9)
+oct_shark <- shark_recent |>
+  dplyr::filter(month == 10)
+nov_shark <- shark_recent |>
+  dplyr::filter(month == 11)
+
 hist(shark_recent$month)
 
 glimpse(shark_recent)

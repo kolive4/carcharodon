@@ -122,8 +122,9 @@ list_obis <- function(path = get_path("obis"),
 read_obis = function(species = "Carcharodon carcharias", 
                      refresh = FALSE,
                      dwc = TRUE,
-                     form = c("table", "sf")[1]){
-  filename = file_name(species[1])
+                     form = c("table", "sf")[1],
+                     ...){
+  filename = file_name(species[1], ...)
   if (!file.exists(filename) || refresh == TRUE) {
     x = fetch_obis(scientificname = species) |>
       dplyr::distinct()

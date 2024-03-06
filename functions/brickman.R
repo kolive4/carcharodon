@@ -5,23 +5,50 @@
 #' @param vars chr, variable names (SST or SSS)
 #' @param interval chr, either "ann" or "mon"
 #' @param bb sf, bounding box from cofbb or otherwise defined
+#' @param band_as_time logical, convert band to appropriate time/date stamp
 #' @param path filepath, path to where you want data saved
 #' @return subsetted stars image 
 subset_brickman = function(scenario = c("RCP85", "RCP45", "PRESENT")[1],
                            year = c(2055, 2075, NA)[1],
                            vars = c("SST", "SSS")[1], 
                            interval = c("mon", "ann")[1], 
-                           bb = cofbb::get_bb("gom_carcharodon", form = "sf"), 
+                           bb = cofbb::get_bb("gom_carcharodon", form = "sf"),
+                           band_as_time = FALSE,
                            path = here::here("data/brickman/gom_carcharodon")){
-  brickman = brickman::read_brickman(scenario = scenario[1], year = year[1], vars = vars[1], interval = interval[1])
+  if(FALSE){
+    scenario = "PRESENT"
+    year = "PRESENT"
+    vars = c("SST", "Tbtm")
+    interval = "mon"
+    path = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/data/brickman/gom_carcharodon"
+  }
+  brickman = brickman::read_brickman(scenario = scenario[1], year = year[1], vars = vars, interval = interval[1])
   warp = brickman::warp_brickman(brickman, crs = sf::st_crs(bb))
   sub = warp[bb]
   
   if(scenario == "PRESENT") year = "PRESENT"
   
   if(!dir.exists(path)) ok = dir.create(path, recursive = TRUE)
-  filename = file.path(path, sprintf("%s_%s_%s_%s.tif", scenario[1], as.character(year[1]), vars[1], interval[1]))
-  stars::write_stars(sub, filename)
+
+  for (i in seq_along(vars)){
+    v = vars[i]
+    filename = file.path(path, sprintf("%s_%s_%s_%s.tif", scenario[1], as.character(year[1]), v, interval[1]))
+    cat(filename, "\n")
+    sub[i,,, drop = FALSE] |>
+      stars::write_stars(filename)
+  }
+  
+  if(band_as_time == TRUE) {
+    time = switch(scenario,
+                  "PRESENT" = seq(from = as.Date("2020-01-01"), length = 12, by = "month"),
+                  "2075" = seq(from = as.Date("2075-01-01"), length = 12, by = "month") ,
+                  "2055" = seq(from = as.Date("2055-01-01"), length = 12, by = "month") )
+    dims = stars::st_dimensions(sub)
+    sub = stars::st_set_dimensions(sub, "band", names = "time", values = time)
+  }
+  
+  return(sub)
+
 }
 
 #' Function to read in Brickman data that has been cached
@@ -31,6 +58,8 @@ subset_brickman = function(scenario = c("RCP85", "RCP45", "PRESENT")[1],
 #' @param vars chr, variable names (SST or SSS)
 #' @param interval chr, either "ann" or "mon"
 #' @param path filepath, path to where data is saved
+#' @param band_as_time logical, convert band to appropriate time/date stamp
+#' @param verbose logical
 #' @param anomaly logical, anomaly or true value
 #' @return subsetted stars image 
 load_brickman = function(scenario = c("RCP85", "RCP45", "PRESENT")[1],
@@ -38,6 +67,8 @@ load_brickman = function(scenario = c("RCP85", "RCP45", "PRESENT")[1],
                          vars = c("SST", "SSS")[1], 
                          interval = c("mon", "ann")[1], 
                          path = here::here("data/brickman/gom_carcharodon"),
+                         band_as_time = FALSE,
+                         verbose = FALSE,
                          anomaly = FALSE){
   if(FALSE){
     scenario = c("RCP85", "RCP45", "PRESENT")[1]
@@ -50,13 +81,41 @@ load_brickman = function(scenario = c("RCP85", "RCP45", "PRESENT")[1],
   
   if(scenario == "PRESENT") year = "PRESENT"
   
-  filename = file.path(path, sprintf("%s_%s_%s_%s.tif", scenario[1], as.character(year[1]), vars[1], interval[1]))
-  x = stars::read_stars(filename)
-
-  if(anomaly == FALSE && scenario != "PRESENT"){
-    present = load_brickman(scenario = "PRESENT", vars = vars[1], interval = interval[1], path = path)
-    x = x + present
+  x = lapply(seq_along(vars), 
+             function(i){
+                v = vars[i]
+                filename = file.path(path, 
+                                     sprintf("%s_%s_%s_%s.tif", 
+                                             scenario[1], 
+                                             as.character(year[1]), 
+                                             v, 
+                                             interval[1]))
+                if(verbose) cat(filename, "\n")
+                x = stars::read_stars(filename)
+                if(anomaly == FALSE && scenario != "PRESENT"){
+                  present = load_brickman(scenario = "PRESENT", 
+                                          vars = vars[1], 
+                                          interval = interval[1], 
+                                          path = path)
+                  x = x + present
+                }
+                if(v == "Bathy_depth") {
+                  names(x) = "Bathy_depth"
+                }
+                return(x)
+             }
+  )
+  x = twinkle::bind_attrs(x)
+  
+  if(band_as_time == TRUE && !("Bathy_depth" %in% vars)) {
+    time = switch(scenario,
+                  "PRESENT" = seq(from = as.Date("2020-01-01"), length = 12, by = "month"),
+                  "2075" = seq(from = as.Date("2075-01-01"), length = 12, by = "month") ,
+                  "2055" = seq(from = as.Date("2055-01-01"), length = 12, by = "month") )
+    dims = stars::st_dimensions(x)
+    x = stars::st_set_dimensions(x, "band", names = "time", values = time)
   }
+  
   return(x)
 }
 
@@ -86,4 +145,67 @@ summary_brickman = function(x){
     dplyr::bind_cols(minmax) |>
     dplyr::bind_cols(quant)
 }
+
+#' Function to get depth restricted bathymetry
+#' 
+#' @param x stars, stars object for depth
+#' @param covar str, name of covariate of interest
+#' @param depth num, depth restriction
+#' @param value NA, value beyond depth restriction
+#' @return depth restricted stars object
+buffer_depth = function(x, covar, depth, value = NA) {
+  if(FALSE){
+    x = brickman_bathymetry
+    covar = cfg$static_covariates
+    depth = cfg$depth_threshold
+    value = NA
+  }
+  m = x[[covar]] |>
+    as.matrix()
+  ix = m > depth
+  m[ix] = value
+  x[[covar]] = m
+
+  return(x)
+}
+
+
+#' Extract brickman points
+#' 
+#' @param x stars, stars object of variable data
+#' @param y sf, points for extraction
+#' @param ... extra arguments for st_extract, such as: time_column
+#' @return tibble of data
+brickman_extract = function(x, y, ...){
+
+  #' Function to extract data at points for specific covariates
+  #' 
+  #' @param obj stars object to pass in
+  #' @param i chr, covariate name in the list (SST, Tbtm, etc.)
+  #' @param points stars, points stars object at which to extract points
+  #' @return stars object 
+  covariate_extract = function(obj, i, points, ...) {
+    r = stars::st_extract(obj[i,,,], at = points, ...) |>
+        sf::st_as_sf() |>
+        sf::st_drop_geometry() |>
+        dplyr::as_tibble()
+    if(length(dim(obj)) < 3){
+      r = rlang::set_names(r, as.name(i))
+    } else if ((dim(obj)[3] == 12) && (ncol(r) ==12)) {
+      r = rlang::set_names(r, paste(as.name(i), month.abb, sep = "_"))
+    }
+    return(r)
+  }
+  
+  lapply(names(x), function(vname, obj = NULL, points = NULL){
+    covariate_extract(obj, vname, points, ...) |>
+      dplyr::select(1)
+  }, obj = x, points = y) |>
+    dplyr::bind_cols()
+}
+
+
+
+
+
 

@@ -1,14 +1,14 @@
 spp <- list_obis()
 global_coast <- rnaturalearth::ne_coastline(returnclass = "sf")
-nwa_coast <- sf::st_crop(global_coast, bb)
+shark_coast <- sf::st_crop(global_coast, shark_box)
 
 # can use the seasonality function here to get occurrences for each species based on seasons
 shark_occs = shark_recent |>
-  sf::st_crop(bb)
+  sf::st_crop(shark_box)
 grey_seal_occs = grey_seal_recent |>
-  sf::st_crop(bb)
+  sf::st_crop(shark_box)
 harbor_seal_occs = harbor_seal_recent |>
-  sf::st_crop(bb)
+  sf::st_crop(shark_box)
 
 
 eckertIV <- "+proj=eck4 +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs"
