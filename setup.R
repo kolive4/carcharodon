@@ -37,6 +37,8 @@ suppressPackageStartupMessages({
 
 here::i_am("setup.R")
 
+DATAPATH = here::here("data")
+
 for (f in list.files(here::here("functions"), pattern = "^.*\\.R$", full.names = TRUE)){
   source(f)
 }
