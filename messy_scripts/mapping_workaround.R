@@ -1,15 +1,15 @@
-library(stars)
-library(dplyr)
-library(viridis)
-install.packages("colorRamps")
-library(colorRamps)
-library(colorspace)
-library(devtools)
-install_github("BigelowLab/brickman")
-library(brickman)
-library(RColorBrewer)
-library(ggplot2)
-library(gridExtra)
+suppressPackageStartupMessages({
+  library(stars)
+  library(dplyr)
+  library(viridis)
+  library(colorRamps)
+  library(colorspace)
+  library(devtools)
+  library(brickman)
+  library(RColorBrewer)
+  library(ggplot2)
+  library(gridExtra)
+})
 
 curated = read.csv(file.path(cfg$data_path, "historical/curated_literature1.csv")) |>
   sf::st_as_sf(coords = c("Longitude", "Latitude"), crs = 4326)
@@ -30,12 +30,12 @@ aug_combo = bind_rows(aug_obis_obs, aug_cur)
 ggplot() +
   geom_sf(data = aug_combo, shape = aug_combo$method)
 
-shark_recent = read_sf(file.path(cfg$data_path, "obis/shark_recent_occs.gpkg"))
+shark_recent = read_sf(file.path("/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/data/obis/shark_recent_occs.gpkg"))
 aug_shark = shark_recent |>
   filter(month == 8)
 plot(aug_shark)
 
-present_sst = read_stars(file.path(cfg$data_path, "brickman/gom_carcharodon/PRESENT_PRESENT_SST_mon.tif"))
+present_sst = read_stars(file.path("/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/data/brickman/gom_carcharodon/PRESENT_PRESENT_SST_mon.tif"))
 plot(present_sst[,,,8], col = blue2red(10), key.pos = 4, reset = FALSE)
 plot(aug_shark, pch = "x", cex = 1.5, col = "black", add = TRUE)
 #OR
@@ -140,3 +140,16 @@ ggsave(filename = "rcp85_2075_tbtm.png", plot = rcp85_2075_tbtm_plot, path = "/m
 
 
 plot(RCP85_2075_tbtm[,,,8], col = scale_color_continuous_sequential(palette = "Heat", begin = 3, end = 27), key.pos = 4, reset = FALSE)
+
+
+# Coastline mapping
+# need to read in brickman bathymetry for this to work
+brick_total_sa = buffer_depth(brickman_bathymetry, cfg$static_covariates, depth = 5000)
+brick_total_sa_contour = st_contour(brick_total_sa, breaks = c(0, Inf))
+write_sf(brick_total_sa_contour, file.path(cfg$data_path, "brickman/study_area_coastline.gpkg"))
+coastline = read_sf(file.path(cfg$data_path, "brickman/study_area_coastline.gpkg"))
+cc_coastline = ggplot() +
+  geom_sf(data = coastline, 
+          aes(), colour = "black", fill = "white", lwd = 1.5) 
+cc_coastline
+ggsave(filename = "carcharodon_coastline.png", plot = cc_coastline, path = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/figures", width = 11, height = 8.5, units = "in", dpi = 300)

@@ -120,56 +120,310 @@ aug = ggplot() +
 aug
 ggsave(filename = "aug_rcp85_2075_pred.png", plot = aug, path = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/figures", width = 11, height = 8.5, units = "in", dpi = 300)
 
-rcp85_2075_jun_sst = monthly_rcp85_2075_brick[1,,,6, drop = TRUE]
-rcp85_2075_jun_tbtm = monthly_rcp85_2075_brick[2,,,6, drop = TRUE]
-rcp85_2075_combined_covars_jun = c(depth, rcp85_2075_jun_sst, rcp85_2075_jun_tbtm, along = NA_integer_) |>
-  rlang::set_names(c("depth", "brick_sst", "brick_tbtm"))
-jun_2075_rcp85_pred = predict(aug.ws.model, rcp85_2075_combined_covars_jun, type = "cloglog")
-jun = ggplot() +
-        geom_stars(data = jun_2075_rcp85_pred) +
-        scale_fill_viridis(name = "Habitat Suitability", limits = c(0, 1)) +
-        ggtitle("June RCP85 2075 Prediction (august model)") +
-        theme_void() +
-        theme(plot.title = element_text(hjust = 0.5))
+
+#New covariate layers ---- 
+brickman_bathymetry = load_brickman(scenario = 'PRESENT', 
+                                    vars = "Bathy_depth", 
+                                    band_as_time = TRUE, 
+                                    path = file.path("/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/data/brickman/bathy"))
+log_bathy = log10(brickman_bathymetry)
+log_bathymetry_binned_plot = ggplot() +
+  geom_stars(data = log_bathy) +
+  scale_fill_steps(name = "log(Depth)", n.breaks = 7, low = "#deebf7", high = "#08306b") +
+  geom_sf(data = aug_shark, aes(shape = basisOfRecord), fill = "white", show.legend = "point") +
+  scale_shape_manual(name = "Method", values = c(21, 24, 22)) +
+  theme_void() 
+log_bathymetry_binned_plot
+ggsave(filename = "log_depth_binned.png", plot = log_bathymetry_binned_plot, path = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/figures", width = 11, height = 8.5, units = "in", dpi = 300)
 
 
-rcp85_2075_jul_sst = monthly_rcp85_2075_brick[1,,,7, drop = TRUE]
-rcp85_2075_jul_tbtm = monthly_rcp85_2075_brick[2,,,7, drop = TRUE]
-rcp85_2075_combined_covars_jul = c(depth, rcp85_2075_jul_sst, rcp85_2075_jul_tbtm, along = NA_integer_) |>
-  rlang::set_names(c("depth", "brick_sst", "brick_tbtm"))
-jul_2075_rcp85_pred = predict(aug.ws.model, rcp85_2075_combined_covars_jul, type = "cloglog")
-jul = ggplot() +
-        geom_stars(data = jul_2075_rcp85_pred) +
-        scale_fill_viridis(name = "Habitat Suitability", limits = c(0, 1)) +
-        ggtitle("July RCP85 2075 Prediction (august model)") +
-        theme_void() +
-        theme(plot.title = element_text(hjust = 0.5))
+present_present = load_brickman(scenario = "PRESENT",
+                                year = NA,
+                                vars = c("SST",
+                                         "Tbtm",
+                                         "MLD",
+                                         "SSS",
+                                         "Sbtm",
+                                         "U",
+                                         "V",
+                                         "Xbtm"), 
+                                interval = "mon", 
+                                band_as_time = TRUE, 
+                                path = file.path("/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/data/brickman/gom_carcharodon"))
+
+obs_bg_brick = read_sf(file.path("/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/data/covars/brickman_covar_obs_bg.gpkg"))
+aug_shark = obs_bg_brick |>
+  dplyr::filter(month == 8) |>
+  dplyr::filter(id == 1)
+
+present_sst_points = ggplot() +
+  geom_stars(data = present_present[1,,,8]) +
+  scale_fill_steps(name = "Sea Surface Temperature (\u00B0C)", limits = c(15, 28), n.breaks = 7, low = "#FEEDDE", high = "#8C2D04") +
+  geom_sf(data = aug_shark, aes(shape = basisOfRecord), fill = "white", show.legend = "point") +
+  scale_shape_manual(name = "Method", values = c(21, 24, 22)) +
+  theme_void() 
+present_sst_points
+ggsave(filename = "present_sst_points.png", plot = present_sst_points, path = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/figures", width = 11, height = 8.5, units = "in", dpi = 300)
+
+present_tbtm_points = ggplot() +
+  geom_stars(data = present_present[2,,,8]) +
+  scale_fill_steps(name = "Temperature at Bottom (\u00B0C)", limits = c(0, 25), n.breaks = 7, low = "#DBFAF9", high = "#02877A") +
+  geom_sf(data = aug_shark, aes(shape = basisOfRecord), fill = "white", show.legend = "point") +
+  scale_shape_manual(name = "Method", values = c(21, 24, 22)) +
+  theme_void() 
+present_tbtm_points
+ggsave(filename = "present_tbtm_points.png", plot = present_tbtm_points, path = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/figures", width = 11, height = 8.5, units = "in", dpi = 300)
+
+present_mld_points = ggplot() +
+  geom_stars(data = present_present[3,,,8]) +
+  scale_fill_steps(name = "Mixed Layer Depth (m)", limits = c(0, 20), n.breaks = 7, low = "#cbc2b9", high = "#5e3719") +
+  geom_sf(data = aug_shark, aes(shape = basisOfRecord), fill = "white", show.legend = "point") +
+  scale_shape_manual(name = "Method", values = c(21, 24, 22)) +
+  theme_void() 
+present_mld_points
+ggsave(filename = "present_mld_points.png", plot = present_mld_points, path = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/figures", width = 11, height = 8.5, units = "in", dpi = 300)
+
+present_sss_points = ggplot() +
+  geom_stars(data = present_present[4,,,8]) +
+  scale_fill_steps(name = "Sea Surface Salinity (ppm)", limits = c(24, 36), n.breaks = 7, low = "#ffd2b6", high = "#c24e00") +
+  geom_sf(data = aug_shark, aes(shape = basisOfRecord), fill = "white", show.legend = "point") +
+  scale_shape_manual(name = "Method", values = c(21, 24, 22)) +
+  theme_void() 
+present_sss_points
+ggsave(filename = "present_sss_points.png", plot = present_sss_points, path = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/figures", width = 11, height = 8.5, units = "in", dpi = 300)
+
+present_sbtm_points = ggplot() +
+  geom_stars(data = present_present[5,,,8]) +
+  scale_fill_steps(name = "Salinity at Bottom (ppm)", limits = c(24, 36), n.breaks = 7, low = "#fff5b5", high = "#a49c00") +
+  geom_sf(data = aug_shark, aes(shape = basisOfRecord), fill = "white", show.legend = "point") +
+  scale_shape_manual(name = "Method", values = c(21, 24, 22)) +
+  theme_void() 
+present_sbtm_points
+ggsave(filename = "present_sbtm_points.png", plot = present_sbtm_points, path = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/figures", width = 11, height = 8.5, units = "in", dpi = 300)
+
+aug_pres_pres_sst = present_present[1,,,8, drop = TRUE]
+aug_pres_pres_tbtm = present_present[2,,,8, drop = TRUE]
+aug_pres_pres_mld = present_present[3,,,8, drop = TRUE]
+aug_pres_pres_sss = present_present[4,,,8, drop = TRUE]
+aug_pres_pres_sbtm = present_present[5,,,8, drop = TRUE]
+aug_pres_pres_combined_covars = c(brickman_bathymetry, aug_pres_pres_sst, aug_pres_pres_tbtm, aug_pres_pres_mld, aug_pres_pres_sss, aug_pres_pres_sbtm, along = NA_integer_) |>
+  rlang::set_names(c("depth", "brick_sst", "brick_tbtm", "brick_mld", "brick_sss", "brick_sbtm"))
+
+aug.ws.model = read_maxnet("/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/modeling_workflow/versions/v01/v01.008/model.rds")
+plot(aug.ws.model)
+aug_nowcast = predict(aug.ws.model, aug_pres_pres_combined_covars, type = "cloglog")
+now = ggplot() +
+  geom_stars(data = aug_nowcast) +
+  scale_fill_binned(type = "viridis", name = "Habitat Suitability", limits = c(0, 1), n.breaks = 6) +
+  ggtitle("August Nowcast") +
+  theme_void() +
+  theme(plot.title = element_text(hjust = 0.5))
+now
+ggsave(filename = "aug_nowcast.png", plot = now, path = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/figures", width = 11, height = 8.5, units = "in", dpi = 300)
+
+present_2055 = load_brickman(scenario = "PRESENT",
+                                year = 2055,
+                                vars = c("SST",
+                                         "Tbtm",
+                                         "MLD",
+                                         "SSS",
+                                         "Sbtm",
+                                         "U",
+                                         "V",
+                                         "Xbtm"), 
+                                interval = "mon", 
+                                band_as_time = TRUE, 
+                                path = file.path("/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/data/brickman/gom_carcharodon"))
+
+present_2075 = load_brickman(scenario = "PRESENT",
+                                year = 2075,
+                                vars = c("SST",
+                                         "Tbtm",
+                                         "MLD",
+                                         "SSS",
+                                         "Sbtm",
+                                         "U",
+                                         "V",
+                                         "Xbtm"), 
+                                interval = "mon", 
+                                band_as_time = TRUE, 
+                                path = file.path("/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/data/brickman/gom_carcharodon"))
+
+rcp45_2055 = load_brickman(scenario = "RCP45",
+                                year = 2055,
+                                vars = c("SST",
+                                         "Tbtm",
+                                         "MLD",
+                                         "SSS",
+                                         "Sbtm",
+                                         "U",
+                                         "V",
+                                         "Xbtm"), 
+                                interval = "mon", 
+                                band_as_time = TRUE, 
+                                path = file.path("/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/data/brickman/gom_carcharodon"))
+
+rcp45_2075 = load_brickman(scenario = "RCP45",
+                                year = 2075,
+                                vars = c("SST",
+                                         "Tbtm",
+                                         "MLD",
+                                         "SSS",
+                                         "Sbtm",
+                                         "U",
+                                         "V",
+                                         "Xbtm"), 
+                                interval = "mon", 
+                                band_as_time = TRUE, 
+                                path = file.path("/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/data/brickman/gom_carcharodon"))
+
+rcp85_2055 = load_brickman(scenario = "RCP85",
+                           year = 2055,
+                           vars = c("SST",
+                                    "Tbtm",
+                                    "MLD",
+                                    "SSS",
+                                    "Sbtm",
+                                    "U",
+                                    "V",
+                                    "Xbtm"), 
+                           interval = "mon", 
+                           band_as_time = TRUE, 
+                           path = file.path("/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/data/brickman/gom_carcharodon"))
+
+rcp85_2055_sst = ggplot() +
+  geom_stars(data = rcp85_2055[1,,,8]) +
+  scale_fill_steps(name = "Sea Surface Temperature (\u00B0C)", n.breaks = 7, low = "#FEEDDE", high = "#8C2D04") +
+  theme_void() 
+rcp85_2055_sst
+ggsave(filename = "rcp85_2055_sst.png", plot = rcp85_2055_sst, path = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/figures", width = 11, height = 8.5, units = "in", dpi = 300)
+
+rcp85_2055_tbtm = ggplot() +
+  geom_stars(data = rcp85_2055[2,,,8]) +
+  scale_fill_steps(name = "Temperature at Bottom (\u00B0C)", n.breaks = 7, low = "#DBFAF9", high = "#02877A") +
+  theme_void() 
+rcp85_2055_tbtm
+ggsave(filename = "rcp85_2055_tbtm.png", plot = rcp85_2055_tbtm, path = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/figures", width = 11, height = 8.5, units = "in", dpi = 300)
+
+rcp85_2055_mld = ggplot() +
+  geom_stars(data = rcp85_2055[3,,,8]) +
+  scale_fill_steps(name = "Mixed Layer Depth (m)", n.breaks = 7, low = "#cbc2b9", high = "#5e3719") +
+  theme_void() 
+rcp85_2055_mld
+ggsave(filename = "rcp85_2055_mld.png", plot = rcp85_2055_mld, path = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/figures", width = 11, height = 8.5, units = "in", dpi = 300)
+
+rcp85_2055_sss = ggplot() +
+  geom_stars(data = rcp85_2055[4,,,8]) +
+  scale_fill_steps(name = "Sea Surface Salinity (ppm)", n.breaks = 7, low = "#ffd2b6", high = "#c24e00") +
+  theme_void() 
+rcp85_2055_sss
+ggsave(filename = "rcp85_2055_sss.png", plot = rcp85_2055_sss, path = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/figures", width = 11, height = 8.5, units = "in", dpi = 300)
+
+rcp85_2055_sbtm = ggplot() +
+  geom_stars(data = rcp85_2055[5,,,8]) +
+  scale_fill_steps(name = "Salinity at Bottom (ppm)", n.breaks = 7, low = "#fff5b5", high = "#a49c00") +
+  theme_void() 
+rcp85_2055_sbtm
+ggsave(filename = "rcp85_2055_sbtm.png", plot = rcp85_2055_sbtm, path = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/figures", width = 11, height = 8.5, units = "in", dpi = 300)
+
+aug_rcp85_2055_sst  = rcp85_2055[1,,,8, drop = TRUE]
+aug_rcp85_2055_tbtm = rcp85_2055[2,,,8, drop = TRUE]
+aug_rcp85_2055_mld  = rcp85_2055[3,,,8, drop = TRUE]
+aug_rcp85_2055_sss  = rcp85_2055[4,,,8, drop = TRUE]
+aug_rcp85_2055_sbtm = rcp85_2055[5,,,8, drop = TRUE]
+aug_rcp85_2055_combined_covars = c(brickman_bathymetry, 
+                                   aug_rcp85_2055_sst, 
+                                   aug_rcp85_2055_tbtm, 
+                                   aug_rcp85_2055_mld, 
+                                   aug_rcp85_2055_sss, 
+                                   aug_rcp85_2055_sbtm, 
+                                   along = NA_integer_) |>
+  rlang::set_names(c("depth", "brick_sst", "brick_tbtm", "brick_mld", "brick_sss", "brick_sbtm"))
+
+aug.ws.model = read_maxnet("/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/modeling_workflow/versions/v01/v01.008/model.rds")
+plot(aug.ws.model)
+aug_rcp85_2055 = predict(aug.ws.model, aug_rcp85_2055_combined_covars, type = "cloglog")
+aug_rcp85_2055_pred = ggplot() +
+  geom_stars(data = aug_rcp85_2055) +
+  scale_fill_binned(type = "viridis", name = "Habitat Suitability", limits = c(0, 1), n.breaks = 6) +
+  ggtitle("August RCP 8.5 2055 Forecast") +
+  theme_void() +
+  theme(plot.title = element_text(hjust = 0.5))
+aug_rcp85_2055_pred
+ggsave(filename = "aug_rcp85_2055_pred.png", plot = aug_rcp85_2055_pred, path = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/figures", width = 11, height = 8.5, units = "in", dpi = 300)
 
 
-rcp85_2075_sep_sst = monthly_rcp85_2075_brick[1,,,9, drop = TRUE]
-rcp85_2075_sep_tbtm = monthly_rcp85_2075_brick[2,,,9, drop = TRUE]
-rcp85_2075_combined_covars_sep = c(depth, rcp85_2075_sep_sst, rcp85_2075_sep_tbtm, along = NA_integer_) |>
-  rlang::set_names(c("depth", "brick_sst", "brick_tbtm"))
-sep_2075_rcp85_pred = predict(aug.ws.model, rcp85_2075_combined_covars_sep, type = "cloglog")
-sep = ggplot() +
-        geom_stars(data = sep_2075_rcp85_pred) +
-        scale_fill_viridis(name = "Habitat Suitability", limits = c(0, 1)) +
-        ggtitle("Sept RCP85 2075 Prediction (Aug model)") +
-        theme_void() +
-        theme(plot.title = element_text(hjust = 0.5))
+rcp85_2075 = load_brickman(scenario = "RCP85",
+                           year = 2075,
+                           vars = c("SST",
+                                    "Tbtm",
+                                    "MLD",
+                                    "SSS",
+                                    "Sbtm",
+                                    "U",
+                                    "V",
+                                    "Xbtm"), 
+                           interval = "mon", 
+                           band_as_time = TRUE, 
+                           path = file.path("/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/data/brickman/gom_carcharodon"))
 
+rcp85_2075_sst = ggplot() +
+  geom_stars(data = rcp85_2075[1,,,8]) +
+  scale_fill_steps(name = "Sea Surface Temperature (\u00B0C)", limits = c(12, 30), n.breaks = 7, low = "#FEEDDE", high = "#8C2D04") +
+  theme_void() 
+rcp85_2075_sst
+ggsave(filename = "rcp85_2075_sst.png", plot = rcp85_2075_sst, path = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/figures", width = 11, height = 8.5, units = "in", dpi = 300)
 
-rcp85_2075_oct_sst = monthly_rcp85_2075_brick[1,,,10, drop = TRUE]
-rcp85_2075_oct_tbtm = monthly_rcp85_2075_brick[2,,,10, drop = TRUE]
-rcp85_2075_combined_covars_oct = c(depth, rcp85_2075_oct_sst, rcp85_2075_oct_tbtm, along = NA_integer_) |>
-  rlang::set_names(c("depth", "brick_sst", "brick_tbtm"))
-oct_2075_rcp85_pred = predict(aug.ws.model, rcp85_2075_combined_covars_oct, type = "cloglog")
-oct = ggplot() +
-        geom_stars(data = oct_2075_rcp85_pred) +
-        scale_fill_viridis(name = "Habitat Suitability", limits = c(0, 1)) +
-        ggtitle("October RCP85 2075 Prediction (Aug model)") +
-        theme_void() +
-        theme(plot.title = element_text(hjust = 0.5))
+rcp85_2075_tbtm = ggplot() +
+  geom_stars(data = rcp85_2075[2,,,8]) +
+  scale_fill_steps(name = "Temperature at Bottom (\u00B0C)", limits = c(12, 28), n.breaks = 7, low = "#DBFAF9", high = "#02877A") +
+  theme_void() 
+rcp85_2075_tbtm
+ggsave(filename = "rcp85_2075_tbtm.png", plot = rcp85_2075_tbtm, path = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/figures", width = 11, height = 8.5, units = "in", dpi = 300)
 
+rcp85_2075_mld = ggplot() +
+  geom_stars(data = rcp85_2075[3,,,8]) +
+  scale_fill_steps(name = "Mixed Layer Depth (m)", limits = c(8, 38), n.breaks = 7, low = "#cbc2b9", high = "#5e3719") +
+  theme_void() 
+rcp85_2075_mld
+ggsave(filename = "rcp85_2075_mld.png", plot = rcp85_2075_mld, path = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/figures", width = 11, height = 8.5, units = "in", dpi = 300)
 
-grid.arrange(now, jun, jul, aug, sep, oct, nrow = 2)
+rcp85_2075_sss = ggplot() +
+  geom_stars(data = rcp85_2075[4,,,8]) +
+  scale_fill_steps(name = "Sea Surface Salinity (ppm)", limits = c(10, 30), n.breaks = 7, low = "#ffd2b6", high = "#c24e00") +
+  theme_void() 
+rcp85_2075_sss
+ggsave(filename = "rcp85_2075_sss.png", plot = rcp85_2075_sss, path = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/figures", width = 11, height = 8.5, units = "in", dpi = 300)
+
+rcp85_2075_sbtm = ggplot() +
+  geom_stars(data = rcp85_2075[5,,,8]) +
+  scale_fill_steps(name = "Salinity at Bottom (ppm)", limits = c(12, 30), n.breaks = 7, low = "#fff5b5", high = "#a49c00") +
+  theme_void() 
+rcp85_2075_sbtm
+ggsave(filename = "rcp85_2075_sbtm.png", plot = rcp85_2075_sbtm, path = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/figures", width = 11, height = 8.5, units = "in", dpi = 300)
+
+aug_rcp85_2075_sst  = rcp85_2075[1,,,8, drop = TRUE]
+aug_rcp85_2075_tbtm = rcp85_2075[2,,,8, drop = TRUE]
+aug_rcp85_2075_mld  = rcp85_2075[3,,,8, drop = TRUE]
+aug_rcp85_2075_sss  = rcp85_2075[4,,,8, drop = TRUE]
+aug_rcp85_2075_sbtm = rcp85_2075[5,,,8, drop = TRUE]
+aug_rcp85_2075_combined_covars = c(brickman_bathymetry, 
+                                   aug_rcp85_2075_sst, 
+                                   aug_rcp85_2075_tbtm, 
+                                   aug_rcp85_2075_mld, 
+                                   aug_rcp85_2075_sss, 
+                                   aug_rcp85_2075_sbtm, 
+                                   along = NA_integer_) |>
+  rlang::set_names(c("depth", "brick_sst", "brick_tbtm", "brick_mld", "brick_sss", "brick_sbtm"))
+
+aug.ws.model = read_maxnet("/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/modeling_workflow/versions/v01/v01.008/model.rds")
+plot(aug.ws.model)
+aug_rcp85_2075 = predict(aug.ws.model, aug_rcp85_2075_combined_covars, type = "cloglog")
+aug_rcp85_2075_pred = ggplot() +
+  geom_stars(data = aug_rcp85_2075) +
+  scale_fill_binned(type = "viridis", name = "Habitat Suitability", limits = c(0, 1), n.breaks = 6) +
+  ggtitle("August RCP 8.5 2075 Forecast") +
+  theme_void() +
+  theme(plot.title = element_text(hjust = 0.5))
+aug_rcp85_2075_pred
+ggsave(filename = "aug_rcp85_2075_pred.png", plot = aug_rcp85_2075_pred, path = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/figures", width = 11, height = 8.5, units = "in", dpi = 300)

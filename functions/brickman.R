@@ -20,8 +20,11 @@ subset_brickman = function(scenario = c("RCP85", "RCP45", "PRESENT")[1],
     year = "PRESENT"
     vars = c("SST", "Tbtm")
     interval = "mon"
+    bb = cofbb::get_bb("gom_carcharodon", form = "sf")
+    band_as_time = TRUE
     path = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/data/brickman/gom_carcharodon"
   }
+  
   brickman = brickman::read_brickman(scenario = scenario[1], year = year[1], vars = vars, interval = interval[1])
   warp = brickman::warp_brickman(brickman, crs = sf::st_crs(bb))
   sub = warp[bb]
@@ -44,7 +47,7 @@ subset_brickman = function(scenario = c("RCP85", "RCP45", "PRESENT")[1],
                   "2075" = seq(from = as.Date("2075-01-01"), length = 12, by = "month") ,
                   "2055" = seq(from = as.Date("2055-01-01"), length = 12, by = "month") )
     dims = stars::st_dimensions(sub)
-    sub = stars::st_set_dimensions(sub, "band", names = "time", values = time)
+    sub = stars::st_set_dimensions(sub, names(dims)[3], names = "time", values = time)
   }
   
   return(sub)
@@ -204,6 +207,34 @@ brickman_extract = function(x, y, ...){
     dplyr::bind_cols()
 }
 
+
+#' Function to read and simplify names for brickman covariates
+#' 
+#' @param filename brickman_covar_obs_bg.gpkg, observations and background points with brickman data
+#' @param simplify logical, whether or not to simplify brickman covariate names
+#' @param bb bounding box
+#' @return dataframe with simplified brickman covariate names
+
+read_brickman_points = function(filename = file.path(cfg$data_path, "covars", "brickman_covar_obs_bg.gpkg"), 
+                                simplify = TRUE,
+                                bb = NULL) {
+  
+  x = sf::read_sf(filename)
+  
+  if(!is.null(bb)) x = sf::st_crop(x, bb)
+  
+  if(simplify) x = x |>
+    dplyr::rename(brick_sst = PRESENT_PRESENT_SST_mon.tif) |>
+    dplyr::rename(brick_tbtm = PRESENT_PRESENT_Tbtm_mon.tif) |>
+    dplyr::rename(brick_mld = PRESENT_PRESENT_MLD_mon.tif) |>
+    dplyr::rename(brick_sss = PRESENT_PRESENT_SSS_mon.tif) |>
+    dplyr::rename(brick_sbtm = PRESENT_PRESENT_Sbtm_mon.tif) |>
+    dplyr::rename(brick_u = PRESENT_PRESENT_U_mon.tif) |>
+    dplyr::rename(brick_v = PRESENT_PRESENT_V_mon.tif) |>
+    dplyr::rename(brick_xbtm = PRESENT_PRESENT_Xbtm_mon.tif) 
+  
+  return(x)
+}
 
 
 
