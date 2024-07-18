@@ -19,6 +19,7 @@ suppressPackageStartupMessages({
   library(twinkle)
   library(maxnet)
   library(maxnetic)
+  library(ggplot2)
 })
 
 args = argparser::arg_parser("forecasting for white shark habitat suitability",
@@ -26,7 +27,7 @@ args = argparser::arg_parser("forecasting for white shark habitat suitability",
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/forecast_workflow/v00.000.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/forecast_workflow/v01.0108.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -44,6 +45,8 @@ charlier::start_logger(filename = file.path(vpath, "log"))
 charlier::info("writing config")
 charlier::write_config(cfg, filename = file.path(vpath, basename(args$config)))
 
+nefsc_cc_bb = cofbb::get_bb("nefsc_carcharodon", "sf")
+
 points = read_brickman_points(bb = nefsc_cc_bb)
 
 mon_shark_obs = points |>
@@ -59,6 +62,9 @@ brickman_bathymetry = load_brickman(scenario = cfg$bathy_scenario,
                                     path = file.path(cfg$root_path, cfg$data_path, "brickman/bathy"))
 log_bathy = log10(brickman_bathymetry)
 
+fish_layer = read_stars(file.path(cfg$data_path, cfg$fish_path, cfg$fish_file)) |>
+  sf::st_crop(nefsc_cc_bb) |>
+  dplyr::rename(fish_biomass = cfg$fish_file)
 
 brick_covars = load_brickman(scenario = cfg$scenario,
                                 year = cfg$year,
@@ -67,30 +73,43 @@ brick_covars = load_brickman(scenario = cfg$scenario,
                                 band_as_time = TRUE, 
                                 path = file.path(cfg$root_path, cfg$data_path, "brickman/gom_carcharodon")) # fix path
 
-plot_covars(cfg, bathy = log_bathy, covars = brick_covars, obs = mon_shark_obs)
+plot_covars(cfg, 
+            bathy = log_bathy, 
+            fish = fish_layer, 
+            covars = brick_covars, 
+            obs = mon_shark_obs
+            )
 
 sst = brick_covars[1,,,as.numeric(cfg$month), drop = TRUE]
 tbtm = brick_covars[2,,,as.numeric(cfg$month), drop = TRUE]
 mld =  brick_covars[3,,,as.numeric(cfg$month), drop = TRUE]
 sss =  brick_covars[4,,,as.numeric(cfg$month), drop = TRUE]
 sbtm = brick_covars[5,,,as.numeric(cfg$month), drop = TRUE]
-combined_covars = c(log_bathy, 
+combined_covars = c(log_bathy,
+                    # fish_layer, does not currently work because fish data layer has different dims
                     sst, 
                     tbtm, 
                     mld, 
                     sss, 
                     sbtm, along = NA_integer_) |>
-  rlang::set_names(c("depth", "brick_sst", "brick_tbtm", "brick_mld", "brick_sss", "brick_sbtm"))
+  rlang::set_names(c("log_depth", 
+                     # "fish_biomass", 
+                     "brick_sst", 
+                     "brick_tbtm", 
+                     "brick_mld", 
+                     "brick_sss", 
+                     "brick_sbtm"))
 
-ws.model = read_maxnet(file.path(cfg$root_path, "workflows/modeling_workflow/versions", cfg$model_version_maj, cfg$model_version_maj_minor, "model.rds"))
-plot(ws.model)
-prediction = predict(ws.model, combined_covars, type = "cloglog")
+ws.model = read_maxnet(file.path(cfg$root_path, cfg$modeling_vpath, "model.rds"))
+plot(ws.model, type = "cloglog")
+prediction = predict(ws.model, combined_covars, type = "cloglog") |>
+  write_stars(file.path(vpath, "prediction.tif"))
 pred = ggplot() +
   geom_stars(data = prediction) +
   scale_fill_binned(type = "viridis", 
                     name = "Habitat Suitability", 
                     limits = c(0, 1), 
-                    n.breaks = 6) +
+                    n.breaks = 11) +
   geom_sf(data = mon_shark_obs, 
           aes(shape = basisOfRecord), 
           fill = "white", 
@@ -104,12 +123,14 @@ ggsave(filename = sprintf("%s_prediction.png", cfg$version),
        path = file.path(vpath, "figures"), 
        width = 11, height = 8.5, units = "in", dpi = 300)
 
+pauc = pAUC(prediction, obs_brick, thr = seq(from = 1, to = 0, by = -1/10000))
+plot(pauc)
 
-# predict given the compiled covariate layers
-aug_pres_pres_sst = present_present[1,,,8, drop = TRUE]
-aug_pres_pres_tbtm = present_present[2,,,8, drop = TRUE]
-aug_pres_pres_mld = present_present[3,,,8, drop = TRUE]
-aug_pres_pres_sss = present_present[4,,,8, drop = TRUE]
-aug_pres_pres_sbtm = present_present[5,,,8, drop = TRUE]
-aug_pres_pres_combined_covars = c(brickman_bathymetry, aug_pres_pres_sst, aug_pres_pres_tbtm, aug_pres_pres_mld, aug_pres_pres_sss, aug_pres_pres_sbtm, along = NA_integer_) |>
-  rlang::set_names(c("depth", "brick_sst", "brick_tbtm", "brick_mld", "brick_sss", "brick_sbtm"))
+# # predict given the compiled covariate layers
+# aug_pres_pres_sst = present_present[1,,,8, drop = TRUE]
+# aug_pres_pres_tbtm = present_present[2,,,8, drop = TRUE]
+# aug_pres_pres_mld = present_present[3,,,8, drop = TRUE]
+# aug_pres_pres_sss = present_present[4,,,8, drop = TRUE]
+# aug_pres_pres_sbtm = present_present[5,,,8, drop = TRUE]
+# aug_pres_pres_combined_covars = c(brickman_bathymetry, aug_pres_pres_sst, aug_pres_pres_tbtm, aug_pres_pres_mld, aug_pres_pres_sss, aug_pres_pres_sbtm, along = NA_integer_) |>
+#   rlang::set_names(c("depth", "brick_sst", "brick_tbtm", "brick_mld", "brick_sss", "brick_sbtm"))

@@ -37,5 +37,5 @@ rasterize_coast_polygon = function(x = read_coast_buffer(),
   
   sf::st_crop(template, sf::st_geometry(x), crop = FALSE) |>
     rlang::set_names("mask") |>
-    dplyr::mutate(mask = dplyr::replace(mask, mask <= 0, NA))
+    dplyr::mutate(mask = replace(mask, mask <= 0, NA))
 }

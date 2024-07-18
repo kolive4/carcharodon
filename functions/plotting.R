@@ -1,16 +1,17 @@
 #' Function for mapping
 #' 
 #' @param data coastline object from rnaturalearth
+#' @param bb bounding box coordinates for cropping
 #' @param ... arguments passable to geom_sf
 #' @return x, ggplot layer
 
-geom_coastline = function(coast = rnaturalearth::ne_coastline(scale = "large", returnclass = "sf"), ...) {
+geom_coastline = function(coast = rnaturalearth::ne_coastline(scale = "large", returnclass = "sf"), bb = NULL, ...) {
   
   maine_coords = dplyr::tibble(name = "Maine", Latitude = 45, Longitude = -69) |>
     st_as_sf(coords = c("Longitude", "Latitude"), crs = 4326)
   
   x = list(
-    ggplot2::geom_sf(data = coast, aes(), colour = "black"),
+    ggplot2::geom_sf(data = sf::st_crop(coast, bb), aes(), colour = "black"),
     ggplot2::geom_sf_label(data = maine_coords, aes(label = name, geometry = geometry)) 
   )
   
@@ -25,7 +26,7 @@ geom_coastline = function(coast = rnaturalearth::ne_coastline(scale = "large", r
 #' @param covar covariate data
 #' @param obs observation data
 #' @return plots 
-plot_covars = function(cfg, bathy = NULL, covars = NULL, obs = NULL){
+plot_covars = function(cfg, bathy = NULL, fish = NULL, covars = NULL, obs = NULL){
   
   if ("SST" %in% cfg$covars){
     sst_range = range(brick_covars[1,,,as.numeric(cfg$month)][[1]], na.rm = TRUE)
@@ -35,10 +36,10 @@ plot_covars = function(cfg, bathy = NULL, covars = NULL, obs = NULL){
                        limits = sst_range, # if the same across months, change sst_range arg to [1,,,], if the same across scenarios/years input in cfg 
                        n.breaks = 7, 
                        low = "#FEEDDE", high = "#8C2D04") +
-      geom_sf(data = mon_shark_obs, 
-              aes(shape = basisOfRecord), 
-              fill = "white", 
-              show.legend = "point") +
+      # geom_sf(data = mon_shark_obs, 
+      #         aes(shape = basisOfRecord), 
+      #         fill = "white", 
+      #         show.legend = "point") +
       scale_shape_manual(name = "Method", 
                          values = cfg$graphics$BOR_symbol) +
       ggplot2::labs(caption = cfg$version) +
@@ -58,10 +59,10 @@ plot_covars = function(cfg, bathy = NULL, covars = NULL, obs = NULL){
                        limits = tbtm_range, 
                        n.breaks = 7, 
                        low = "#DBFAF9", high = "#02877A") +
-      geom_sf(data = mon_shark_obs, 
-              aes(shape = basisOfRecord), 
-              fill = "white", 
-              show.legend = "point") +
+      # geom_sf(data = mon_shark_obs, 
+      #         aes(shape = basisOfRecord), 
+      #         fill = "white", 
+      #         show.legend = "point") +
       scale_shape_manual(name = "Method", 
                          values = cfg$graphics$BOR_symbol) +
       ggplot2::labs(caption = cfg$version) +
@@ -81,10 +82,10 @@ plot_covars = function(cfg, bathy = NULL, covars = NULL, obs = NULL){
                        limits = mld_range, # if the same across months, change sst_range arg to [1,,,], if the same across scenarios/years input in cfg 
                        n.breaks = 7, 
                        low = "#cbc2b9", high = "#5e3719") +
-      geom_sf(data = mon_shark_obs, 
-              aes(shape = basisOfRecord), 
-              fill = "white", 
-              show.legend = "point") +
+      #geom_sf(data = mon_shark_obs, 
+      #        aes(shape = basisOfRecord), 
+      #        fill = "white", 
+      #        show.legend = "point") +
       scale_shape_manual(name = "Method", 
                          values = cfg$graphics$BOR_symbol) +
       ggplot2::labs(caption = cfg$version) +
@@ -104,10 +105,10 @@ plot_covars = function(cfg, bathy = NULL, covars = NULL, obs = NULL){
                        limits = sss_range, # if the same across months, change sst_range arg to [1,,,], if the same across scenarios/years input in cfg 
                        n.breaks = 7, 
                        low = "#ffd2b6", high = "#c24e00") +
-      geom_sf(data = mon_shark_obs, 
-              aes(shape = basisOfRecord), 
-              fill = "white", 
-              show.legend = "point") +
+      # geom_sf(data = mon_shark_obs, 
+      #         aes(shape = basisOfRecord), 
+      #         fill = "white", 
+      #         show.legend = "point") +
       scale_shape_manual(name = "Method", 
                          values = cfg$graphics$BOR_symbol) +
       ggplot2::labs(caption = cfg$version) +
@@ -125,12 +126,12 @@ plot_covars = function(cfg, bathy = NULL, covars = NULL, obs = NULL){
       geom_stars(data = brick_covars[5,,,as.numeric(cfg$month)]) +
       scale_fill_steps(name = "Bottom Salinity (ppm)",
                        limits = sbtm_range, # if the same across months, change sst_range arg to [1,,,], if the same across scenarios/years input in cfg 
-                       n.breaks = 7, 
+                       n.breaks = 8, 
                        low = "#fff5b5", high = "#a49c00") +
-      geom_sf(data = mon_shark_obs, 
-              aes(shape = basisOfRecord), 
-              fill = "white", 
-              show.legend = "point") +
+      # geom_sf(data = mon_shark_obs, 
+      #         aes(shape = basisOfRecord), 
+      #         fill = "white", 
+      #         show.legend = "point") +
       scale_shape_manual(name = "Method", 
                          values = cfg$graphics$BOR_symbol) +
       ggplot2::labs(caption = cfg$version) +
@@ -233,8 +234,30 @@ plot_covars = function(cfg, bathy = NULL, covars = NULL, obs = NULL){
            path = file.path(vpath, "figures"), 
            width = 11, height = 8.5, units = "in", dpi = 300)
     
+    if ("fish_biomass" %in% cfg$fish_var) {
+      fish_biomass_plot = ggplot() +
+        geom_stars(data = fish_layer) +
+        scale_fill_steps(name = "Fish Biomass", 
+                         n.breaks = 7, 
+                         low = "#FFCFF2", high = "#B80087") +
+        geom_sf(data = mon_shark_obs, 
+                aes(shape = basisOfRecord), 
+                fill = "white", 
+                show.legend = "point") +
+        scale_shape_manual(name = "Method", 
+                           values = cfg$graphics$BOR_symbol) +
+        ggplot2::labs(caption = cfg$version) +
+        theme_void() 
+      fish_biomass_plot
+      ggsave(filename = sprintf("%s_fish_biomass.png", cfg$version), 
+             plot = fish_biomass_plot, 
+             path = file.path(vpath, "figures"), 
+             width = 11, height = 8.5, units = "in", dpi = 300)
+      
+    
   }
     
     
     
+  }
 }

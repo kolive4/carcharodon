@@ -215,7 +215,7 @@ brickman_extract = function(x, y, ...){
 #' @param bb bounding box
 #' @return dataframe with simplified brickman covariate names
 
-read_brickman_points = function(filename = file.path(cfg$data_path, "covars", "brickman_covar_obs_bg.gpkg"), 
+read_brickman_points = function(filename = file.path(cfg$root_path, cfg$gather_data_vpath, "brickman_covar_obs_bg.gpkg"), 
                                 simplify = TRUE,
                                 bb = NULL) {
   
