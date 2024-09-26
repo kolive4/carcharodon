@@ -84,9 +84,17 @@ ws.model <- maxnet::maxnet(ws.flag,
                            addsamplestobackground = FALSE
                            ) |>
   write_maxnet(file.path(vpath, "model.rds"))
+ws.model.collect = plot(ws.model, type = "cloglog", plot = FALSE)
 
-var_imp = maxnetic::variable_importance(ws.model, dplyr::bind_rows(obs_drop, bg_drop), type = "cloglog", arrange = "decreasing")
+x = model_rename(ws.model.collect)
+p = gather_plots(x)
 
+var_imp = maxnetic::variable_importance(ws.model, dplyr::bind_rows(obs_drop, bg_drop), type = "cloglog", arrange = "decreasing") |>
+  write.csv(file.path(vpath, "variable_importance.csv"))
+
+png(file.path(vpath, "variable_likelihood.png"))
+plot(ws.model, type = "cloglog")
+dev.off()
 pdf(file.path(vpath, "variable_likelihood.pdf"))
 plot(ws.model, type = "cloglog")
 dev.off()

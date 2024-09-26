@@ -120,11 +120,17 @@ pred = ggplot() +
 pred
 ggsave(filename = sprintf("%s_prediction.png", cfg$version),
        plot = pred, 
-       path = file.path(vpath, "figures"), 
+       path = vpath, 
        width = 11, height = 8.5, units = "in", dpi = 300)
+
+obs_brick = read_sf(file.path(cfg$modeling_vpath, "obs_brick.gpkg"))
 
 pauc = pAUC(prediction, obs_brick, thr = seq(from = 1, to = 0, by = -1/10000))
 plot(pauc)
+
+png(file.path(vpath, "pauc.png"))
+plot(pauc)
+dev.off()
 
 # # predict given the compiled covariate layers
 # aug_pres_pres_sst = present_present[1,,,8, drop = TRUE]

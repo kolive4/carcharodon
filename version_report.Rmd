@@ -1,0 +1,45 @@
+---
+title: "version_report"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+source("setup.R")
+
+cfg = charlier::read_config("version_report.yaml")
+cfg$version = version
+vpars = charlier::parse_version(cfg$version)
+
+m_vpars = charlier::parse_version(cfg$m_version)
+m_path = file.path(cfg$m_workflow_path, "versions", m_vpars[["major"]], cfg$m_version)
+
+f_vpars = charlier::parse_version(cfg$f_version)
+f_path = file.path(cfg$f_workflow_path, "versions", f_vpars[["major"]], cfg$f_version)
+
+
+```
+```{r}
+file = file.path(f_path, paste0(cfg$f_version, "_prediction.png"))
+```
+![Prediction image not found](`r file`)
+
+```{r}
+file2 = file.path(f_path, "pauc.png")
+```
+![pAUC image not found](`r file2`)
+
+```{r}
+file3 = file.path(m_path, "variable_importance.csv")
+x = readr::read_csv(file3)
+print(x)
+```
+![variable importance table not found](`r file3`)
+
+```{r}
+file4 = file.path(m_path, "variable_likelihood.png")
+```
+![variable likelihood curves not found](`r file4`)
