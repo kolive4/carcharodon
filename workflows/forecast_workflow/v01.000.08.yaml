@@ -25,7 +25,7 @@ covars:
 - V
 - Xbtm
 model_version_maj: v01
-model_version_maj_minor: v01.0008
+model_version_maj_minor: v01.000.08
 graphics:
   BOR_symbol:
   - 15
@@ -35,9 +35,7 @@ graphics:
   - 25
   ggtitle: August Nowcast
   plot_points: TRUE
-fish_layer: yes
 fish_path: fish_data/MDAT_Fish_SummaryProducts_NEFSC/commondata/raster_data
 fish_file: fish_biomass_nefsc_2010_2019_SPRING_All.tif
-dfs_layer: yes
 dfs_path: mapping/etopo
 dfs_file: etopo_warped_distance_to_shore_meters.tif

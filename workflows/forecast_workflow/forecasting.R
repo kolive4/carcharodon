@@ -37,7 +37,7 @@ for (f in list.files(cfg$source_path, pattern = "^.*\\.R$", full.names = TRUE)){
 }
 
 vpars = charlier::parse_version(cfg$version)
-vpath = file.path(cfg$root_path, cfg$output_path, "versions", vpars[["major"]], cfg$version)
+vpath = file.path(cfg$root_path, cfg$output_path, "versions", vpars[["major"]], vpars[["minor"]], cfg$version)
 if (!dir.exists(vpath)) 
   dir.create(vpath, showWarnings = FALSE, recursive = TRUE)
 

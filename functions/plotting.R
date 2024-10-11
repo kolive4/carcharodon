@@ -53,7 +53,8 @@ plot_covars = function(cfg, bathy = NULL, fish = NULL, dfs = NULL, covars = NULL
     ggsave(filename = sprintf("%s_sst_points.png", cfg$version), 
            plot = sst_points, 
            path = file.path(vpath, "figures"), 
-           width = 11, height = 8.5, units = "in", dpi = 300)
+           width = 11, height = 8.5, units = "in", dpi = 300,
+           create.dir = TRUE)
   }
   
   if ("Tbtm" %in% cfg$covars){
@@ -79,7 +80,8 @@ plot_covars = function(cfg, bathy = NULL, fish = NULL, dfs = NULL, covars = NULL
     ggsave(filename = sprintf("%s_tbtm_points.png", cfg$version), # need to find a way to separate when making multiple, can I paste in a value from the cfg that would be an identifier?
            plot = tbtm_points, 
            path = file.path(vpath, "figures"), 
-           width = 11, height = 8.5, units = "in", dpi = 300)
+           width = 11, height = 8.5, units = "in", dpi = 300,
+           create.dir = TRUE)
   }
   
   if ("MLD" %in% cfg$covars){
@@ -105,7 +107,8 @@ plot_covars = function(cfg, bathy = NULL, fish = NULL, dfs = NULL, covars = NULL
     ggsave(filename = sprintf("%s_mld_points.png", cfg$version), # need to find a way to separate when making multiple, can I paste in a value from the cfg that would be an identifier?
            plot = mld_points, 
            path = file.path(vpath, "figures"), 
-           width = 11, height = 8.5, units = "in", dpi = 300)
+           width = 11, height = 8.5, units = "in", dpi = 300,
+           create.dir = TRUE)
   }
   
   if ("SSS" %in% cfg$covars){
@@ -131,7 +134,8 @@ plot_covars = function(cfg, bathy = NULL, fish = NULL, dfs = NULL, covars = NULL
     ggsave(filename = sprintf("%s_sss_points.png", cfg$version), # need to find a way to separate when making multiple, can I paste in a value from the cfg that would be an identifier?
            plot = sss_points, 
            path = file.path(vpath, "figures"), 
-           width = 11, height = 8.5, units = "in", dpi = 300)
+           width = 11, height = 8.5, units = "in", dpi = 300,
+           create.dir = TRUE)
   }
   
   if ("Sbtm" %in% cfg$covars){
@@ -157,7 +161,8 @@ plot_covars = function(cfg, bathy = NULL, fish = NULL, dfs = NULL, covars = NULL
     ggsave(filename = sprintf("%s_sbtm_points.png", cfg$version), # need to find a way to separate when making multiple, can I paste in a value from the cfg that would be an identifier?
            plot = sbtm_points, 
            path = file.path(vpath, "figures"), 
-           width = 11, height = 8.5, units = "in", dpi = 300)
+           width = 11, height = 8.5, units = "in", dpi = 300,
+           create.dir = TRUE)
   }
   
   if ("U" %in% cfg$covars){
@@ -184,7 +189,8 @@ plot_covars = function(cfg, bathy = NULL, fish = NULL, dfs = NULL, covars = NULL
     ggsave(filename = sprintf("%s_u_points.png", cfg$version), # need to find a way to separate when making multiple, can I paste in a value from the cfg that would be an identifier?
            plot = u_points, 
            path = file.path(vpath, "figures"), 
-           width = 11, height = 8.5, units = "in", dpi = 300)
+           width = 11, height = 8.5, units = "in", dpi = 300,
+           create.dir = TRUE)
   }
   
   if ("V" %in% cfg$covars){
@@ -210,7 +216,8 @@ plot_covars = function(cfg, bathy = NULL, fish = NULL, dfs = NULL, covars = NULL
     ggsave(filename = sprintf("%s_v_points.png", cfg$version), # need to find a way to separate when making multiple, can I paste in a value from the cfg that would be an identifier?
            plot = v_points, 
            path = file.path(vpath, "figures"), 
-           width = 11, height = 8.5, units = "in", dpi = 300)
+           width = 11, height = 8.5, units = "in", dpi = 300,
+           create.dir = TRUE)
   }
   
   
@@ -237,7 +244,8 @@ plot_covars = function(cfg, bathy = NULL, fish = NULL, dfs = NULL, covars = NULL
     ggsave(filename = sprintf("%s_xbtm_points.png", cfg$version), # need to find a way to separate when making multiple, can I paste in a value from the cfg that would be an identifier?
            plot = xbtm_points, 
            path = file.path(vpath, "figures"), 
-           width = 11, height = 8.5, units = "in", dpi = 300)
+           width = 11, height = 8.5, units = "in", dpi = 300,
+           create.dir = TRUE)
   }
   
   if ("Bathy_depth" %in% cfg$static_vars) {
@@ -261,7 +269,8 @@ plot_covars = function(cfg, bathy = NULL, fish = NULL, dfs = NULL, covars = NULL
     ggsave(filename = sprintf("%s_depth_binned.png", cfg$version), 
            plot = bathymetry_binned_plot, 
            path = file.path(vpath, "figures"), 
-           width = 11, height = 8.5, units = "in", dpi = 300)
+           width = 11, height = 8.5, units = "in", dpi = 300,
+           create.dir = TRUE)
   
   if ("log_depth" %in% cfg$static_vars) {
     log_bathymetry_binned_plot = ggplot() +
@@ -284,7 +293,8 @@ plot_covars = function(cfg, bathy = NULL, fish = NULL, dfs = NULL, covars = NULL
     ggsave(filename = sprintf("%s_log_depth_binned.png", cfg$version), 
            plot = log_bathymetry_binned_plot, 
            path = file.path(vpath, "figures"), 
-           width = 11, height = 8.5, units = "in", dpi = 300)
+           width = 11, height = 8.5, units = "in", dpi = 300,
+           create.dir = TRUE)
     
     if ("fish_biomass" %in% cfg$static_vars) {
       fish_biomass_plot = ggplot() +
@@ -307,7 +317,8 @@ plot_covars = function(cfg, bathy = NULL, fish = NULL, dfs = NULL, covars = NULL
       ggsave(filename = sprintf("%s_fish_biomass.png", cfg$version), 
              plot = fish_biomass_plot, 
              path = file.path(vpath, "figures"), 
-             width = 11, height = 8.5, units = "in", dpi = 300)
+             width = 11, height = 8.5, units = "in", dpi = 300,
+             create.dir = TRUE)
       
     
     }
@@ -332,7 +343,8 @@ plot_covars = function(cfg, bathy = NULL, fish = NULL, dfs = NULL, covars = NULL
       ggsave(filename = sprintf("%s_dfs.png", cfg$version), 
              plot = dfs_plot, 
              path = file.path(vpath, "figures"), 
-             width = 11, height = 8.5, units = "in", dpi = 300)
+             width = 11, height = 8.5, units = "in", dpi = 300,
+             create.dir = TRUE)
       
       
     }

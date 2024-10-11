@@ -11,17 +11,17 @@ knitr::opts_chunk$set(echo = TRUE)
 source("setup.R")
 
 cfg = charlier::read_config("version_report.yaml")
-cfg$version = version
+# cfg$version = version
 vpars = charlier::parse_version(cfg$version)
 
 m_vpars = charlier::parse_version(cfg$m_version)
-m_path = file.path(cfg$m_workflow_path, "versions", m_vpars[["major"]], cfg$m_version)
+m_path = file.path(cfg$m_workflow_path, "versions", m_vpars[["major"]], m_vpars[["minor"]], cfg$m_version)
 
 f_vpars = charlier::parse_version(cfg$f_version)
-f_path = file.path(cfg$f_workflow_path, "versions", f_vpars[["major"]], cfg$f_version)
-
+f_path = file.path(cfg$f_workflow_path, "versions", f_vpars[["major"]], f_vpars[["minor"]], cfg$f_version)
 
 ```
+
 ```{r}
 file = file.path(f_path, paste0(cfg$f_version, "_prediction.png"))
 ```
