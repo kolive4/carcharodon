@@ -27,7 +27,7 @@ args = argparser::arg_parser("forecasting for white shark habitat suitability",
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/forecast_workflow/v01.0108.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/forecast_workflow/v01.000.08.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -54,55 +54,76 @@ mon_shark_obs = points |>
   filter(id == 1)
 
 
-# combine covariate layers together to make a predictive layer, do this for all years and scenarios
-
-brickman_bathymetry = load_brickman(scenario = cfg$bathy_scenario, 
-                                    vars = cfg$bathy_var, 
-                                    band_as_time = TRUE, 
-                                    path = file.path(cfg$root_path, cfg$data_path, "brickman/bathy"))
-log_bathy = log10(brickman_bathymetry)
-
-fish_layer = read_stars(file.path(cfg$data_path, cfg$fish_path, cfg$fish_file)) |>
-  sf::st_crop(nefsc_cc_bb) |>
-  dplyr::rename(fish_biomass = cfg$fish_file)
+cvr = sapply(cfg$covars, function(covar) {
+  sprintf("%s_%s_%s_mon.tif", cfg$scenario, cfg$year, covar)
+})
+lookup = purrr::set_names(cvr, tolower(cfg$covars))
 
 brick_covars = load_brickman(scenario = cfg$scenario,
                                 year = cfg$year,
                                 vars = cfg$covars, 
                                 interval = "mon", 
                                 band_as_time = TRUE, 
-                                path = file.path(cfg$root_path, cfg$data_path, "brickman/gom_carcharodon")) # fix path
+                                path = file.path(cfg$root_path, cfg$data_path, "brickman/gom_carcharodon")) |> # fix path
+  rename(any_of(lookup))
+
+combo_covar = dplyr::slice(brick_covars, time, as.numeric(cfg$month))
+
+# combine covariate layers together to make a predictive layer, do this for all years and scenarios
+if ("Bathy_depth" %in% cfg$static_vars) {
+  brickman_bathymetry = load_brickman(scenario = cfg$bathy_scenario, 
+                                      vars = "Bathy_depth", 
+                                      band_as_time = TRUE, 
+                                      path = file.path(cfg$root_path, cfg$data_path, "brickman/bathy")) |>
+    dplyr::rename(depth = "Bathy_depth")
+  combo_covar = c(combo_covar, brickman_bathymetry) 
+} 
+if ("log_depth" %in% cfg$static_vars) { # is this right?
+  if (!exists("brickman_bathymetry")) {
+    brickman_bathymetry = load_brickman(scenario = cfg$bathy_scenario, 
+                                        vars = "Bathy_depth", 
+                                        band_as_time = TRUE, 
+                                        path = file.path(cfg$root_path, cfg$data_path, "brickman/bathy")) |>
+      dplyr::rename(depth = "Bathy_depth")
+  }
+  log_bathy = log10(brickman_bathymetry) |>
+    dplyr::rename(log_depth = depth)
+  combo_covar = c(combo_covar, log_bathy)
+    
+}
+
+
+if("fish_biomass" %in% cfg$static_vars) {
+  fish_layer = read_stars(file.path(cfg$data_path, cfg$fish_path, cfg$fish_file)) |>
+    sf::st_crop(nefsc_cc_bb) |>
+    stars::st_warp(dest = brickman_bathymetry) |>
+    dplyr::rename(fish_biomass = cfg$fish_file)
+  combo_covar = c(combo_covar, fish_layer)
+}
+
+if("dfs" %in% cfg$static_vars) {
+  dfs_layer = read_stars(file.path(cfg$data_path, cfg$dfs_path, cfg$dfs_file)) |>
+    dplyr::rename(dfs = cfg$dfs_file) |>
+    stars::st_warp(dest = brickman_bathymetry)
+  combo_covar = c(combo_covar, dfs_layer)
+}
 
 plot_covars(cfg, 
-            bathy = log_bathy, 
-            fish = fish_layer, 
+            bathy = if("Bathy_depth" %in% cfg$static_vars) {brickman_bathymetry} 
+                    else if ("log_depth" %in% cfg$static_vars) {log_bathy} 
+                    else {NULL} , 
+            fish = if("fish_biomass" %in% cfg$static_vars){fish_layer} 
+                   else {NULL}, 
+            dfs = if("dfs" %in% cfg$static_vars) {dfs_layer} 
+                  else {NULL},
             covars = brick_covars, 
-            obs = mon_shark_obs
+            obs = mon_shark_obs,
+            plot_points = cfg$graphics$plot_points
             )
-
-sst = brick_covars[1,,,as.numeric(cfg$month), drop = TRUE]
-tbtm = brick_covars[2,,,as.numeric(cfg$month), drop = TRUE]
-mld =  brick_covars[3,,,as.numeric(cfg$month), drop = TRUE]
-sss =  brick_covars[4,,,as.numeric(cfg$month), drop = TRUE]
-sbtm = brick_covars[5,,,as.numeric(cfg$month), drop = TRUE]
-combined_covars = c(log_bathy,
-                    # fish_layer, does not currently work because fish data layer has different dims
-                    sst, 
-                    tbtm, 
-                    mld, 
-                    sss, 
-                    sbtm, along = NA_integer_) |>
-  rlang::set_names(c("log_depth", 
-                     # "fish_biomass", 
-                     "brick_sst", 
-                     "brick_tbtm", 
-                     "brick_mld", 
-                     "brick_sss", 
-                     "brick_sbtm"))
 
 ws.model = read_maxnet(file.path(cfg$root_path, cfg$modeling_vpath, "model.rds"))
 plot(ws.model, type = "cloglog")
-prediction = predict(ws.model, combined_covars, type = "cloglog") |>
+prediction = predict(ws.model, combo_covar, type = "cloglog") |>
   write_stars(file.path(vpath, "prediction.tif"))
 pred = ggplot() +
   geom_stars(data = prediction) +
@@ -110,13 +131,19 @@ pred = ggplot() +
                     name = "Habitat Suitability", 
                     limits = c(0, 1), 
                     n.breaks = 11) +
-  geom_sf(data = mon_shark_obs, 
-          aes(shape = basisOfRecord), 
-          fill = "white", 
-          show.legend = "point") +
+  geom_coastline(bb = cofbb::get_bb("nefsc_carcharodon", form = "bb")) +
   ggtitle(cfg$graphics$ggtitle) +
   theme_void() +
   theme(plot.title = element_text(hjust = 0.5))
+  if (cfg$graphics$plot_points) {
+    pred = pred +
+      geom_sf(data = mon_shark_obs, 
+            aes(shape = basisOfRecord), 
+            fill = "white", 
+            show.legend = "point") +
+      scale_shape_manual(name = "Method", 
+                         values = cfg$graphics$BOR_symbol)
+  }
 pred
 ggsave(filename = sprintf("%s_prediction.png", cfg$version),
        plot = pred, 
@@ -130,13 +157,4 @@ plot(pauc)
 
 png(file.path(vpath, "pauc.png"))
 plot(pauc)
-dev.off()
-
-# # predict given the compiled covariate layers
-# aug_pres_pres_sst = present_present[1,,,8, drop = TRUE]
-# aug_pres_pres_tbtm = present_present[2,,,8, drop = TRUE]
-# aug_pres_pres_mld = present_present[3,,,8, drop = TRUE]
-# aug_pres_pres_sss = present_present[4,,,8, drop = TRUE]
-# aug_pres_pres_sbtm = present_present[5,,,8, drop = TRUE]
-# aug_pres_pres_combined_covars = c(brickman_bathymetry, aug_pres_pres_sst, aug_pres_pres_tbtm, aug_pres_pres_mld, aug_pres_pres_sss, aug_pres_pres_sbtm, along = NA_integer_) |>
-#   rlang::set_names(c("depth", "brick_sst", "brick_tbtm", "brick_mld", "brick_sss", "brick_sbtm"))
+ok = dev.off()

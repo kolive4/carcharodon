@@ -2,6 +2,7 @@ version: v01.000
 root_path: /mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon
 output_path: workflows/get_data_workflow
 source_path: /mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/functions
+fetch_obis: no
 species: Carcharodon carcharias
 start_date: '2000-01-01'
 end_date: '2024-01-01'
@@ -28,6 +29,8 @@ data_path: /mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/d
 figure_path: /mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/figures
 fish_path: fish_data/MDAT_Fish_SummaryProducts_NEFSC/commondata/raster_data
 fish_file: fish_biomass_nefsc_2010_2019_SPRING_All.tif
+dfs_path: mapping/etopo
+dfs_file: etopo_warped_distance_to_shore_meters.tif
 brickman_subset: no
 mask_name: mapping/gebco/gebco_mask.tif
 bg_number: 10000.0

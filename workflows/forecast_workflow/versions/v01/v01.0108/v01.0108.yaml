@@ -7,8 +7,10 @@ data_path: data
 figure_path: figures
 output_path: workflows/forecast_workflow
 bathy_scenario: PRESENT
-bathy_var: Bathy_depth
-fish_var: fish_biomass
+static_vars:
+- Bathy_depth
+- fish_biomass
+- dfs
 month: 08
 scenario: PRESENT
 year: NA
@@ -33,3 +35,5 @@ graphics:
   ggtitle: August Nowcast
 fish_path: fish_data/MDAT_Fish_SummaryProducts_NEFSC/commondata/raster_data
 fish_file: fish_biomass_nefsc_2010_2019_SPRING_All.tif
+dfs_path: mapping/etopo
+dfs_file: etopo_warped_distance_to_shore_meters.tif

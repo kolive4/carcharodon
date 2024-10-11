@@ -6,15 +6,19 @@ output_path: workflows/modeling_workflow
 gather_data_vpath: /workflows/get_data_workflow/versions/v01/v01.100
 month: 8
 mon_covariates:
-- SST
-- Tbtm
-- MLD
-- SSS
-- Sbtm
-- U
-- V
-- Xbtm
-static_covariates: Bathy_depth
+- brick_sst
+- brick_tbtm
+- brick_mld
+- brick_sss
+- brick_sbtm
+- brick_u
+- brick_v
+- brick_xbtm
+static_covariates:
+- brick_depth
+- log_depth
+- dfs
+- fish_biomass
 obs_filter:
   basisOfRecord:
   - HumanObservation

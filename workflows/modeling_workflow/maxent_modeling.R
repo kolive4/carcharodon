@@ -26,7 +26,7 @@ args = argparser::arg_parser("maxent modeling for white shark obs",
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/modeling_workflow/v01.0008.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/modeling_workflow/v01.000.01.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -36,7 +36,7 @@ for (f in list.files(cfg$source_path, pattern = "^.*\\.R$", full.names = TRUE)){
 }
 
 vpars = charlier::parse_version(cfg$version)
-vpath = file.path(cfg$root_path, cfg$output_path, "versions", vpars[["major"]], cfg$version)
+vpath = file.path(cfg$root_path, cfg$output_path, "versions", vpars[["major"]], vpars[["minor"]], cfg$version)
 if (!dir.exists(vpath)) 
   dir.create(vpath, showWarnings = FALSE, recursive = TRUE)
 
@@ -49,11 +49,8 @@ nefsc_cc_bb = cofbb::get_bb("nefsc_carcharodon", "sf")
 obs_brick = read_brickman_points(file.path(cfg$root_path, cfg$gather_data_vpath, "brickman_covar_obs_bg.gpkg"), bb = nefsc_cc_bb) |>
   dplyr::filter(month %in% cfg$month) |>
   dplyr::filter(id == 1, basisOfRecord %in% cfg$obs_filter$basisOfRecord) |>
-  select(c("brick_sst", "brick_tbtm", "log_depth", 
-           #"fish_biomass", "brick_depth",
-           "brick_mld", "brick_sss", "brick_sbtm"
-           #, "brick_u", "brick_v", "brick_xbtm"
-           )) |>
+  select(c(cfg$mon_covariates, cfg$static_covariates)) |>
+  dplyr::rename_with(~ stringr::str_remove(., "^brick_")) |>
   na.omit() |>
   write_sf(file.path(vpath, "obs_brick.gpkg"))
 
@@ -63,41 +60,36 @@ obs_drop = obs_brick |>
 bg_brick = read_brickman_points(file.path(cfg$root_path, cfg$gather_data_vpath, "brickman_covar_obs_bg.gpkg"), bb = nefsc_cc_bb) |>
   dplyr::filter(month %in% cfg$month) |>
   dplyr::filter(id == 0) |>
-  select(c("brick_sst", "brick_tbtm", "log_depth",
-           #"fish_biomass", "brick_depth",
-           "brick_mld", "brick_sss", "brick_sbtm"
-           #, "brick_u", "brick_v", "brick_xbtm"
-           )) |>
+  select(c(cfg$mon_covariates, cfg$static_covariates)) |>
+  dplyr::rename_with(~ stringr::str_remove(., "^brick_")) |>
   na.omit() |>
   write_sf(file.path(vpath, "bg_brick.gpkg"))
 
 bg_drop = bg_brick |>
   st_drop_geometry()
-plot(bg_brick["brick_sss"], pch = ".", reset = FALSE)
-plot(coast, add = TRUE)
 
 combo_drop = dplyr::bind_rows(obs_drop, bg_drop, .id = "presence")
 
 ws.flag <- c(rep(1, nrow(obs_drop)), rep(0, nrow(bg_drop)))
 ws.model <- maxnet::maxnet(ws.flag,
                                     dplyr::select(combo_drop, -presence),
-                           addsamplestobackground = FALSE
+                           addsamplestobackground = TRUE
                            ) |>
   write_maxnet(file.path(vpath, "model.rds"))
 ws.model.collect = plot(ws.model, type = "cloglog", plot = FALSE)
 
-x = model_rename(ws.model.collect)
-p = gather_plots(x)
+# x = model_rename(ws.model.collect)
+# p = gather_plots(x)
 
 var_imp = maxnetic::variable_importance(ws.model, dplyr::bind_rows(obs_drop, bg_drop), type = "cloglog", arrange = "decreasing") |>
   write.csv(file.path(vpath, "variable_importance.csv"))
 
 png(file.path(vpath, "variable_likelihood.png"))
 plot(ws.model, type = "cloglog")
-dev.off()
+ok = dev.off()
 pdf(file.path(vpath, "variable_likelihood.pdf"))
 plot(ws.model, type = "cloglog")
-dev.off()
+ok = dev.off()
 
 # observations: id = 1
 # bg: id = 0

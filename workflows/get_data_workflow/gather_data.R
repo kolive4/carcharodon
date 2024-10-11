@@ -25,7 +25,7 @@ args = argparser::arg_parser("assembling observation and background data",
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/get_data_workflow/v01.000.yaml",
+                          default = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/get_data_workflow/v01.000.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -86,7 +86,17 @@ spot$Year = format(spot$date, "%Y")
 
 satellite = bind_rows(psat, spot)
 
-wshark <- read_obis(species = cfg$species, dwc = TRUE, path = file.path(cfg$data_path, "obis")) |>
+if(cfg$fetch_obis){
+  fetch_obis(scientificname =  cfg$species)
+  wshark = read_obis(species = cfg$species, 
+                     dwc = TRUE, 
+                     path = file.path(cfg$data_path, "obis"))
+}else{
+  wshark = read_obis(species = cfg$species, 
+                      dwc = TRUE, 
+                      path = file.path(cfg$data_path, "obis"))
+}
+wshark <- wshark |>
   distinct() |>
   sf::st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), crs = 4326) |>
   dplyr::mutate(month = format(eventDate, "%m") |>
@@ -94,6 +104,7 @@ wshark <- read_obis(species = cfg$species, dwc = TRUE, path = file.path(cfg$data
   dplyr::mutate(Year = format(eventDate, "%Y")) |>
   dplyr::bind_rows(curated, satellite) |>
   dplyr::mutate(extractDate = as.Date(sprintf("2020-%0.2i-01", month))) |>
+  dplyr::rename(c(obis_sst = sst, obis_depth = depth)) |>
   sf::st_crop(shark_box) |>
   sf::write_sf(file.path(cfg$data_path, "obis", "shark_occs.gpkg"))
 
@@ -151,9 +162,14 @@ if(cfg$brickman_subset){
 log_brickman_bathymetry = log10(brickman_bathymetry)
 
 fish_layer = read_stars(file.path(cfg$data_path, cfg$fish_path, cfg$fish_file)) |>
-  sf::st_crop(shark_box)
+  sf::st_crop(shark_box) |>
+  st_warp(dest = brickman_bathymetry)
   # need to add a way to manipulate this layer to the brickman layer dimensions
-  
+
+#distance from shore layer
+dfs_layer = read_stars(file.path(cfg$data_path, cfg$dfs_path, cfg$dfs_file)) |>
+  rename(dfs = cfg$dfs_file) |>
+  st_warp(dest = brickman_bathymetry)
 
 # extract covariate data at obs points
 shark_depth = st_extract(brickman_bathymetry, at = wshark) |>
@@ -166,9 +182,13 @@ shark_fish = st_extract(fish_layer, at = wshark) |>
   st_as_sf() |>
   as_tibble() |>
   rename(fish_biomass = cfg$fish_file)
+shark_dfs = st_extract(dfs_layer, at = wshark) |>
+  sf::st_as_sf() |>
+  dplyr::as_tibble() 
 shark_covars = brickman_extract(monthly_brick_cov, wshark, time_column = "extractDate") # changed to eventDate because it is consistent amongst all obs
 
 wshark = dplyr::mutate(wshark, fish_biomass = shark_fish$fish_biomass) |>
+  dplyr::mutate(wshark, dfs = shark_dfs$dfs) |>
   dplyr::mutate(wshark, brick_depth = shark_depth$Bathy_depth) |>
   dplyr::mutate(wshark, log_depth = log_shark_depth$Bathy_depth) |>
   dplyr::bind_cols(shark_covars) |>
@@ -219,10 +239,12 @@ bg_brick = dplyr::mutate(bg_brick, eventDate = dates) |>
 brick_bg_depth = stars::st_extract(brickman_bathymetry, at = bg_brick)
 brick_bg_log_depth = stars::st_extract(log_brickman_bathymetry, at = bg_brick)
 brick_bg_fish = stars::st_extract(fish_layer, at = bg_brick)
+brick_bg_dfs = stars::st_extract(dfs_layer, at = bg_brick)
 brick_bg_covars = brickman_extract(monthly_brick_cov, bg_brick, time_column = "time", interpolate_time = FALSE)
 
 bg_brick = dplyr::mutate(bg_brick, brick_depth = brick_bg_depth$Bathy_depth) |>
   dplyr::mutate(bg_brick, fish_biomass = brick_bg_fish$fish_biomass) |>
+  dplyr::mutate(bg_brick, dfs = brick_bg_dfs$dfs) |>
   dplyr::mutate(bg_brick, log_depth = brick_bg_log_depth$Bathy_depth) |>
   dplyr::bind_cols(brick_bg_covars) |>
   write_sf(file.path(vpath, "brickman_covar_bg.gpkg"))
@@ -232,7 +254,7 @@ bg = ggplot() +
   geom_sf(data = bg_brick, aes(), color = "black", size = 0.1) +
   theme_void() 
 bg
-ggsave(filename = paste0(cfg$version, "bg.png"), plot = bg, path = file.path(vpath, "figures"), width = 11, height = 8.5, units = "in", dpi = 300)
+ggsave(filename = paste0(cfg$version, "bg.png"), plot = bg, path = file.path(vpath, "figures"), width = 11, height = 8.5, units = "in", dpi = 300, create.dir = TRUE)
 
 # bind together in a single geopackage w/ flag for bg and obs data
 obs_bg_brick = bind_rows(list(wshark, bg_brick), .id = "id") |>
