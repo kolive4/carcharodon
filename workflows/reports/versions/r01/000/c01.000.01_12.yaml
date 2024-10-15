@@ -1,0 +1,5 @@
+version: r01.000.01_12
+root_path: /mnt/ecocast/projects/koliveira/subprojects/carcharodon
+report_path: /workflows/reports
+f_path: /workflows/forecast_workflow/versions/v01/000
+scenario: Present Conditions

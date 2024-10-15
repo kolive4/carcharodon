@@ -27,7 +27,7 @@ args = argparser::arg_parser("forecasting for white shark habitat suitability",
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/forecast_workflow/v01.000.08.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/forecast_workflow/v01.100.04.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -38,6 +38,7 @@ for (f in list.files(cfg$source_path, pattern = "^.*\\.R$", full.names = TRUE)){
 
 vpars = charlier::parse_version(cfg$version)
 vpath = file.path(cfg$root_path, cfg$output_path, "versions", vpars[["major"]], vpars[["minor"]], cfg$version)
+min_vpath = file.path(cfg$root_path, cfg$output_path, "versions", vpars[["major"]], vpars[["minor"]])
 if (!dir.exists(vpath)) 
   dir.create(vpath, showWarnings = FALSE, recursive = TRUE)
 
@@ -91,7 +92,6 @@ if ("log_depth" %in% cfg$static_vars) { # is this right?
   combo_covar = c(combo_covar, log_bathy)
     
 }
-
 
 if("fish_biomass" %in% cfg$static_vars) {
   fish_layer = read_stars(file.path(cfg$data_path, cfg$fish_path, cfg$fish_file)) |>

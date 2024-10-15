@@ -1,0 +1,41 @@
+version: v01.200.12
+root_path: /mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon
+gather_data_vpath: workflows/get_data_workflow/versions/v01/v01.200
+modeling_vpath: workflows/modeling_workflow/versions/v01/200/v01.200.12
+source_path: functions
+data_path: data
+figure_path: figures
+output_path: workflows/forecast_workflow
+bathy_scenario: PRESENT
+static_vars:
+- Bathy_depth
+- log_depth
+- fish_biomass
+- dfs
+month: 12
+scenario: PRESENT
+year: PRESENT
+covars:
+- SST
+- Tbtm
+- SSS
+- Sbtm
+- MLD
+- U
+- V
+- Xbtm
+model_version_maj: v01
+model_version_maj_minor: v01.200.12
+graphics:
+  BOR_symbol:
+  - 15
+  - 3
+  - 4
+  - 21
+  - 25
+  ggtitle: December Nowcast
+  plot_points: yes
+fish_path: fish_data/MDAT_Fish_SummaryProducts_NEFSC/commondata/raster_data
+fish_file: fish_biomass_nefsc_2010_2019_SPRING_All.tif
+dfs_path: mapping/etopo
+dfs_file: etopo_warped_distance_to_shore_meters.tif

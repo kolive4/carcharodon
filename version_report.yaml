@@ -1,6 +1,0 @@
-version: r01.000.12
-m_workflow_path: "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/modeling_workflow"
-m_version: v01.000.12
-f_workflow_path: "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/forecast_workflow"
-f_version: v01.000.12
-output_path: "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/reports"

@@ -25,7 +25,7 @@ args = argparser::arg_parser("assembling observation and background data",
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/get_data_workflow/v01.000.yaml",
+                          default = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/get_data_workflow/v01.100.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -96,6 +96,10 @@ if(cfg$fetch_obis){
                       dwc = TRUE, 
                       path = file.path(cfg$data_path, "obis"))
 }
+
+mask = stars::read_stars(file.path(cfg$data_path, cfg$mask_name)) |>
+  rlang::set_names("mask")
+
 wshark <- wshark |>
   distinct() |>
   sf::st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), crs = 4326) |>
@@ -105,7 +109,12 @@ wshark <- wshark |>
   dplyr::bind_rows(curated, satellite) |>
   dplyr::mutate(extractDate = as.Date(sprintf("2020-%0.2i-01", month))) |>
   dplyr::rename(c(obis_sst = sst, obis_depth = depth)) |>
-  sf::st_crop(shark_box) |>
+  sf::st_crop(shark_box)
+#need to find a way to crop by the stars object
+wshark.mask = st_extract(mask, wshark)
+
+wshark = wshark |>
+  dplyr::filter(wshark.mask$mask == 1) |>
   sf::write_sf(file.path(cfg$data_path, "obis", "shark_occs.gpkg"))
 
 shark_mon_hist = ggplot2::ggplot() +
@@ -128,7 +137,11 @@ occs = ggplot() +
   geom_sf(data = wshark, aes(shape = basisOfRecord), fill = "white", color = "black", size = 2.5) + 
   theme_void() 
 occs
-ggsave(filename = "occurrences.png", plot = occs, path = file.path(cfg$figure_path), width = 11, height = 8.5, units = "in", dpi = 300)
+ggsave(filename = paste0(cfg$version, "_occurrences.png"), 
+       plot = occs, 
+       path = file.path(vpath, "figures"), 
+       width = 11, height = 8.5, units = "in", dpi = 300, create.dir = TRUE)
+
 
 # load covariates from brickman
 if(cfg$brickman_subset){
@@ -208,19 +221,10 @@ wshark = dplyr::mutate(wshark, fish_biomass = shark_fish$fish_biomass) |>
 #   write_sf(brick_buf, file.path(cfg$data_path, cfg$polygon))
 # }
 
-# using mask as area to plot on?
-mask = stars::read_stars(file.path(cfg$data_path, cfg$mask_name)) |>
-  rlang::set_names("mask")
-
-# mask_buf = stars::st_contour(mask)
-# mask_buf = mask_buf[1]
-# write_sf(mask_buf, file.path(cfg$data_path, cfg$buffer_name))
-
 bg_brick = twinkle::random_points(mask, 
                                   n = cfg$bg_number, 
                                   m = cfg$bg_m, 
                                   na.rm = TRUE, 
-                                  # polygon = mask_buf, 
                                   form = "sf") |>
   filter(.data$mask == 1) # chooses points within the buffer
 
@@ -254,7 +258,10 @@ bg = ggplot() +
   geom_sf(data = bg_brick, aes(), color = "black", size = 0.1) +
   theme_void() 
 bg
-ggsave(filename = paste0(cfg$version, "bg.png"), plot = bg, path = file.path(vpath, "figures"), width = 11, height = 8.5, units = "in", dpi = 300, create.dir = TRUE)
+ggsave(filename = paste0(cfg$version, "bg.png"), 
+       plot = bg, 
+       path = file.path(vpath, "figures"), 
+       width = 11, height = 8.5, units = "in", dpi = 300, create.dir = TRUE)
 
 # bind together in a single geopackage w/ flag for bg and obs data
 obs_bg_brick = bind_rows(list(wshark, bg_brick), .id = "id") |>
