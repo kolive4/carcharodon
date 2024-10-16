@@ -28,12 +28,12 @@ geom_coastline = function(coast = rnaturalearth::ne_coastline(scale = "large", r
 #' @param obs observation data
 #' @param plot_points logical for whether or not to plot points on the plot
 #' @return plots 
-plot_covars = function(cfg, bathy = NULL, fish = NULL, dfs = NULL, covars = NULL, obs = NULL, plot_points = NULL){
+plot_covars = function(cfg, bathy = NULL, log_bathy = NULL, fish = NULL, dfs = NULL, covars = NULL, obs = NULL, plot_points = NULL){
   
   if ("SST" %in% cfg$covars){
-    sst_range = range(brick_covars[1,,,as.numeric(cfg$month)][[1]], na.rm = TRUE)
+    sst_range = range(covars[["sst"]], na.rm = TRUE)
     sst_points = ggplot() +
-      geom_stars(data = brick_covars[1,,,as.numeric(cfg$month)]) +
+      geom_stars(data = covars["sst"]) +
       scale_fill_steps(name = "Sea Surface Temperature (\u00B0C)", 
                        limits = sst_range, # if the same across months, change sst_range arg to [1,,,], if the same across scenarios/years input in cfg 
                        n.breaks = 7, 
@@ -58,9 +58,9 @@ plot_covars = function(cfg, bathy = NULL, fish = NULL, dfs = NULL, covars = NULL
   }
   
   if ("Tbtm" %in% cfg$covars){
-    tbtm_range = range(brick_covars[2,,,as.numeric(cfg$month)][[1]], na.rm = TRUE)
+    tbtm_range = range(covars[["tbtm"]], na.rm = TRUE)
     tbtm_points = ggplot() +
-      geom_stars(data = brick_covars[2,,,as.numeric(cfg$month)]) +
+      geom_stars(data = covars["tbtm"]) +
       scale_fill_steps(name = "Bottom Temperature (\u00B0C)", 
                        limits = tbtm_range, 
                        n.breaks = 7, 
@@ -85,9 +85,9 @@ plot_covars = function(cfg, bathy = NULL, fish = NULL, dfs = NULL, covars = NULL
   }
   
   if ("MLD" %in% cfg$covars){
-    mld_range = range(brick_covars[3,,,as.numeric(cfg$month)][[1]], na.rm = TRUE)
+    mld_range = range(covars[["mld"]], na.rm = TRUE)
     mld_points = ggplot() +
-      geom_stars(data = brick_covars[3,,,as.numeric(cfg$month)]) +
+      geom_stars(data = covars["mld"]) +
       scale_fill_steps(name = "Mixed Layer Depth (m)",
                        limits = mld_range, # if the same across months, change sst_range arg to [1,,,], if the same across scenarios/years input in cfg 
                        n.breaks = 7, 
@@ -112,9 +112,9 @@ plot_covars = function(cfg, bathy = NULL, fish = NULL, dfs = NULL, covars = NULL
   }
   
   if ("SSS" %in% cfg$covars){
-    sss_range = range(brick_covars[4,,,as.numeric(cfg$month)][[1]], na.rm = TRUE)
+    sss_range = range(covars[["sss"]], na.rm = TRUE)
     sss_points = ggplot() +
-      geom_stars(data = brick_covars[4,,,as.numeric(cfg$month)]) +
+      geom_stars(data = covars["sss"]) +
       scale_fill_steps(name = "Sea Surface Salinity (ppm)",
                        limits = sss_range, # if the same across months, change sst_range arg to [1,,,], if the same across scenarios/years input in cfg 
                        n.breaks = 7, 
@@ -139,9 +139,9 @@ plot_covars = function(cfg, bathy = NULL, fish = NULL, dfs = NULL, covars = NULL
   }
   
   if ("Sbtm" %in% cfg$covars){
-    sbtm_range = range(brick_covars[5,,,as.numeric(cfg$month)][[1]], na.rm = TRUE)
+    sbtm_range = range(covars[["sbtm"]], na.rm = TRUE)
     sbtm_points = ggplot() +
-      geom_stars(data = brick_covars[5,,,as.numeric(cfg$month)]) +
+      geom_stars(data = covars["sbtm"]) +
       scale_fill_steps(name = "Bottom Salinity (ppm)",
                        limits = sbtm_range, # if the same across months, change sst_range arg to [1,,,], if the same across scenarios/years input in cfg 
                        n.breaks = 8, 
@@ -166,9 +166,9 @@ plot_covars = function(cfg, bathy = NULL, fish = NULL, dfs = NULL, covars = NULL
   }
   
   if ("U" %in% cfg$covars){
-    u_range = range(brick_covars[6,,,as.numeric(cfg$month)][[1]], na.rm = TRUE)
+    u_range = range(covars[["u"]], na.rm = TRUE)
     u_points = ggplot() +
-      geom_stars(data = brick_covars[6,,,as.numeric(cfg$month)]) +
+      geom_stars(data = covars["u"]) +
       scale_fill_steps(name = "Horizontal advection (?)",
                        limits = u_range, # if the same across months, change sst_range arg to [1,,,], if the same across scenarios/years input in cfg 
                        n.breaks = 7, 
@@ -194,9 +194,9 @@ plot_covars = function(cfg, bathy = NULL, fish = NULL, dfs = NULL, covars = NULL
   }
   
   if ("V" %in% cfg$covars){
-    v_range = range(brick_covars[7,,,as.numeric(cfg$month)][[1]], na.rm = TRUE)
+    v_range = range(covars[["v"]], na.rm = TRUE)
     v_points = ggplot() +
-      geom_stars(data = brick_covars[7,,,as.numeric(cfg$month)]) +
+      geom_stars(data = covars["v"]) +
       scale_fill_steps(name = "Vertical advection (?)",
                        limits = v_range, # if the same across months, change sst_range arg to [1,,,], if the same across scenarios/years input in cfg 
                        n.breaks = 7, 
@@ -222,9 +222,9 @@ plot_covars = function(cfg, bathy = NULL, fish = NULL, dfs = NULL, covars = NULL
   
   
   if ("Xbtm" %in% cfg$covars){
-    xbtm_range = range(brick_covars[8,,,as.numeric(cfg$month)][[1]], na.rm = TRUE)
+    xbtm_range = range(covars[["xbtm"]], na.rm = TRUE)
     xbtm_points = ggplot() +
-      geom_stars(data = brick_covars[8,,,as.numeric(cfg$month)]) +
+      geom_stars(data = covars["xbtm"]) +
       scale_fill_steps(name = "Bottom Advection (?)",
                        limits = xbtm_range, # if the same across months, change sst_range arg to [1,,,], if the same across scenarios/years input in cfg 
                        n.breaks = 7, 
@@ -250,7 +250,7 @@ plot_covars = function(cfg, bathy = NULL, fish = NULL, dfs = NULL, covars = NULL
   
   if ("Bathy_depth" %in% cfg$static_vars) {
     bathymetry_binned_plot = ggplot() +
-      geom_stars(data = brickman_bathymetry) +
+      geom_stars(data = bathy) +
       scale_fill_steps(name = "Depth", 
                        n.breaks = 7, 
                        low = "#deebf7", high = "#08306b") +
@@ -298,7 +298,7 @@ plot_covars = function(cfg, bathy = NULL, fish = NULL, dfs = NULL, covars = NULL
     
     if ("fish_biomass" %in% cfg$static_vars) {
       fish_biomass_plot = ggplot() +
-        geom_stars(data = fish_layer) +
+        geom_stars(data = fish) +
         scale_fill_steps(name = "Fish Biomass", 
                          n.breaks = 7, 
                          low = "#FFCFF2", high = "#B80087") +
@@ -324,7 +324,7 @@ plot_covars = function(cfg, bathy = NULL, fish = NULL, dfs = NULL, covars = NULL
     }
     if ("dfs" %in% cfg$static_vars) {
       dfs_plot = ggplot() +
-        geom_stars(data = dfs_layer) +
+        geom_stars(data = dfs) +
         scale_fill_steps(name = "Distance from Shore (m)", 
                          n.breaks = 7, 
                          low = "#c7dbff", high = "#bf49ff") +

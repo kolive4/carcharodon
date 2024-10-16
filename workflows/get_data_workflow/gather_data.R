@@ -110,7 +110,7 @@ wshark <- wshark |>
   dplyr::mutate(extractDate = as.Date(sprintf("2020-%0.2i-01", month))) |>
   dplyr::rename(c(obis_sst = sst, obis_depth = depth)) |>
   sf::st_crop(shark_box)
-#need to find a way to crop by the stars object
+
 wshark.mask = st_extract(mask, wshark)
 
 wshark = wshark |>
@@ -174,10 +174,10 @@ if(cfg$brickman_subset){
 
 log_brickman_bathymetry = log10(brickman_bathymetry)
 
+# if including in later steps, prediction and other spatial stuff gets cropped to this layer
 fish_layer = read_stars(file.path(cfg$data_path, cfg$fish_path, cfg$fish_file)) |>
   sf::st_crop(shark_box) |>
   st_warp(dest = brickman_bathymetry)
-  # need to add a way to manipulate this layer to the brickman layer dimensions
 
 #distance from shore layer
 dfs_layer = read_stars(file.path(cfg$data_path, cfg$dfs_path, cfg$dfs_file)) |>

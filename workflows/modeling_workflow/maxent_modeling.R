@@ -77,7 +77,6 @@ ws.model <- maxnet::maxnet(ws.flag,
                            ) |>
   write_maxnet(file.path(vpath, "model.rds"))
 ws.model.collect = plot(ws.model, type = "cloglog", plot = FALSE)
-
 # x = model_rename(ws.model.collect)
 # p = gather_plots(x)
 

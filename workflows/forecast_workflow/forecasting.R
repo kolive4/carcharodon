@@ -54,7 +54,6 @@ mon_shark_obs = points |>
   dplyr::filter(month %in% as.numeric(cfg$month)) |>
   filter(id == 1)
 
-
 cvr = sapply(cfg$covars, function(covar) {
   sprintf("%s_%s_%s_mon.tif", cfg$scenario, cfg$year, covar)
 })
@@ -69,6 +68,13 @@ brick_covars = load_brickman(scenario = cfg$scenario,
   rename(any_of(lookup))
 
 combo_covar = dplyr::slice(brick_covars, time, as.numeric(cfg$month))
+
+mask = stars::read_stars(file.path(cfg$root_path, cfg$data_path, cfg$mask_name)) |>
+  rlang::set_names("mask") |>
+  st_warp(dest = combo_covar)
+
+ix = (mask[["mask"]] <= 0)
+mask[["mask"]][ix] = NA_real_
 
 # combine covariate layers together to make a predictive layer, do this for all years and scenarios
 if ("Bathy_depth" %in% cfg$static_vars) {
@@ -108,15 +114,18 @@ if("dfs" %in% cfg$static_vars) {
   combo_covar = c(combo_covar, dfs_layer)
 }
 
+combo_covar[is.na(mask)] = NA_real_
+
 plot_covars(cfg, 
-            bathy = if("Bathy_depth" %in% cfg$static_vars) {brickman_bathymetry} 
-                    else if ("log_depth" %in% cfg$static_vars) {log_bathy} 
+            bathy = if("Bathy_depth" %in% cfg$static_vars) {combo_covar["depth"]}
+                    else{NULL},
+            log_bathy = if ("log_depth" %in% cfg$static_vars) {combo_covar["log_depth"]} 
                     else {NULL} , 
-            fish = if("fish_biomass" %in% cfg$static_vars){fish_layer} 
+            fish = if("fish_biomass" %in% cfg$static_vars){combo_covar["fish_biomass"]} 
                    else {NULL}, 
-            dfs = if("dfs" %in% cfg$static_vars) {dfs_layer} 
+            dfs = if("dfs" %in% cfg$static_vars) {combo_covar["dfs"]} 
                   else {NULL},
-            covars = brick_covars, 
+            covars = combo_covar, 
             obs = mon_shark_obs,
             plot_points = cfg$graphics$plot_points
             )
@@ -153,6 +162,9 @@ ggsave(filename = sprintf("%s_prediction.png", cfg$version),
 obs_brick = read_sf(file.path(cfg$modeling_vpath, "obs_brick.gpkg"))
 
 pauc = pAUC(prediction, obs_brick, thr = seq(from = 1, to = 0, by = -1/10000))
+pauc_area = pauc$area |>
+  as_tibble() |>
+  write.csv(file.path(vpath, paste0(cfg$version, "_pauc.csv")))
 plot(pauc)
 
 png(file.path(vpath, "pauc.png"))

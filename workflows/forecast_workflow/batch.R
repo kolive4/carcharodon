@@ -1,5 +1,5 @@
 yamls = list.files(path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/forecast_workflow", 
-           pattern = glob2rx("v01.200.*.yaml"),
+           pattern = glob2rx("v01.2000.*.yaml"),
            full.names = TRUE)
   
 # Rscript workflows/modeling_workflow/maxent_modeling.R --config workflows/modeling_workflow/v01.2012.yaml

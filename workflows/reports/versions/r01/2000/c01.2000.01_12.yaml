@@ -1,0 +1,9 @@
+version: r01.2000.01_12
+root_path: /mnt/ecocast/projects/koliveira/subprojects/carcharodon
+report_path: workflows/reports
+f_path: workflows/forecast_workflow/versions/v01/2000
+scenario: Present Conditions
+graphics:
+  title: pAUC Values
+  x: Month
+  'TRUE': pAUC
