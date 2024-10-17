@@ -6,5 +6,4 @@ scenario: Present Conditions
 graphics:
   title: pAUC Values
   x: Month
-  y: pAUC
-
+  'TRUE': pAUC
