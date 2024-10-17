@@ -1,0 +1,50 @@
+version: v01.0100.06
+root_path: /mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon
+gather_data_vpath: workflows/get_data_workflow/versions/v01/v01.000
+modeling_vpath: workflows/modeling_workflow/versions/v01/010/v01.010.06
+source_path: functions
+data_path: data
+figure_path: figures
+output_path: workflows/forecast_workflow
+bathy_scenario: PRESENT
+static_vars:
+- log_depth
+- fish_biomass
+- dfs
+month: 06
+scenario: PRESENT
+year: PRESENT
+covars:
+- SST
+- Tbtm
+- SSS
+- Sbtm
+- MLD
+- U
+- V
+- Xbtm
+obs_filter:
+  basisOfRecord:
+    - HumanObservation
+    - PreservedSpecimen
+    - curated
+    - PSAT
+    - SPOT
+model_version_maj: v01
+model_version_maj_minor: v01.010.06
+graphics:
+  BOR_symbol:
+  - 15
+  - 3
+  - 4
+  - 21
+  - 25
+  ggtitle: June Nowcast
+  plot_points: TRUE
+  plot_contour: FALSE
+contour_name: ~
+fish_path: fish_data/MDAT_Fish_SummaryProducts_NEFSC/commondata/raster_data
+fish_file: fish_biomass_nefsc_2010_2019_SPRING_All.tif
+dfs_path: mapping/etopo
+dfs_file: etopo_warped_distance_to_shore_meters.tif
+mask_name: mapping/gebco/gebco_mask.tif
