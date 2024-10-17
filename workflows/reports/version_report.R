@@ -15,7 +15,7 @@ args = argparser::arg_parser("reports for white shark habitat suitability",
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/reports/r01.000.01.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/reports/r01.0010.01.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -31,8 +31,17 @@ charlier::start_logger(filename = file.path(vpath, "log"))
 charlier::info("writing config")
 charlier::write_config(cfg, filename = file.path(vpath, basename(args$config)))
 
-rmarkdown::render(file.path(cfg$root_path, cfg$report_path, "version_report.Rmd"), 
-                  output_dir = vpath, 
-                  output_file = paste0(cfg$version, ".md"))
+mpars = charlier::parse_version(cfg$m_version)
+m_path = file.path(cfg$root_path, cfg$m_workflow_path, "versions", mpars[["major"]], mpars[["minor"]], cfg$m_version)
+
+if(file.exists(file.path(m_path, "model.rds"))){
+  rmarkdown::render(file.path(cfg$root_path, cfg$report_path, "version_report.Rmd"), 
+                    output_dir = vpath, 
+                    output_file = paste0(cfg$version, ".md"))
+  ret = 0
+} else {ret = 28}
+
+quit(save = "no", status = ret)
+
 
 

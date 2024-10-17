@@ -35,6 +35,8 @@ graphics:
   - 25
   ggtitle: February Nowcast
   plot_points: TRUE
+  plot_contour: TRUE
+contour_name: mapping/25nm_shoreline_contour.gpkg
 fish_path: fish_data/MDAT_Fish_SummaryProducts_NEFSC/commondata/raster_data
 fish_file: fish_biomass_nefsc_2010_2019_SPRING_All.tif
 dfs_path: mapping/etopo

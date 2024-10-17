@@ -27,8 +27,10 @@ geom_coastline = function(coast = rnaturalearth::ne_coastline(scale = "large", r
 #' @param covar covariate data
 #' @param obs observation data
 #' @param plot_points logical for whether or not to plot points on the plot
+#' @param contour contour line data
+#' @param plot_contour logical for whether or not to plot contour lines
 #' @return plots 
-plot_covars = function(cfg, bathy = NULL, log_bathy = NULL, fish = NULL, dfs = NULL, covars = NULL, obs = NULL, plot_points = NULL){
+plot_covars = function(cfg, bathy = NULL, log_bathy = NULL, fish = NULL, dfs = NULL, covars = NULL, obs = NULL, plot_points = NULL, contour = NULL, plot_contour = NULL){
   
   if ("SST" %in% cfg$covars){
     sst_range = range(covars[["sst"]], na.rm = TRUE)
@@ -50,6 +52,10 @@ plot_covars = function(cfg, bathy = NULL, log_bathy = NULL, fish = NULL, dfs = N
           scale_shape_manual(name = "Method", 
                              values = cfg$graphics$BOR_symbol)
       }
+    if (plot_contour) {
+      sst_points = sst_points +
+        geom_sf(data = mask_contour, color = "white")
+    }
     ggsave(filename = sprintf("%s_sst_points.png", cfg$version), 
            plot = sst_points, 
            path = file.path(vpath, "figures"), 
@@ -77,6 +83,10 @@ plot_covars = function(cfg, bathy = NULL, log_bathy = NULL, fish = NULL, dfs = N
           scale_shape_manual(name = "Method", 
                              values = cfg$graphics$BOR_symbol)
       }
+    if (plot_contour) {
+      tbtm_points = tbtm_points +
+        geom_sf(data = mask_contour, color = "white")
+    }
     ggsave(filename = sprintf("%s_tbtm_points.png", cfg$version), # need to find a way to separate when making multiple, can I paste in a value from the cfg that would be an identifier?
            plot = tbtm_points, 
            path = file.path(vpath, "figures"), 
@@ -104,6 +114,10 @@ plot_covars = function(cfg, bathy = NULL, log_bathy = NULL, fish = NULL, dfs = N
           scale_shape_manual(name = "Method", 
                              values = cfg$graphics$BOR_symbol)
       }
+    if (plot_contour) {
+      mld_points = mld_points +
+        geom_sf(data = mask_contour, color = "white")
+    }
     ggsave(filename = sprintf("%s_mld_points.png", cfg$version), # need to find a way to separate when making multiple, can I paste in a value from the cfg that would be an identifier?
            plot = mld_points, 
            path = file.path(vpath, "figures"), 
@@ -131,6 +145,10 @@ plot_covars = function(cfg, bathy = NULL, log_bathy = NULL, fish = NULL, dfs = N
           scale_shape_manual(name = "Method", 
                              values = cfg$graphics$BOR_symbol)
       }
+    if (plot_contour) {
+      sss_points = sss_points +
+        geom_sf(data = mask_contour, color = "white")
+    }
     ggsave(filename = sprintf("%s_sss_points.png", cfg$version), # need to find a way to separate when making multiple, can I paste in a value from the cfg that would be an identifier?
            plot = sss_points, 
            path = file.path(vpath, "figures"), 
@@ -158,6 +176,10 @@ plot_covars = function(cfg, bathy = NULL, log_bathy = NULL, fish = NULL, dfs = N
           scale_shape_manual(name = "Method", 
                              values = cfg$graphics$BOR_symbol)
       }
+    if (plot_contour) {
+      sbtm_points = sbtm_points +
+        geom_sf(data = mask_contour, color = "white")
+    }
     ggsave(filename = sprintf("%s_sbtm_points.png", cfg$version), # need to find a way to separate when making multiple, can I paste in a value from the cfg that would be an identifier?
            plot = sbtm_points, 
            path = file.path(vpath, "figures"), 
@@ -185,6 +207,10 @@ plot_covars = function(cfg, bathy = NULL, log_bathy = NULL, fish = NULL, dfs = N
           scale_shape_manual(name = "Method", 
                              values = cfg$graphics$BOR_symbol)
       }
+    if (plot_contour) {
+      u_points = u_points +
+        geom_sf(data = mask_contour, color = "white")
+    }
     print(u_points)
     ggsave(filename = sprintf("%s_u_points.png", cfg$version), # need to find a way to separate when making multiple, can I paste in a value from the cfg that would be an identifier?
            plot = u_points, 
@@ -213,6 +239,10 @@ plot_covars = function(cfg, bathy = NULL, log_bathy = NULL, fish = NULL, dfs = N
           scale_shape_manual(name = "Method", 
                              values = cfg$graphics$BOR_symbol)
       }
+    if (plot_contour) {
+      v_points = v_points +
+        geom_sf(data = mask_contour, color = "white")
+    }
     ggsave(filename = sprintf("%s_v_points.png", cfg$version), # need to find a way to separate when making multiple, can I paste in a value from the cfg that would be an identifier?
            plot = v_points, 
            path = file.path(vpath, "figures"), 
@@ -241,6 +271,10 @@ plot_covars = function(cfg, bathy = NULL, log_bathy = NULL, fish = NULL, dfs = N
           scale_shape_manual(name = "Method", 
                              values = cfg$graphics$BOR_symbol)
       }
+    if (plot_contour) {
+      xbtm_points = xbtm_points +
+        geom_sf(data = mask_contour, color = "white")
+    }
     ggsave(filename = sprintf("%s_xbtm_points.png", cfg$version), # need to find a way to separate when making multiple, can I paste in a value from the cfg that would be an identifier?
            plot = xbtm_points, 
            path = file.path(vpath, "figures"), 
@@ -266,6 +300,10 @@ plot_covars = function(cfg, bathy = NULL, log_bathy = NULL, fish = NULL, dfs = N
           scale_shape_manual(name = "Method", 
                              values = cfg$graphics$BOR_symbol)
       }
+    if (plot_contour) {
+      bathymetry_binned_plot = bathymetry_binned_plot +
+        geom_sf(data = mask_contour, color = "white")
+    }
     ggsave(filename = sprintf("%s_depth_binned.png", cfg$version), 
            plot = bathymetry_binned_plot, 
            path = file.path(vpath, "figures"), 
@@ -290,6 +328,10 @@ plot_covars = function(cfg, bathy = NULL, log_bathy = NULL, fish = NULL, dfs = N
           scale_shape_manual(name = "Method", 
                              values = cfg$graphics$BOR_symbol)
       }
+    if (plot_contour) {
+      log_bathymetry_binned_plot = log_bathymetry_binned_plot +
+        geom_sf(data = mask_contour, color = "white")
+    }
     ggsave(filename = sprintf("%s_log_depth_binned.png", cfg$version), 
            plot = log_bathymetry_binned_plot, 
            path = file.path(vpath, "figures"), 
@@ -314,6 +356,10 @@ plot_covars = function(cfg, bathy = NULL, log_bathy = NULL, fish = NULL, dfs = N
             scale_shape_manual(name = "Method", 
                                values = cfg$graphics$BOR_symbol)
         }
+      if (plot_contour) {
+        fish_biomass_plot = fish_biomass_plot +
+          geom_sf(data = mask_contour, color = "white")
+      }
       ggsave(filename = sprintf("%s_fish_biomass.png", cfg$version), 
              plot = fish_biomass_plot, 
              path = file.path(vpath, "figures"), 
@@ -340,6 +386,10 @@ plot_covars = function(cfg, bathy = NULL, log_bathy = NULL, fish = NULL, dfs = N
             scale_shape_manual(name = "Method", 
                                values = cfg$graphics$BOR_symbol)
         }
+      if (plot_contour) {
+        dfs_plot = dfs_plot +
+          geom_sf(data = mask_contour, color = "white")
+      }
       ggsave(filename = sprintf("%s_dfs.png", cfg$version), 
              plot = dfs_plot, 
              path = file.path(vpath, "figures"), 

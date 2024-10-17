@@ -100,6 +100,10 @@ if(cfg$fetch_obis){
 mask = stars::read_stars(file.path(cfg$data_path, cfg$mask_name)) |>
   rlang::set_names("mask")
 
+if (!is.null(cfg$contour_name)) {
+  mask_contour = sf::read_sf(file.path(cfg$data_path, cfg$contour_name))
+}
+
 wshark <- wshark |>
   distinct() |>
   sf::st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), crs = 4326) |>
@@ -135,7 +139,13 @@ shark_yr_hist
 occs = ggplot() +
   geom_coastline(bb = shark_box) +
   geom_sf(data = wshark, aes(shape = basisOfRecord), fill = "white", color = "black", size = 2.5) + 
+  geom_coastline(bb = cofbb::get_bb("nefsc_carcharodon", form = "bb"), color = "red") +
   theme_void() 
+if (!is.null(cfg$contour_name)) {
+  occs = occs +
+    geom_sf(data = mask_contour, color = "red")
+  
+}
 occs
 ggsave(filename = paste0(cfg$version, "_occurrences.png"), 
        plot = occs, 

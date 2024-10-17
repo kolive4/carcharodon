@@ -33,6 +33,7 @@ dfs_path: mapping/etopo
 dfs_file: etopo_warped_distance_to_shore_meters.tif
 brickman_subset: no
 mask_name: mapping/gebco/gebco_mask.tif
+contour_name: ~
 bg_number: 10000.0
 bg_m: 10.0
 polygon: brickman/bathy/PRESENT_PRESENT_Bathy_depth_750.gpkg

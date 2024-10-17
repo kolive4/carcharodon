@@ -24,21 +24,21 @@ f_path = file.path(cfg$root_path, cfg$f_workflow_path, "versions", f_vpars[["maj
 ```{r}
 file = file.path(f_path, paste0(cfg$f_version, "_prediction.png"))
 ```
-![Prediction image not found](`r file`)
+![`r ifelse(file.exists(file), "Prediction Map",  "Prediction Map not found")`](`r file`)
 
 ```{r}
 file2 = file.path(f_path, "pauc.png")
 ```
-![pAUC image not found](`r file2`)
+![`r ifelse(file.exists(file), "pAUC",  "pAUC figure not found")`](`r file2`)
 
 ```{r}
 file3 = file.path(m_path, "variable_importance.csv")
 x = readr::read_csv(file3)
 print(x)
 ```
-![variable importance table not found](`r file3`)
+![`r ifelse(file.exists(file), "Variable Importance",  "Variable Importance table not found")`](`r file3`)
 
 ```{r}
 file4 = file.path(m_path, "variable_likelihood.png")
 ```
-![variable likelihood curves not found](`r file4`)
+![`r ifelse(file.exists(file), "Variable Likelihood Curves",  "Variable Likelihood Curves not found")`](`r file4`)

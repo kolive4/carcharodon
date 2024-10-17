@@ -27,7 +27,7 @@ args = argparser::arg_parser("forecasting for white shark habitat suitability",
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/forecast_workflow/v01.100.04.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/forecast_workflow/v01.0030.04.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -46,13 +46,15 @@ charlier::start_logger(filename = file.path(vpath, "log"))
 charlier::info("writing config")
 charlier::write_config(cfg, filename = file.path(vpath, basename(args$config)))
 
+
+
 nefsc_cc_bb = cofbb::get_bb("nefsc_carcharodon", "sf")
 
 points = read_brickman_points(bb = nefsc_cc_bb)
 
 mon_shark_obs = points |>
   dplyr::filter(month %in% as.numeric(cfg$month)) |>
-  filter(id == 1)
+  filter(id == 1, basisOfRecord %in% cfg$obs_filter$basisOfRecord)
 
 cvr = sapply(cfg$covars, function(covar) {
   sprintf("%s_%s_%s_mon.tif", cfg$scenario, cfg$year, covar)
@@ -116,6 +118,10 @@ if("dfs" %in% cfg$static_vars) {
 
 combo_covar[is.na(mask)] = NA_real_
 
+if (!is.null(cfg$contour_name)) {
+  mask_contour = sf::read_sf(file.path(cfg$data_path, cfg$contour_name))
+} else {NULL}
+
 plot_covars(cfg, 
             bathy = if("Bathy_depth" %in% cfg$static_vars) {combo_covar["depth"]}
                     else{NULL},
@@ -127,6 +133,8 @@ plot_covars(cfg,
                   else {NULL},
             covars = combo_covar, 
             obs = mon_shark_obs,
+            contour = mask_contour,
+            plot_contour = cfg$graphics$plot_contour,
             plot_points = cfg$graphics$plot_points
             )
 
@@ -152,6 +160,10 @@ pred = ggplot() +
             show.legend = "point") +
       scale_shape_manual(name = "Method", 
                          values = cfg$graphics$BOR_symbol)
+  }
+  if (cfg$graphics$plot_contour) {
+    pred = pred +
+      geom_sf(data = mask_contour, color = "white")
   }
 pred
 ggsave(filename = sprintf("%s_prediction.png", cfg$version),
