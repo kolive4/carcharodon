@@ -171,14 +171,17 @@ ggsave(filename = sprintf("%s_prediction.png", cfg$version),
        path = vpath, 
        width = 11, height = 8.5, units = "in", dpi = 300)
 
-obs_brick = read_sf(file.path(cfg$modeling_vpath, "obs_brick.gpkg"))
+if (cfg$scenario == "PRESENT") {
+  obs_brick = read_sf(file.path(cfg$modeling_vpath, "obs_brick.gpkg"))
+  
+  pauc = pAUC(prediction, obs_brick, thr = seq(from = 1, to = 0, by = -1/10000))
+  pauc_area = pauc$area |>
+    as_tibble() |>
+    write.csv(file.path(vpath, paste0(cfg$version, "_pauc.csv")))
+  plot(pauc)
+  
+  png(file.path(vpath, "pauc.png"))
+  plot(pauc)
+  ok = dev.off()
+}
 
-pauc = pAUC(prediction, obs_brick, thr = seq(from = 1, to = 0, by = -1/10000))
-pauc_area = pauc$area |>
-  as_tibble() |>
-  write.csv(file.path(vpath, paste0(cfg$version, "_pauc.csv")))
-plot(pauc)
-
-png(file.path(vpath, "pauc.png"))
-plot(pauc)
-ok = dev.off()
