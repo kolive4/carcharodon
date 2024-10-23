@@ -17,7 +17,7 @@ args = argparser::arg_parser("a tool to cast monthly predictions into one figure
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/reports/c01.0001.01_12.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/reports/c01.0101.01_12.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -62,23 +62,24 @@ pauc_files = list.files(path = file.path(cfg$root_path, cfg$f_path),
                         pattern = "pauc.csv",
                         recursive = TRUE,
                         full.names = TRUE) 
-
-paucs = lapply(pauc_files, readr::read_csv) |>
-  dplyr::bind_rows(.id = "month") |>
-  dplyr::select(c("month", "value")) |>
-  dplyr::rename(pauc = "value") |>
-  dplyr::mutate(month = as.numeric(month))
-
-pauc_plot = ggplot() +
-  geom_area(data = paucs, aes(x = month, y = pauc), color = "navy", fill = "skyblue4") +
-  scale_y_continuous(limits = c(0, 1)) +
-  scale_x_continuous(limits = c(1, 12), n.breaks = 11) +
-  theme_classic() +
-  ggtitle(cfg$graphics$title) +
-  labs(x = cfg$graphics$x, 
-       y = "pAUC")
-pauc_plot
-ggsave(filename = sprintf("%s_paucs.png", cfg$version),
-       plot = pauc_plot, 
-       path = vpath, 
-       width = 11, height = 8.5, units = "in", dpi = 300)
+if (TRUE %in% file.exists(pauc_files)) {
+  paucs = lapply(pauc_files, readr::read_csv) |>
+    dplyr::bind_rows(.id = "month") |>
+    dplyr::select(c("month", "value")) |>
+    dplyr::rename(pauc = "value") |>
+    dplyr::mutate(month = as.numeric(month))
+  
+  pauc_plot = ggplot() +
+    geom_area(data = paucs, aes(x = month, y = pauc), color = "navy", fill = "skyblue4") +
+    scale_y_continuous(limits = c(0, 1)) +
+    scale_x_continuous(limits = c(1, 12), n.breaks = 11) +
+    theme_classic() +
+    ggtitle(cfg$graphics$title) +
+    labs(x = cfg$graphics$x, 
+         y = "pAUC")
+  pauc_plot
+  ggsave(filename = sprintf("%s_paucs.png", cfg$version),
+         plot = pauc_plot, 
+         path = vpath, 
+         width = 11, height = 8.5, units = "in", dpi = 300)
+}
