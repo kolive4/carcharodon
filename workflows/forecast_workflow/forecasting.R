@@ -27,7 +27,7 @@ args = argparser::arg_parser("forecasting for white shark habitat suitability",
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/forecast_workflow/v01.0030.04.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/forecast_workflow/v01.0101.01.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 

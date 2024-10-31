@@ -309,6 +309,7 @@ plot_covars = function(cfg, bathy = NULL, log_bathy = NULL, fish = NULL, dfs = N
            path = file.path(vpath, "figures"), 
            width = 11, height = 8.5, units = "in", dpi = 300,
            create.dir = TRUE)
+  }
   
   if ("log_depth" %in% cfg$static_vars) {
     log_bathymetry_binned_plot = ggplot() +
@@ -337,7 +338,7 @@ plot_covars = function(cfg, bathy = NULL, log_bathy = NULL, fish = NULL, dfs = N
            path = file.path(vpath, "figures"), 
            width = 11, height = 8.5, units = "in", dpi = 300,
            create.dir = TRUE)
-    
+  }
     if ("fish_biomass" %in% cfg$static_vars) {
       fish_biomass_plot = ggplot() +
         geom_stars(data = fish) +
@@ -401,6 +402,4 @@ plot_covars = function(cfg, bathy = NULL, log_bathy = NULL, fish = NULL, dfs = N
     
     
     
-  }
-  }
 }

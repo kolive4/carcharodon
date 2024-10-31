@@ -8,7 +8,6 @@ figure_path: figures
 output_path: workflows/forecast_workflow
 bathy_scenario: PRESENT
 static_vars:
-- Bathy_depth
 - log_depth
 - fish_biomass
 - dfs

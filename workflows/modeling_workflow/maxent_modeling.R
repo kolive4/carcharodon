@@ -26,7 +26,7 @@ args = argparser::arg_parser("maxent modeling for white shark obs",
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/modeling_workflow/v01.003.04.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/modeling_workflow/v01.030.01.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -70,12 +70,18 @@ bg_drop = bg_brick |>
 
 combo_drop = dplyr::bind_rows(obs_drop, bg_drop, .id = "presence")
 
+count_tbl = tibble(n_obs = nrow(obs_drop), n_bg = nrow(bg_drop)) |>
+  write_csv(file.path(vpath, "obs_bg_counts.csv"))
+
 ws.flag <- c(rep(1, nrow(obs_drop)), rep(0, nrow(bg_drop)))
 ws.model <- maxnet::maxnet(ws.flag,
                                     dplyr::select(combo_drop, -presence),
                            addsamplestobackground = TRUE
                            ) |>
   write_maxnet(file.path(vpath, "model.rds"))
+p = predict(ws.model, dplyr::select(combo_drop, -presence)) |>
+  as.vector()
+
 ws.model.collect = plot(ws.model, type = "cloglog", plot = FALSE)
 # x = model_rename(ws.model.collect)
 # p = gather_plots(x)
