@@ -19,6 +19,7 @@ suppressPackageStartupMessages({
   library(twinkle)
   library(maxnet)
   library(maxnetic)
+  library(readr)
 })
 
 args = argparser::arg_parser("maxent modeling for white shark obs",
@@ -26,7 +27,7 @@ args = argparser::arg_parser("maxent modeling for white shark obs",
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/modeling_workflow/v01.030.01.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/modeling_workflow/v02.000.12.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -52,7 +53,7 @@ obs_brick = read_brickman_points(file.path(cfg$root_path, cfg$gather_data_vpath,
   select(c(cfg$mon_covariates, cfg$static_covariates)) |>
   dplyr::rename_with(~ stringr::str_remove(., "^brick_")) |>
   na.omit() |>
-  write_sf(file.path(vpath, "obs_brick.gpkg"))
+  sf::write_sf(file.path(vpath, "obs_brick.gpkg"))
 
 obs_drop = obs_brick |>
   st_drop_geometry()

@@ -1,0 +1,44 @@
+version: v02.0002.04
+root_path: /mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon
+gather_data_vpath: workflows/get_data_workflow/versions/v02/v02.000
+modeling_vpath: workflows/modeling_workflow/versions/v02/000/v02.000.04
+source_path: functions
+data_path: data
+figure_path: figures
+output_path: workflows/forecast_workflow
+bathy_scenario: PRESENT
+static_vars:
+- log_depth
+- fish_biomass
+- dfs
+month: 4
+scenario: RCP85
+year: 2055
+covars:
+- SST
+- Tbtm
+- SSS
+- Sbtm
+- MLD
+- U
+- V
+- Xbtm
+obs_filter:
+  basisOfRecord:
+  - HumanObservation
+  - PreservedSpecimen
+model_version_maj: v02
+model_version_maj_minor: v02.000.04
+graphics:
+  BOR_symbol:
+  - 15
+  - 3
+  ggtitle: April Grey Seal 2055 RCP 8.5
+  plot_points: no
+  plot_contour: no
+contour_name: ~
+fish_path: fish_data/MDAT_Fish_SummaryProducts_NEFSC/commondata/raster_data
+fish_file: fish_biomass_nefsc_2010_2019_SPRING_All.tif
+dfs_path: mapping/etopo
+dfs_file: etopo_warped_distance_to_shore_meters.tif
+mask_name: mapping/gebco/gebco_mask.tif

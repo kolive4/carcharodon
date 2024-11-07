@@ -127,7 +127,7 @@ shark_mon_hist = ggplot2::ggplot() +
   ggplot2::labs(x = "Month", y = "Count") +
   ggplot2::theme_classic()
 shark_mon_hist
-ggplot2::ggsave(filename = "occ_monthly_hist.png", plot = shark_mon_hist, path = file.path(cfg$figure_path), width = 11, height = 8.5, units = "in", dpi = 300)
+ggplot2::ggsave(filename = "occ_monthly_hist.png", plot = shark_mon_hist, path = file.path(vpath, "figures"), width = 11, height = 8.5, units = "in", dpi = 300)
 
 shark_yr_hist = ggplot2::ggplot() +
   ggplot2::geom_bar(data = wshark,
