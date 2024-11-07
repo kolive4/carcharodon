@@ -27,7 +27,7 @@ args = argparser::arg_parser("forecasting for white shark habitat suitability",
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/forecast_workflow/v01.0101.01.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/forecast_workflow/v04.0000.12.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -175,13 +175,14 @@ if (cfg$scenario == "PRESENT") {
   obs_brick = read_sf(file.path(cfg$modeling_vpath, "obs_brick.gpkg"))
   
   pauc = pAUC(prediction, obs_brick, thr = seq(from = 1, to = 0, by = -1/10000))
+  
+  pauc_plot = plot(pauc)
+  ggsave(filename = sprintf("%s_pauc.png", cfg$version),
+         plot = pauc_plot, 
+         path = vpath)
+  
   pauc_area = pauc$area |>
     as_tibble() |>
     write.csv(file.path(vpath, paste0(cfg$version, "_pauc.csv")))
-  plot(pauc)
-  
-  png(file.path(vpath, "pauc.png"))
-  plot(pauc)
-  ok = dev.off()
 }
 

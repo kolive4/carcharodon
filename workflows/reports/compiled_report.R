@@ -18,7 +18,7 @@ args = argparser::arg_parser("a tool to cast monthly predictions into one figure
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/reports/c01.0100.01_12.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/reports/c04.0000.01_12.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -75,8 +75,8 @@ if (TRUE %in% file.exists(pauc_files)) {
   pauc_plot = ggplot() +
     # geom_area(data = paucs, aes(x = month, y = pauc), color = "navy", fill = "skyblue4") +
     geom_line(data = paucs, aes(x = month, y = pauc), color = "navy") +
-    scale_y_continuous(limits = c(0.6, 1)) +
-    scale_x_continuous(limits = c(1, 12), n.breaks = 11) +
+    scale_y_continuous(limits = c(0, 1)) +
+    scale_x_continuous(limits = c(1, 12), n.breaks = 12) +
     theme_classic() +
     ggtitle(cfg$graphics$pauc_title) +
     labs(x = cfg$graphics$x, 

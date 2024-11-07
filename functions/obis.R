@@ -60,7 +60,12 @@ fetch_obis <- function(scientificname = 'Carcharodon carcharias',
                        save_file = file_name(scientificname, path = here::here("data", "obis")),
                        template = species_template(),
                        ...){
-  
+  if (length(scientificname) > 1) {
+    xx = lapply(scientificname, fetch_obis) |>
+      dplyr::bind_rows()
+    
+    return(xx)
+  }
   autofill <- function(x, template = species_template()){
     xnames <- colnames(x)
     tnames <- colnames(template)
@@ -124,6 +129,14 @@ read_obis = function(species = "Carcharodon carcharias",
                      dwc = TRUE,
                      form = c("table", "sf")[1],
                      ...){
+  if (length(species) > 1) {
+    xx = lapply(species, function(spp) {
+      read_obis(species = spp, refresh = refresh, dwc = dwc, form = form, ...)
+    }) |>
+      dplyr::bind_rows()
+    
+    return(xx)
+  }
   filename = file_name(species[1], ...)
   if (!file.exists(filename) || refresh == TRUE) {
     x = fetch_obis(scientificname = species) |>

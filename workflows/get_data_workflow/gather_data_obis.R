@@ -21,11 +21,11 @@ suppressPackageStartupMessages({
 })
 
 args = argparser::arg_parser("assembling observation and background data",
-                             name = "gather_data_otherspecies.R",
+                             name = "gather_data_obis.R",
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/get_data_workflow/v02.000.yaml",
+                          default = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/get_data_workflow/v04.000.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -36,8 +36,11 @@ for (f in list.files(cfg$source_path, pattern = "^.*\\.R$", full.names = TRUE)){
 
 vpars = charlier::parse_version(cfg$version)
 vpath = file.path(cfg$root_path, cfg$output_path, "versions", vpars[["major"]], cfg$version)
-if (!dir.exists(vpath)) 
+if (!dir.exists(vpath)) {
   dir.create(vpath, showWarnings = FALSE, recursive = TRUE)
+}
+
+dir.create(file.path(vpath, "figures"), showWarnings = FALSE)
 
 charlier::start_logger(filename = file.path(vpath, "log"))
 charlier::info("writing config")
