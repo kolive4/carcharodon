@@ -25,7 +25,7 @@ args = argparser::arg_parser("assembling observation and background data",
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/get_data_workflow/v01.100.yaml",
+                          default = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/get_data_workflow/v01.001.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
