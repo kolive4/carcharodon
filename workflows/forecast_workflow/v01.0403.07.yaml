@@ -40,7 +40,8 @@ graphics:
   plot_contour: FALSE
 contour_name: ~
 fish_path: fish_data/MDAT_Fish_SummaryProducts_NEFSC/commondata/raster_data
-fish_file: fish_biomass_nefsc_2010_2019_SPRING_All.tif
+spring_fish_file: fish_biomass_nefsc_2010_2019_SPRING_All.tif 
+fall_fish_file: fish_biomass_nefsc_2010_2019_FALL_All.tif
 dfs_path: mapping/etopo
 dfs_file: etopo_warped_distance_to_shore_meters.tif
 mask_name: mapping/gebco/gebco_mask.tif

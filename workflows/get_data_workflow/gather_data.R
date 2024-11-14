@@ -109,6 +109,7 @@ wshark <- wshark |>
   sf::st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), crs = 4326) |>
   dplyr::mutate(month = format(eventDate, "%m") |>
                   as.numeric()) |>
+  dplyr::filter(!is.na(month)) |>
   dplyr::mutate(Year = format(eventDate, "%Y")) |>
   dplyr::bind_rows(curated, satellite) |>
   dplyr::mutate(extractDate = as.Date(sprintf("2020-%0.2i-01", month))) |>
@@ -127,7 +128,10 @@ shark_mon_hist = ggplot2::ggplot() +
   ggplot2::labs(x = "Month", y = "Count") +
   ggplot2::theme_classic()
 shark_mon_hist
-ggplot2::ggsave(filename = "occ_monthly_hist.png", plot = shark_mon_hist, path = file.path(vpath, "figures"), width = 11, height = 8.5, units = "in", dpi = 300)
+ggplot2::ggsave(filename = "occ_monthly_hist.png", 
+                plot = shark_mon_hist, 
+                path = file.path(vpath, "figures"), 
+                width = 11, height = 8.5, units = "in", dpi = 300, create.dir = TRUE)
 
 shark_yr_hist = ggplot2::ggplot() +
   ggplot2::geom_bar(data = wshark,
@@ -184,8 +188,10 @@ if(cfg$brickman_subset){
 
 log_brickman_bathymetry = log10(brickman_bathymetry)
 
-# if including in later steps, prediction and other spatial stuff gets cropped to this layer
-fish_layer = read_stars(file.path(cfg$data_path, cfg$fish_path, cfg$fish_file)) |>
+fall_fish_layer = read_stars(file.path(cfg$data_path, cfg$fish_path, cfg$fall_fish_file)) |>
+  sf::st_crop(shark_box) |>
+  st_warp(dest = brickman_bathymetry)
+spring_fish_layer = read_stars(file.path(cfg$data_path, cfg$fish_path, cfg$spring_fish_file)) |>
   sf::st_crop(shark_box) |>
   st_warp(dest = brickman_bathymetry)
 
@@ -201,10 +207,35 @@ shark_depth = st_extract(brickman_bathymetry, at = wshark) |>
 log_shark_depth = st_extract(log_brickman_bathymetry, at = wshark) |>
   st_as_sf() |>
   as_tibble()
-shark_fish = st_extract(fish_layer, at = wshark) |>
-  st_as_sf() |>
-  as_tibble() |>
-  rename(fish_biomass = cfg$fish_file)
+
+if (cfg$which_fish == "SPRING") {
+  shark_fish = st_extract(spring_fish_layer, at = wshark) |>
+    st_as_sf() |>
+    as_tibble() |>
+    rename(fish_biomass = cfg$spring_fish_file)
+}
+if (cfg$which_fish == "FALL") {
+  shark_fish = st_extract(fall_fish_layer, at = wshark) |>
+    st_as_sf() |>
+    as_tibble() |>
+    rename(fish_biomass = cfg$fall_fish_file)
+}
+if (cfg$which_fish == "COMBO") {
+  spring_shark = wshark |>
+    dplyr::filter(month %in% cfg$spring_fish_mon)
+  spring_shark_fish = st_extract(spring_fish_layer, at = spring_shark) |>
+    st_as_sf() |>
+    as_tibble() |>
+    rename(fish_biomass = cfg$spring_fish_file)
+  fall_shark = wshark |>
+    dplyr::filter(month %in% cfg$fall_fish_mon)
+  fall_shark_fish = st_extract(fall_fish_layer, at = fall_shark) |>
+    st_as_sf() |>
+    as_tibble() |>
+    rename(fish_biomass = cfg$fall_fish_file)
+  shark_fish = dplyr::bind_rows(spring_shark_fish, fall_shark_fish)
+}
+
 shark_dfs = st_extract(dfs_layer, at = wshark) |>
   sf::st_as_sf() |>
   dplyr::as_tibble() 
@@ -250,9 +281,28 @@ bg_brick = dplyr::mutate(bg_brick, eventDate = dates) |>
   dplyr::mutate(time = as.Date(format(eventDate, "2020/%m/01"))) |>
   write_sf(file.path(vpath, "standard_bg_brick.gpkg"))
 
+if (cfg$which_fish == "SPRING") {
+  brick_bg_fish = stars::st_extract(spring_fish_layer, at = bg_brick) |>
+    rename(fish_biomass = cfg$spring_fish_file)
+}
+if (cfg$which_fish == "FALL") {
+  brick_bg_fish = stars::st_extract(fall_fish_layer, at = bg_brick) |>
+    rename(fish_biomass = cfg$fall_fish_file)
+}
+if (cfg$which_fish == "COMBO") {
+  fall_bg = bg_brick |>
+    dplyr::filter(month %in% cfg$fall_fish_mon)
+  fall_bg_fish = stars::st_extract(fall_fish_layer, at = fall_bg) |>
+    rename(fish_biomass = cfg$fall_fish_file)
+  spring_bg = bg_brick |>
+    dplyr::filter(month %in% cfg$spring_fish_mon)
+  spring_bg_fish = stars::st_extract(spring_fish_layer, at = spring_bg) |>
+    rename(fish_biomass = cfg$spring_fish_file)
+  brick_bg_fish = dplyr::bind_rows(fall_bg_fish, spring_bg_fish)
+}
+
 brick_bg_depth = stars::st_extract(brickman_bathymetry, at = bg_brick)
 brick_bg_log_depth = stars::st_extract(log_brickman_bathymetry, at = bg_brick)
-brick_bg_fish = stars::st_extract(fish_layer, at = bg_brick)
 brick_bg_dfs = stars::st_extract(dfs_layer, at = bg_brick)
 brick_bg_covars = brickman_extract(monthly_brick_cov, bg_brick, time_column = "time", interpolate_time = FALSE)
 

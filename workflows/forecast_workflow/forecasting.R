@@ -27,7 +27,7 @@ args = argparser::arg_parser("forecasting for white shark habitat suitability",
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/forecast_workflow/v04.0000.12.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/forecast_workflow/v01.0100.09.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -46,11 +46,10 @@ charlier::start_logger(filename = file.path(vpath, "log"))
 charlier::info("writing config")
 charlier::write_config(cfg, filename = file.path(vpath, basename(args$config)))
 
-
-
 nefsc_cc_bb = cofbb::get_bb("nefsc_carcharodon", "sf")
-
 points = read_brickman_points(bb = nefsc_cc_bb)
+fall_fish_mon = c(12, 1, 2, 3, 4, 5)
+spring_fish_mon = c(6, 7, 8, 9, 10, 11)
 
 mon_shark_obs = points |>
   dplyr::filter(month %in% as.numeric(cfg$month)) |>
@@ -102,11 +101,22 @@ if ("log_depth" %in% cfg$static_vars) { # is this right?
 }
 
 if("fish_biomass" %in% cfg$static_vars) {
-  fish_layer = read_stars(file.path(cfg$data_path, cfg$fish_path, cfg$fish_file)) |>
-    sf::st_crop(nefsc_cc_bb) |>
-    stars::st_warp(dest = brickman_bathymetry) |>
-    dplyr::rename(fish_biomass = cfg$fish_file)
-  combo_covar = c(combo_covar, fish_layer)
+  fish_layer = NULL
+  if (cfg$month %in% fall_fish_mon) {
+    fish_layer = read_stars(file.path(cfg$data_path, cfg$fish_path, cfg$fall_fish_file)) |>
+      sf::st_crop(nefsc_cc_bb) |>
+      stars::st_warp(dest = brickman_bathymetry) |>
+      dplyr::rename(fish_biomass = cfg$fall_fish_file)
+  }
+  if (cfg$month %in% spring_fish_mon) {
+    fish_layer = read_stars(file.path(cfg$data_path, cfg$fish_path, cfg$spring_fish_file)) |>
+      sf::st_crop(nefsc_cc_bb) |>
+      stars::st_warp(dest = brickman_bathymetry) |>
+      dplyr::rename(fish_biomass = cfg$spring_fish_file)
+  }
+  if (!is.null(fish_layer)) {
+    combo_covar = c(combo_covar, fish_layer)
+  }
 }
 
 if("dfs" %in% cfg$static_vars) {
@@ -186,3 +196,9 @@ if (cfg$scenario == "PRESENT") {
     write.csv(file.path(vpath, paste0(cfg$version, "_pauc.csv")))
 }
 
+
+Error in if (is.function(.x) || !np || any(sapply(prefixes, has_prefix,  : 
+                                                  missing value where TRUE/FALSE needed
+                                                  In addition: Warning message:
+                                                    In any(sapply(prefixes, has_prefix, x = .x)) :
+                                                    coercing argument of type 'list' to logical
