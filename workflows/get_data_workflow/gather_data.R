@@ -25,7 +25,7 @@ args = argparser::arg_parser("assembling observation and background data",
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/get_data_workflow/v01.001.yaml",
+                          default = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/get_data_workflow/v01.000.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -47,14 +47,14 @@ charlier::write_config(cfg, filename = file.path(vpath, basename(args$config)))
 shark_box = cofbb::get_bb(cfg$bbox_name, form = "sf")
 
 curated = read.csv(file.path(cfg$data_path, "historical/curated_literature2.csv")) |>
+  dplyr::filter(nchar(eventDate) != 0) |>
   sf::st_as_sf(coords = c("Longitude", "Latitude"), crs = 4326) |>
-  dplyr::filter(nchar(eventDate) >= 10) |>
-  dplyr::mutate(eventDate = as.Date(eventDate, format = c("%m/%d/%Y"))) |>
+  dplyr::mutate(eventDate = as.Date(eventDate, format = c("%Y-%m-%d"))) |>
   dplyr::mutate(basisOfRecord = "curated") |>
   dplyr::rename(citation = X) |>
   dplyr::rename(note2 = X.1) |>
-  dplyr::rename(month.chr = Month) |>
-  dplyr::mutate(month = match(.data$month.chr, month.name))
+  dplyr::rename(month = Month)
+curated$Year = as.numeric(curated$Year)
 
 psat = read.csv(file.path(cfg$data_path, "satellite/Skomal_PSAT_data.csv")) |>
   sf::st_as_sf(coords = c("Longitude", "Latitude"), crs = 4326) |>
@@ -66,9 +66,9 @@ psat = read.csv(file.path(cfg$data_path, "satellite/Skomal_PSAT_data.csv")) |>
   dplyr::arrange(shark_id, date_time) |>
   dplyr::select(-Date) |>
   dplyr::mutate(basisOfRecord = "PSAT")
-psat$date = as.Date(psat$date_time, format = "%m/%d/%y")
-psat$month = as.numeric(format(psat$date, "%m"))
-psat$Year = format(psat$date, "%Y")
+psat$eventDate = as.Date(psat$date_time, format = "%m/%d/%y")
+psat$month = as.numeric(format(psat$eventDate, "%m"))
+psat$Year = format(psat$eventDate, "%Y")
 
 spot = read.csv(file.path(cfg$data_path, "satellite/Skomal_SPOT_data.csv")) |>
   st_as_sf(coords = c("Longitude", "Latitude"), crs = 4326) |>
@@ -80,11 +80,21 @@ spot = read.csv(file.path(cfg$data_path, "satellite/Skomal_SPOT_data.csv")) |>
   dplyr::arrange(shark_id, date_time) |>
   dplyr::select(-Date) |>
   dplyr::mutate(basisOfRecord = "SPOT")
-spot$date = as.Date(spot$date_time, format = "%m/%d/%y")
-spot$month = as.numeric(format(spot$date, "%m"))
-spot$Year = format(spot$date, "%Y")
+spot$eventDate = as.Date(spot$date_time, format = "%m/%d/%y")
+spot$month = as.numeric(format(spot$eventDate, "%m"))
+spot$Year = format(spot$eventDate, "%Y")
 
 satellite = bind_rows(psat, spot)
+
+inat_removed_cols = c("uuid", "observed_on_string", "url", "image_url", "sound_url", "tag_list", "captive_cultivated", "oauth_application_id", "private_place_guess", "private_latitude", "private_longitude", "geoprivacy", "taxon_geoprivacy", "coordinates_obscured", "species_guess")
+inat = read.csv(file.path(cfg$data_path, "inaturalist/observations-507834.csv")) |>
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326) |>
+  dplyr::filter(quality_grade == "research") |>
+  dplyr::select(!all_of(inat_removed_cols)) |>
+  dplyr::mutate(basisOfRecord = "iNaturalist")
+inat$eventDate = as.Date(inat$observed_on, format = "%Y-%m-%d")
+inat$month = as.numeric(format(inat$eventDate, "%m"))
+inat$Year = format(inat$eventDate, "%Y")
 
 if(cfg$fetch_obis){
   fetch_obis(scientificname =  cfg$species)
@@ -109,11 +119,11 @@ wshark <- wshark |>
   sf::st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), crs = 4326) |>
   dplyr::mutate(month = format(eventDate, "%m") |>
                   as.numeric()) |>
-  dplyr::filter(!is.na(month)) |>
   dplyr::mutate(Year = format(eventDate, "%Y")) |>
-  dplyr::bind_rows(curated, satellite) |>
+  dplyr::bind_rows(curated, inat, satellite) |>
   dplyr::mutate(extractDate = as.Date(sprintf("2020-%0.2i-01", month))) |>
   dplyr::rename(c(obis_sst = sst, obis_depth = depth)) |>
+  dplyr::filter(!is.na(month)) |>
   sf::st_crop(shark_box)
 
 wshark.mask = st_extract(mask, wshark)
@@ -327,3 +337,4 @@ ggsave(filename = paste0(cfg$version, "bg.png"),
 obs_bg_brick = bind_rows(list(wshark, bg_brick), .id = "id") |>
   dplyr::mutate(id = as.numeric(id == 1)) |>
   write_sf(file.path(vpath, "brickman_covar_obs_bg.gpkg"))
+

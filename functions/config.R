@@ -53,6 +53,3 @@ append_config = function(files, extra, write = FALSE) {
   return(cfgs)
 }
 
-
-
-
