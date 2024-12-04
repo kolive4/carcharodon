@@ -68,7 +68,7 @@ psat = read.csv(file.path(cfg$data_path, "satellite/Skomal_PSAT_data.csv")) |>
   dplyr::mutate(basisOfRecord = "PSAT")
 psat$eventDate = as.Date(psat$date_time, format = "%m/%d/%y")
 psat$month = as.numeric(format(psat$eventDate, "%m"))
-psat$Year = format(psat$eventDate, "%Y")
+psat$Year = as.numeric(format(psat$eventDate, "%Y"))
 
 spot = read.csv(file.path(cfg$data_path, "satellite/Skomal_SPOT_data.csv")) |>
   st_as_sf(coords = c("Longitude", "Latitude"), crs = 4326) |>
@@ -82,19 +82,19 @@ spot = read.csv(file.path(cfg$data_path, "satellite/Skomal_SPOT_data.csv")) |>
   dplyr::mutate(basisOfRecord = "SPOT")
 spot$eventDate = as.Date(spot$date_time, format = "%m/%d/%y")
 spot$month = as.numeric(format(spot$eventDate, "%m"))
-spot$Year = format(spot$eventDate, "%Y")
+spot$Year = as.numeric(format(spot$eventDate, "%Y"))
 
 satellite = bind_rows(psat, spot)
 
 inat_removed_cols = c("uuid", "observed_on_string", "url", "image_url", "sound_url", "tag_list", "captive_cultivated", "oauth_application_id", "private_place_guess", "private_latitude", "private_longitude", "geoprivacy", "taxon_geoprivacy", "coordinates_obscured", "species_guess")
-inat = read.csv(file.path(cfg$data_path, "inaturalist/observations-507834.csv")) |>
+inat = read.csv(file.path(cfg$data_path, cfg$inat_file)) |>
   st_as_sf(coords = c("longitude", "latitude"), crs = 4326) |>
   dplyr::filter(quality_grade == "research") |>
   dplyr::select(!all_of(inat_removed_cols)) |>
   dplyr::mutate(basisOfRecord = "iNaturalist")
 inat$eventDate = as.Date(inat$observed_on, format = "%Y-%m-%d")
 inat$month = as.numeric(format(inat$eventDate, "%m"))
-inat$Year = format(inat$eventDate, "%Y")
+inat$Year = as.numeric(format(inat$eventDate, "%Y"))
 
 if(cfg$fetch_obis){
   fetch_obis(scientificname =  cfg$species)
@@ -119,7 +119,7 @@ wshark <- wshark |>
   sf::st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), crs = 4326) |>
   dplyr::mutate(month = format(eventDate, "%m") |>
                   as.numeric()) |>
-  dplyr::mutate(Year = format(eventDate, "%Y")) |>
+  dplyr::mutate(Year = as.numeric(format(eventDate, "%Y"))) |>
   dplyr::bind_rows(curated, inat, satellite) |>
   dplyr::mutate(extractDate = as.Date(sprintf("2020-%0.2i-01", month))) |>
   dplyr::rename(c(obis_sst = sst, obis_depth = depth)) |>

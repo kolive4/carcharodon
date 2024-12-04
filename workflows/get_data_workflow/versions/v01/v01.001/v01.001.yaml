@@ -56,3 +56,4 @@ spring_fish_mon:
 - 10.0
 - 11.0
 which_fish: FALL
+inat_file: inaturalist/observations-507834.csv
