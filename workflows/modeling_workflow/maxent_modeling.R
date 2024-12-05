@@ -27,7 +27,7 @@ args = argparser::arg_parser("maxent modeling for white shark obs",
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/modeling_workflow/v02.000.12.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/modeling_workflow/v01.002.08.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
