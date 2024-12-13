@@ -46,6 +46,13 @@ charlier::write_config(cfg, filename = file.path(vpath, basename(args$config)))
 # read in species data & filter species by dates & subset species by bounding box
 shark_box = cofbb::get_bb(cfg$bbox_name, form = "sf")
 
+mask = stars::read_stars(file.path(cfg$data_path, cfg$mask_name)) |>
+  rlang::set_names("mask")
+
+if (!is.null(cfg$contour_name)) {
+  mask_contour = sf::read_sf(file.path(cfg$data_path, cfg$contour_name))
+}
+
 curated = read.csv(file.path(cfg$data_path, "historical/curated_literature2.csv")) |>
   dplyr::filter(nchar(eventDate) != 0) |>
   sf::st_as_sf(coords = c("Longitude", "Latitude"), crs = 4326) |>
@@ -53,8 +60,24 @@ curated = read.csv(file.path(cfg$data_path, "historical/curated_literature2.csv"
   dplyr::mutate(basisOfRecord = "curated") |>
   dplyr::rename(citation = X) |>
   dplyr::rename(note2 = X.1) |>
-  dplyr::rename(month = Month)
+  dplyr::rename(month = Month) |>
+  sf::st_crop(shark_box)
 curated$Year = as.numeric(curated$Year)
+
+curated_plot = ggplot() +
+  rnaturalearth::geom_coastline(bb = shark_box, color = "red") +
+  geom_sf(data = curated, aes(shape = basisOfRecord), fill = "white", color = "black", size = 2.5) + 
+  theme_void() 
+if (!is.null(cfg$contour_name)) {
+  curated_plot = curated_plot +
+    geom_sf(data = mask_contour, color = "red")
+  
+}
+curated_plot
+png(filename = file.path(vpath, "figures", paste0(cfg$version, "_curated_occs.png")), 
+    bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
+curated_plot
+dev.off()
 
 psat = read.csv(file.path(cfg$data_path, "satellite/Skomal_PSAT_data.csv")) |>
   sf::st_as_sf(coords = c("Longitude", "Latitude"), crs = 4326) |>
@@ -85,6 +108,19 @@ spot$month = as.numeric(format(spot$eventDate, "%m"))
 spot$Year = as.numeric(format(spot$eventDate, "%Y"))
 
 satellite = bind_rows(psat, spot)
+satellite_plot = ggplot() +
+  geom_coastline(bb = shark_box, color = "red") +
+  geom_sf(data = satellite, aes(shape = basisOfRecord), fill = "white", color = "black", size = 2.5) + 
+  theme_void() 
+if (!is.null(cfg$contour_name)) {
+  satellite_plot = satellite_plot +
+    geom_sf(data = mask_contour, color = "red")
+  
+}
+png(filename = file.path(vpath, "figures", paste0(cfg$version, "_satellite_occs.png")), 
+    bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
+satellite_plot
+dev.off()
 
 inat_removed_cols = c("uuid", "observed_on_string", "url", "image_url", "sound_url", "tag_list", "captive_cultivated", "oauth_application_id", "private_place_guess", "private_latitude", "private_longitude", "geoprivacy", "taxon_geoprivacy", "coordinates_obscured", "species_guess")
 inat = read.csv(file.path(cfg$data_path, cfg$inat_file)) |>
@@ -95,6 +131,20 @@ inat = read.csv(file.path(cfg$data_path, cfg$inat_file)) |>
 inat$eventDate = as.Date(inat$observed_on, format = "%Y-%m-%d")
 inat$month = as.numeric(format(inat$eventDate, "%m"))
 inat$Year = as.numeric(format(inat$eventDate, "%Y"))
+
+inat_plot = ggplot() +
+  geom_coastline(bb = shark_box, color = "red") +
+  geom_sf(data = inat, aes(shape = basisOfRecord), fill = "white", color = "black", size = 2.5) + 
+  theme_void() 
+if (!is.null(cfg$contour_name)) {
+  inat_plot = inat_plot +
+    geom_sf(data = mask_contour, color = "red")
+  
+}
+png(filename = file.path(vpath, "figures", paste0(cfg$version, "_inat_occs.png")), 
+    bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
+inat_plot
+dev.off()
 
 if(cfg$fetch_obis){
   fetch_obis(scientificname =  cfg$species)
@@ -107,15 +157,9 @@ if(cfg$fetch_obis){
                       path = file.path(cfg$data_path, "obis"))
 }
 
-mask = stars::read_stars(file.path(cfg$data_path, cfg$mask_name)) |>
-  rlang::set_names("mask")
-
-if (!is.null(cfg$contour_name)) {
-  mask_contour = sf::read_sf(file.path(cfg$data_path, cfg$contour_name))
-}
-
 wshark <- wshark |>
   distinct() |>
+  dplyr::filter(basisOfRecord == "HumanObservation") |>
   sf::st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), crs = 4326) |>
   dplyr::mutate(month = format(eventDate, "%m") |>
                   as.numeric()) |>
@@ -124,7 +168,26 @@ wshark <- wshark |>
   dplyr::mutate(extractDate = as.Date(sprintf("2020-%0.2i-01", month))) |>
   dplyr::rename(c(obis_sst = sst, obis_depth = depth)) |>
   dplyr::filter(!is.na(month)) |>
-  sf::st_crop(shark_box)
+  sf::st_crop(shark_box) |>
+  dplyr::mutate(basisOfRecord = dplyr::if_else(basisOfRecord == "HumanObservation", "OBIS", basisOfRecord))
+
+obis = wshark |>
+  dplyr::filter(basisOfRecord == "OBIS")
+
+obis_plot = ggplot() +
+  geom_coastline(bb = shark_box, color = "red") +
+  geom_sf(data = obis, aes(shape = basisOfRecord), fill = "white", color = "black", size = 2.5) + 
+  theme_void() 
+if (!is.null(cfg$contour_name)) {
+  obis_plot = obis_plot +
+    geom_sf(data = mask_contour, color = "red")
+  
+}
+png(filename = file.path(vpath, "figures", paste0(cfg$version, "_obis_occs.png")), 
+    bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
+obis_plot
+dev.off()
+
 
 wshark.mask = st_extract(mask, wshark)
 
@@ -161,11 +224,29 @@ if (!is.null(cfg$contour_name)) {
   
 }
 occs
-ggsave(filename = paste0(cfg$version, "_occurrences.png"), 
-       plot = occs, 
-       path = file.path(vpath, "figures"), 
-       width = 11, height = 8.5, units = "in", dpi = 300, create.dir = TRUE)
+png(filename = file.path(vpath, "figures", paste0(cfg$version, "_occs.png")), 
+    bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
+occs
+dev.off()
 
+non_sat_BOR = c("OBIS", "curated", "iNaturalist")
+non_sat = ggplot() +
+  geom_coastline(bb = shark_box) +
+  geom_sf(data = dplyr::filter(wshark, basisOfRecord %in% non_sat_BOR), 
+          aes(shape = basisOfRecord), fill = "white", color = "black", size = 2.5) + 
+  geom_coastline(bb = cofbb::get_bb("nefsc_carcharodon", form = "bb"), color = "red") +
+  theme_void() 
+if (!is.null(cfg$contour_name)) {
+  non_sat = non_sat +
+    geom_sf(data = mask_contour, color = "red")
+  
+}
+non_sat
+png(filename = file.path(vpath, "figures", paste0(cfg$version, "_occs.png")), 
+    bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
+non_sat
+dev.off()
+  
 
 # load covariates from brickman
 if(cfg$brickman_subset){

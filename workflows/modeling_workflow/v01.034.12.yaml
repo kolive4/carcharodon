@@ -1,0 +1,24 @@
+version: v01.034.12
+root_path: /mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon
+source_path: /mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/functions
+data_path: data
+output_path: workflows/modeling_workflow
+gather_data_vpath: /workflows/get_data_workflow/versions/v01/v01.000
+month: 12
+mon_covariates:
+- brick_sst
+- brick_tbtm
+- brick_mld
+- brick_sss
+- brick_sbtm
+- brick_u
+- brick_v
+- brick_xbtm
+static_covariates:
+- log_depth
+- dfs
+obs_filter:
+  basisOfRecord:
+  - HumanObservation
+  - curated
+  - iNaturalist

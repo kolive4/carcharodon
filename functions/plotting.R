@@ -56,11 +56,16 @@ plot_covars = function(cfg, bathy = NULL, log_bathy = NULL, fish = NULL, dfs = N
       sst_points = sst_points +
         geom_sf(data = mask_contour, color = "white")
     }
-    ggsave(filename = sprintf("%s_sst_points.png", cfg$version), 
-           plot = sst_points, 
-           path = file.path(vpath, "figures"), 
-           width = 11, height = 8.5, units = "in", dpi = 300,
-           create.dir = TRUE)
+    png(filename = file.path(vpath, "figures", sprintf("%s_sst_points.png", cfg$version)), 
+        bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
+    print(sst_points)
+    dev.off()
+    
+    # ggsave(filename = sprintf("%s_sst_points.png", cfg$version), 
+    #        plot = sst_points, 
+    #        path = file.path(vpath, "figures"), 
+    #        width = 11, height = 8.5, units = "in", dpi = 300,
+    #        create.dir = TRUE)
   }
   
   if ("Tbtm" %in% cfg$covars){
@@ -87,11 +92,16 @@ plot_covars = function(cfg, bathy = NULL, log_bathy = NULL, fish = NULL, dfs = N
       tbtm_points = tbtm_points +
         geom_sf(data = mask_contour, color = "white")
     }
-    ggsave(filename = sprintf("%s_tbtm_points.png", cfg$version), # need to find a way to separate when making multiple, can I paste in a value from the cfg that would be an identifier?
-           plot = tbtm_points, 
-           path = file.path(vpath, "figures"), 
-           width = 11, height = 8.5, units = "in", dpi = 300,
-           create.dir = TRUE)
+    png(filename = file.path(vpath, "figures", sprintf("%s_tbtm_points.png", cfg$version)), 
+        bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
+    print(tbtm_points)
+    dev.off()
+    
+    # ggsave(filename = sprintf("%s_tbtm_points.png", cfg$version), # need to find a way to separate when making multiple, can I paste in a value from the cfg that would be an identifier?
+    #        plot = tbtm_points, 
+    #        path = file.path(vpath, "figures"), 
+    #        width = 11, height = 8.5, units = "in", dpi = 300,
+    #        create.dir = TRUE)
   }
   
   if ("MLD" %in% cfg$covars){
@@ -118,11 +128,15 @@ plot_covars = function(cfg, bathy = NULL, log_bathy = NULL, fish = NULL, dfs = N
       mld_points = mld_points +
         geom_sf(data = mask_contour, color = "white")
     }
-    ggsave(filename = sprintf("%s_mld_points.png", cfg$version), # need to find a way to separate when making multiple, can I paste in a value from the cfg that would be an identifier?
-           plot = mld_points, 
-           path = file.path(vpath, "figures"), 
-           width = 11, height = 8.5, units = "in", dpi = 300,
-           create.dir = TRUE)
+    png(filename = file.path(vpath, "figures", sprintf("%s_mld_points.png", cfg$version)), 
+        bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
+    print(mld_points)
+    dev.off()
+    # ggsave(filename = sprintf("%s_mld_points.png", cfg$version), # need to find a way to separate when making multiple, can I paste in a value from the cfg that would be an identifier?
+    #        plot = mld_points, 
+    #        path = file.path(vpath, "figures"), 
+    #        width = 11, height = 8.5, units = "in", dpi = 300,
+    #        create.dir = TRUE)
   }
   
   if ("SSS" %in% cfg$covars){
@@ -149,11 +163,16 @@ plot_covars = function(cfg, bathy = NULL, log_bathy = NULL, fish = NULL, dfs = N
       sss_points = sss_points +
         geom_sf(data = mask_contour, color = "white")
     }
-    ggsave(filename = sprintf("%s_sss_points.png", cfg$version), # need to find a way to separate when making multiple, can I paste in a value from the cfg that would be an identifier?
-           plot = sss_points, 
-           path = file.path(vpath, "figures"), 
-           width = 11, height = 8.5, units = "in", dpi = 300,
-           create.dir = TRUE)
+    png(filename = file.path(vpath, "figures", sprintf("%s_sss_points.png", cfg$version)), 
+        bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
+    print(sss_points)
+    dev.off()
+    
+    # ggsave(filename = sprintf("%s_sss_points.png", cfg$version), # need to find a way to separate when making multiple, can I paste in a value from the cfg that would be an identifier?
+    #        plot = sss_points, 
+    #        path = file.path(vpath, "figures"), 
+    #        width = 11, height = 8.5, units = "in", dpi = 300,
+    #        create.dir = TRUE)
   }
   
   if ("Sbtm" %in% cfg$covars){
@@ -180,11 +199,15 @@ plot_covars = function(cfg, bathy = NULL, log_bathy = NULL, fish = NULL, dfs = N
       sbtm_points = sbtm_points +
         geom_sf(data = mask_contour, color = "white")
     }
-    ggsave(filename = sprintf("%s_sbtm_points.png", cfg$version), # need to find a way to separate when making multiple, can I paste in a value from the cfg that would be an identifier?
-           plot = sbtm_points, 
-           path = file.path(vpath, "figures"), 
-           width = 11, height = 8.5, units = "in", dpi = 300,
-           create.dir = TRUE)
+    png(filename = file.path(vpath, "figures", sprintf("%s_sbtm_points.png", cfg$version)), 
+        bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
+    print(sbtm_points)
+    dev.off()
+    # ggsave(filename = sprintf("%s_sbtm_points.png", cfg$version), # need to find a way to separate when making multiple, can I paste in a value from the cfg that would be an identifier?
+    #        plot = sbtm_points, 
+    #        path = file.path(vpath, "figures"), 
+    #        width = 11, height = 8.5, units = "in", dpi = 300,
+    #        create.dir = TRUE)
   }
   
   if ("U" %in% cfg$covars){
@@ -211,12 +234,15 @@ plot_covars = function(cfg, bathy = NULL, log_bathy = NULL, fish = NULL, dfs = N
       u_points = u_points +
         geom_sf(data = mask_contour, color = "white")
     }
+    png(filename = file.path(vpath, "figures", sprintf("%s_u_points.png", cfg$version)), 
+        bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
     print(u_points)
-    ggsave(filename = sprintf("%s_u_points.png", cfg$version), # need to find a way to separate when making multiple, can I paste in a value from the cfg that would be an identifier?
-           plot = u_points, 
-           path = file.path(vpath, "figures"), 
-           width = 11, height = 8.5, units = "in", dpi = 300,
-           create.dir = TRUE)
+    dev.off()
+    # ggsave(filename = sprintf("%s_u_points.png", cfg$version), # need to find a way to separate when making multiple, can I paste in a value from the cfg that would be an identifier?
+    #        plot = u_points, 
+    #        path = file.path(vpath, "figures"), 
+    #        width = 11, height = 8.5, units = "in", dpi = 300,
+    #        create.dir = TRUE)
   }
   
   if ("V" %in% cfg$covars){
@@ -243,11 +269,15 @@ plot_covars = function(cfg, bathy = NULL, log_bathy = NULL, fish = NULL, dfs = N
       v_points = v_points +
         geom_sf(data = mask_contour, color = "white")
     }
-    ggsave(filename = sprintf("%s_v_points.png", cfg$version), # need to find a way to separate when making multiple, can I paste in a value from the cfg that would be an identifier?
-           plot = v_points, 
-           path = file.path(vpath, "figures"), 
-           width = 11, height = 8.5, units = "in", dpi = 300,
-           create.dir = TRUE)
+    png(filename = file.path(vpath, "figures", sprintf("%s_v_points.png", cfg$version)), 
+        bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
+    print(v_points)
+    dev.off()
+    # ggsave(filename = sprintf("%s_v_points.png", cfg$version), # need to find a way to separate when making multiple, can I paste in a value from the cfg that would be an identifier?
+    #        plot = v_points, 
+    #        path = file.path(vpath, "figures"), 
+    #        width = 11, height = 8.5, units = "in", dpi = 300,
+    #        create.dir = TRUE)
   }
   
   
@@ -275,11 +305,15 @@ plot_covars = function(cfg, bathy = NULL, log_bathy = NULL, fish = NULL, dfs = N
       xbtm_points = xbtm_points +
         geom_sf(data = mask_contour, color = "white")
     }
-    ggsave(filename = sprintf("%s_xbtm_points.png", cfg$version), # need to find a way to separate when making multiple, can I paste in a value from the cfg that would be an identifier?
-           plot = xbtm_points, 
-           path = file.path(vpath, "figures"), 
-           width = 11, height = 8.5, units = "in", dpi = 300,
-           create.dir = TRUE)
+    png(filename = file.path(vpath, "figures", sprintf("%s_xbtm_points.png", cfg$version)), 
+        bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
+    print(xbtm_points)
+    dev.off()
+    # ggsave(filename = sprintf("%s_xbtm_points.png", cfg$version), # need to find a way to separate when making multiple, can I paste in a value from the cfg that would be an identifier?
+    #        plot = xbtm_points, 
+    #        path = file.path(vpath, "figures"), 
+    #        width = 11, height = 8.5, units = "in", dpi = 300,
+    #        create.dir = TRUE)
   }
   
   if ("Bathy_depth" %in% cfg$static_vars) {
@@ -304,11 +338,15 @@ plot_covars = function(cfg, bathy = NULL, log_bathy = NULL, fish = NULL, dfs = N
       bathymetry_binned_plot = bathymetry_binned_plot +
         geom_sf(data = mask_contour, color = "white")
     }
-    ggsave(filename = sprintf("%s_depth_binned.png", cfg$version), 
-           plot = bathymetry_binned_plot, 
-           path = file.path(vpath, "figures"), 
-           width = 11, height = 8.5, units = "in", dpi = 300,
-           create.dir = TRUE)
+    png(filename = file.path(vpath, "figures", sprintf("%s_depth_binned.png", cfg$version)), 
+        bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
+    print(bathymetry_binned_plot)
+    dev.off()
+    # ggsave(filename = sprintf("%s_depth_binned.png", cfg$version), 
+    #        plot = bathymetry_binned_plot, 
+    #        path = file.path(vpath, "figures"), 
+    #        width = 11, height = 8.5, units = "in", dpi = 300,
+    #        create.dir = TRUE)
   }
   
   if ("log_depth" %in% cfg$static_vars) {
@@ -333,11 +371,15 @@ plot_covars = function(cfg, bathy = NULL, log_bathy = NULL, fish = NULL, dfs = N
       log_bathymetry_binned_plot = log_bathymetry_binned_plot +
         geom_sf(data = mask_contour, color = "white")
     }
-    ggsave(filename = sprintf("%s_log_depth_binned.png", cfg$version), 
-           plot = log_bathymetry_binned_plot, 
-           path = file.path(vpath, "figures"), 
-           width = 11, height = 8.5, units = "in", dpi = 300,
-           create.dir = TRUE)
+    png(filename = file.path(vpath, "figures", sprintf("%s_log_depth_binned.png", cfg$version)), 
+        bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
+    print(log_bathymetry_binned_plot)
+    dev.off()
+    # ggsave(filename = sprintf("%s_log_depth_binned.png", cfg$version), 
+    #        plot = log_bathymetry_binned_plot, 
+    #        path = file.path(vpath, "figures"), 
+    #        width = 11, height = 8.5, units = "in", dpi = 300,
+    #        create.dir = TRUE)
   }
     if ("fish_biomass" %in% cfg$static_vars) {
       fish_biomass_plot = ggplot() +
@@ -361,11 +403,15 @@ plot_covars = function(cfg, bathy = NULL, log_bathy = NULL, fish = NULL, dfs = N
         fish_biomass_plot = fish_biomass_plot +
           geom_sf(data = mask_contour, color = "white")
       }
-      ggsave(filename = sprintf("%s_fish_biomass.png", cfg$version), 
-             plot = fish_biomass_plot, 
-             path = file.path(vpath, "figures"), 
-             width = 11, height = 8.5, units = "in", dpi = 300,
-             create.dir = TRUE)
+      png(filename = file.path(vpath, "figures", sprintf("%s_fish_biomass.png", cfg$version)), 
+          bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
+      print(fish_biomass_plot)
+      dev.off()
+      # ggsave(filename = sprintf("%s_fish_biomass.png", cfg$version), 
+      #        plot = fish_biomass_plot, 
+      #        path = file.path(vpath, "figures"), 
+      #        width = 11, height = 8.5, units = "in", dpi = 300,
+      #        create.dir = TRUE)
       
     
     }
@@ -391,12 +437,16 @@ plot_covars = function(cfg, bathy = NULL, log_bathy = NULL, fish = NULL, dfs = N
         dfs_plot = dfs_plot +
           geom_sf(data = mask_contour, color = "white")
       }
-      ggsave(filename = sprintf("%s_dfs.png", cfg$version), 
-             plot = dfs_plot, 
-             path = file.path(vpath, "figures"), 
-             width = 11, height = 8.5, units = "in", dpi = 300,
-             create.dir = TRUE)
-      
+      png(filename = file.path(vpath, "figures", sprintf("%s_dfs.png", cfg$version)), 
+          bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
+      print(dfs_plot)
+      dev.off()
+      # ggsave(filename = sprintf("%s_dfs.png", cfg$version), 
+      #        plot = dfs_plot, 
+      #        path = file.path(vpath, "figures"), 
+      #        width = 11, height = 8.5, units = "in", dpi = 300,
+      #        create.dir = TRUE)
+      # 
       
     }
     
