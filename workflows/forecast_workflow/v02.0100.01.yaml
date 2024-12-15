@@ -1,7 +1,7 @@
-version: v02.0000.01
+version: v02.0100.01
 root_path: /mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon
 gather_data_vpath: workflows/get_data_workflow/versions/v02/v02.000
-modeling_vpath: workflows/modeling_workflow/versions/v02/000/v02.000.01
+modeling_vpath: workflows/modeling_workflow/versions/v02/010/v02.010.01
 source_path: functions
 data_path: data
 figure_path: figures
@@ -9,7 +9,6 @@ output_path: workflows/forecast_workflow
 bathy_scenario: PRESENT
 static_vars:
 - log_depth
-- fish_biomass
 - dfs
 month: 01
 scenario: PRESENT
@@ -28,7 +27,7 @@ obs_filter:
     - HumanObservation
     - PreservedSpecimen
 model_version_maj: v02
-model_version_maj_minor: v02.000.01
+model_version_maj_minor: v02.010.01
 graphics:
   BOR_symbol:
   - 15
