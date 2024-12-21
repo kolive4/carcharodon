@@ -110,20 +110,20 @@ if("fish_biomass" %in% cfg$static_vars) {
     if (as.numeric(cfg$month) %in% cfg$spring_fish_mon) {
       fish_layer = read_stars(file.path(cfg$data_path, cfg$fish_path, cfg$spring_fish_file)) |>
         sf::st_crop(nefsc_cc_bb) |>
-        stars::st_warp(dest = brickman_bathymetry) |>
+        stars::st_warp(dest = combo_covar) |>
         dplyr::rename(fish_biomass = cfg$spring_fish_file)
     }  
   }
   if (cfg$which_fish == "FALL") {
     fish_layer = read_stars(file.path(cfg$data_path, cfg$fish_path, cfg$fall_fish_file)) |>
       sf::st_crop(nefsc_cc_bb) |>
-      stars::st_warp(dest = brickman_bathymetry) |>
+      stars::st_warp(dest = combo_covar) |>
       dplyr::rename(fish_biomass = cfg$fall_fish_file)
   }
   if (cfg$which_fish == "SPRING") {
     fish_layer = read_stars(file.path(cfg$data_path, cfg$fish_path, cfg$spring_fish_file)) |>
       sf::st_crop(nefsc_cc_bb) |>
-      stars::st_warp(dest = brickman_bathymetry) |>
+      stars::st_warp(dest = combo_covar) |>
       dplyr::rename(fish_biomass = cfg$spring_fish_file)
   }
   if (!is.null(fish_layer)) {
@@ -134,7 +134,7 @@ if("fish_biomass" %in% cfg$static_vars) {
 if("dfs" %in% cfg$static_vars) {
   dfs_layer = read_stars(file.path(cfg$data_path, cfg$dfs_path, cfg$dfs_file)) |>
     dplyr::rename(dfs = cfg$dfs_file) |>
-    stars::st_warp(dest = brickman_bathymetry)
+    stars::st_warp(dest = combo_covar)
   combo_covar = c(combo_covar, dfs_layer)
 }
 

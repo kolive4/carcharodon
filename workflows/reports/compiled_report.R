@@ -54,7 +54,8 @@ breaks = seq(from = 0, to = 1, length.out = length(pal) + 1)
 cast_plots = stars::read_stars(cast_files, along = list(month = month.abb)) |>
   dplyr::rename("Habitat Suitability Index" = "prediction.tif")
 
-png(file.path(vpath, paste0(cfg$version, "compiled_casts.png")))
+png(file.path(vpath, paste0(cfg$version, "compiled_casts.png")), 
+    bg = "white", width = 11, height = 8.5, units = "in", res = 300)
 plot(cast_plots,
      col = pal,
      breaks = breaks,
