@@ -27,7 +27,7 @@ args = argparser::arg_parser("forecasting for white shark habitat suitability",
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/forecast_workflow/v04.0100.09.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/forecast_workflow/v01.0800.01.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -138,6 +138,22 @@ if("dfs" %in% cfg$static_vars) {
   combo_covar = c(combo_covar, dfs_layer)
 }
 
+if("hseal" %in% cfg$static_vars) {
+  hseal_layer = load_seal(scenario = cfg$scenario, year = cfg$year, species = "harbor") |>
+    dplyr::slice(time, as.numeric(cfg$month)) |>
+    dplyr::rename(hseal = "prediction.tif") |>
+    stars::st_warp(dest = combo_covar)
+  combo_covar = c(combo_covar, hseal_layer) 
+} 
+
+if("gseal" %in% cfg$static_vars) {
+  gseal_layer = load_seal(scenario = cfg$scenario, year = cfg$year, species = "gray") |>
+    dplyr::slice(time, as.numeric(cfg$month)) |>
+    dplyr::rename(gseal = "prediction.tif") |>
+    stars::st_warp(dest = combo_covar)
+  combo_covar = c(combo_covar, gseal_layer) 
+}
+
 combo_covar[is.na(mask)] = NA_real_
 
 if (!is.null(cfg$contour_name)) {
@@ -153,6 +169,10 @@ plot_covars(cfg,
                    else {NULL}, 
             dfs = if("dfs" %in% cfg$static_vars) {combo_covar["dfs"]} 
                   else {NULL},
+            gseal = if("gseal" %in% cfg$static_vars) {combo_covar["gseal"]}
+                  else {NULL},
+            hseal = if("hseal" %in% cfg$static_vars) {combo_covar["hseal"]}
+            else {NULL},
             covars = combo_covar, 
             obs = mon_shark_obs,
             contour = mask_contour,

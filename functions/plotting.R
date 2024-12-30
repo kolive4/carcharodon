@@ -30,7 +30,7 @@ geom_coastline = function(coast = rnaturalearth::ne_coastline(scale = "large", r
 #' @param contour contour line data
 #' @param plot_contour logical for whether or not to plot contour lines
 #' @return plots 
-plot_covars = function(cfg, bathy = NULL, log_bathy = NULL, fish = NULL, dfs = NULL, covars = NULL, obs = NULL, plot_points = NULL, contour = NULL, plot_contour = NULL){
+plot_covars = function(cfg, bathy = NULL, log_bathy = NULL, fish = NULL, dfs = NULL, gseal = NULL, hseal = NULL, covars = NULL, obs = NULL, plot_points = NULL, contour = NULL, plot_contour = NULL){
   
   if ("SST" %in% cfg$covars){
     sst_range = range(covars[["sst"]], na.rm = TRUE)
@@ -451,6 +451,75 @@ plot_covars = function(cfg, bathy = NULL, log_bathy = NULL, fish = NULL, dfs = N
       
     }
     
+  if ("gseal" %in% cfg$static_vars) {
+    gseal_plot = ggplot() +
+      geom_stars(data = gseal) +
+      scale_fill_steps(name = "Gray Seal Habitat Suitability", 
+                       n.breaks = 7, 
+                       low = "#89e2fb", high = "#291683") +
+      geom_coastline(bb = cofbb::get_bb("nefsc_carcharodon", form = "bb")) +
+      ggplot2::labs(caption = cfg$version) +
+      theme_void()
+    if (plot_points) {
+      gseal_plot = gseal_plot +
+        geom_sf(data = mon_shark_obs, 
+                aes(shape = basisOfRecord), 
+                fill = "white", 
+                show.legend = "point") +
+        scale_shape_manual(name = "Method", 
+                           values = cfg$graphics$BOR_symbol)
+    }
+    if (plot_contour) {
+      gseal_plot = gseal_plot +
+        geom_sf(data = mask_contour, color = "white")
+    }
+    # png(filename = file.path(vpath, "figures", sprintf("%s_gseal.png", cfg$version)), 
+    #     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
+    # print(gseal_plot)
+    # dev.off()
+    ggsave(filename = sprintf("%s_gseal.png", cfg$version), 
+           plot = gseal_plot, 
+           path = file.path(vpath, "figures"), 
+           width = 11, height = 8.5, units = "in", dpi = 300,
+           create.dir = TRUE)
+    
+    
+  }
+  
+  if ("hseal" %in% cfg$static_vars) {
+    hseal_plot = ggplot() +
+      geom_stars(data = hseal) +
+      scale_fill_steps(name = "Harbor Seal Habitat Suitability", 
+                       n.breaks = 7, 
+                       low = "#ffffff", high = "#000000") +
+      geom_coastline(bb = cofbb::get_bb("nefsc_carcharodon", form = "bb")) +
+      ggplot2::labs(caption = cfg$version) +
+      theme_void()
+    if (plot_points) {
+      hseal_plot = hseal_plot +
+        geom_sf(data = mon_shark_obs, 
+                aes(shape = basisOfRecord), 
+                fill = "white", 
+                show.legend = "point") +
+        scale_shape_manual(name = "Method", 
+                           values = cfg$graphics$BOR_symbol)
+    }
+    if (plot_contour) {
+      hseal_plot = hseal_plot +
+        geom_sf(data = mask_contour, color = "white")
+    }
+    # png(filename = file.path(vpath, "figures", sprintf("%s_hseal.png", cfg$version)), 
+    #     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
+    # print(hseal_plot)
+    # dev.off()
+    ggsave(filename = sprintf("%s_hseal.png", cfg$version), 
+           plot = hseal_plot, 
+           path = file.path(vpath, "figures"), 
+           width = 11, height = 8.5, units = "in", dpi = 300,
+           create.dir = TRUE)
+    
+    
+  }
     
     
 }

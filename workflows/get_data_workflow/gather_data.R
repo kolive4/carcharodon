@@ -25,7 +25,7 @@ args = argparser::arg_parser("assembling observation and background data",
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/get_data_workflow/v01.000.yaml",
+                          default = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/get_data_workflow/v01.003.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -43,6 +43,9 @@ charlier::start_logger(filename = file.path(vpath, "log"))
 charlier::info("writing config")
 charlier::write_config(cfg, filename = file.path(vpath, basename(args$config)))
 
+vfigure_path = file.path(vpath, "figures")
+if (!dir.exists(vfigure_path)) 
+  dir.create(vfigure_path, showWarnings = FALSE, recursive = TRUE)
 # read in species data & filter species by dates & subset species by bounding box
 shark_box = cofbb::get_bb(cfg$bbox_name, form = "sf")
 
@@ -65,7 +68,7 @@ curated = read.csv(file.path(cfg$data_path, "historical/curated_literature2.csv"
 curated$Year = as.numeric(curated$Year)
 
 curated_plot = ggplot() +
-  rnaturalearth::geom_coastline(bb = shark_box, color = "red") +
+  geom_coastline(bb = shark_box, color = "red") +
   geom_sf(data = curated, aes(shape = basisOfRecord), fill = "white", color = "black", size = 2.5) + 
   theme_void() 
 if (!is.null(cfg$contour_name)) {
@@ -286,6 +289,19 @@ spring_fish_layer = read_stars(file.path(cfg$data_path, cfg$fish_path, cfg$sprin
   sf::st_crop(shark_box) |>
   st_warp(dest = brickman_bathymetry)
 
+#seal layers
+if(cfg$hseal == "harbor") {
+  hseal_layer = load_seal(scenario = cfg$scenario, year = cfg$year, species = cfg$hseal) |>
+    dplyr::rename(hseal = "prediction.tif") |>
+    stars::st_warp(dest = brickman_bathymetry)
+} 
+
+if(cfg$gseal == "gray") {
+  gseal_layer = load_seal(scenario = cfg$scenario, year = cfg$year, species = cfg$gseal) |>
+    dplyr::rename(gseal = "prediction.tif") |>
+    stars::st_warp(dest = brickman_bathymetry)
+}
+
 #distance from shore layer
 dfs_layer = read_stars(file.path(cfg$data_path, cfg$dfs_path, cfg$dfs_file)) |>
   rename(dfs = cfg$dfs_file) |>
@@ -331,12 +347,14 @@ shark_dfs = st_extract(dfs_layer, at = wshark) |>
   sf::st_as_sf() |>
   dplyr::as_tibble() 
 shark_covars = brickman_extract(monthly_brick_cov, wshark, time_column = "extractDate") # changed to eventDate because it is consistent amongst all obs
+shark_hseal = brickman_extract(hseal_layer, wshark, time_column = "extractDate")
+shark_gseal = brickman_extract(gseal_layer, wshark, time_column = "extractDate")
 
 wshark = dplyr::mutate(wshark, fish_biomass = shark_fish$fish_biomass) |>
   dplyr::mutate(wshark, dfs = shark_dfs$dfs) |>
   dplyr::mutate(wshark, brick_depth = shark_depth$Bathy_depth) |>
   dplyr::mutate(wshark, log_depth = log_shark_depth$Bathy_depth) |>
-  dplyr::bind_cols(shark_covars) |>
+  dplyr::bind_cols(shark_covars, shark_gseal, shark_hseal) |>
   write_sf(file.path(cfg$data_path, "covars", "brickman_covars_shark_occs.gpkg"))
 
 # random bg selection
@@ -396,12 +414,14 @@ brick_bg_depth = stars::st_extract(brickman_bathymetry, at = bg_brick)
 brick_bg_log_depth = stars::st_extract(log_brickman_bathymetry, at = bg_brick)
 brick_bg_dfs = stars::st_extract(dfs_layer, at = bg_brick)
 brick_bg_covars = brickman_extract(monthly_brick_cov, bg_brick, time_column = "time", interpolate_time = FALSE)
+brick_bg_gseal = brickman_extract(gseal_layer, bg_brick, time_column = "time", interpolate_time = FALSE)
+brick_bg_hseal = brickman_extract(hseal_layer, bg_brick, time_column = "time", interpolate_time = FALSE)
 
 bg_brick = dplyr::mutate(bg_brick, brick_depth = brick_bg_depth$Bathy_depth) |>
   dplyr::mutate(bg_brick, fish_biomass = brick_bg_fish$fish_biomass) |>
   dplyr::mutate(bg_brick, dfs = brick_bg_dfs$dfs) |>
   dplyr::mutate(bg_brick, log_depth = brick_bg_log_depth$Bathy_depth) |>
-  dplyr::bind_cols(brick_bg_covars) |>
+  dplyr::bind_cols(brick_bg_covars, brick_bg_gseal, brick_bg_hseal) |>
   write_sf(file.path(vpath, "brickman_covar_bg.gpkg"))
 
 bg = ggplot() +
