@@ -245,7 +245,7 @@ if (!is.null(cfg$contour_name)) {
   
 }
 non_sat
-png(filename = file.path(vpath, "figures", paste0(cfg$version, "_occs.png")), 
+png(filename = file.path(vpath, "figures", paste0(cfg$version, "_non_sat_occs.png")), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 non_sat
 dev.off()

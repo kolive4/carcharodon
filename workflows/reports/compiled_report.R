@@ -18,7 +18,7 @@ args = argparser::arg_parser("a tool to cast monthly predictions into one figure
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/reports/c04.0000.01_12.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/reports/c01.0900.01_12.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -114,3 +114,21 @@ if (TRUE %in% file.exists(vi_files)) {
          path = vpath, 
          width = 11, height = 8.5, units = "in", dpi = 300)
 }
+
+
+# cov_path = list.files(path = file.path(cfg$root_path, cfg$f_path), 
+#                       pattern = "*.*.*")
+# list_cov_files = function(x){
+#   files = list.files(path = file.path(cfg$root_path, cfg$f_path, x, "figures"),
+#                      pattern = "*.png",
+#                      full.names = TRUE)
+#   return(files)
+# }
+# cov_fig_path = lapply(cov_path, 
+#                       list_cov_files)
+# 
+# covs = lapply(cov_fig_path, png::readPNG)
+# png(file.path(vpath, paste0(cfg$version, "compiled_covariates.png")), 
+#     bg = "white", width = 11, height = 8.5, units = "in", res = 300)
+# plot(covs)
+# ok = dev.off()
