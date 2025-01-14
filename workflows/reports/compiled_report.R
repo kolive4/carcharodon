@@ -18,7 +18,7 @@ args = argparser::arg_parser("a tool to cast monthly predictions into one figure
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/reports/c01.0900.01_12.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/reports/c01.0940.01_12.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -51,8 +51,18 @@ plot_coast = function() {
 pal = terra::map.pal("magma", 10)
 breaks = seq(from = 0, to = 1, length.out = length(pal) + 1)
 
-cast_plots = stars::read_stars(cast_files, along = list(month = month.abb)) |>
-  dplyr::rename("Habitat Suitability Index" = "prediction.tif")
+#*** make programmatic
+non_sat.months = c("May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov")
+non_sat.mon.num = seq(from = 5, to = 11, by = 1)
+#*** make programmatic
+
+if (startsWith(vpars[["minor"]], "094")) {
+  cast_plots = stars::read_stars(cast_files, along = list(month = non_sat.months)) |>
+    dplyr::rename("Habitat Suitability Index" = "prediction.tif")
+} else {
+  cast_plots = stars::read_stars(cast_files, along = list(month = month.abb)) |>
+    dplyr::rename("Habitat Suitability Index" = "prediction.tif")
+}
 
 png(file.path(vpath, paste0(cfg$version, "compiled_casts.png")), 
     bg = "white", width = 11, height = 8.5, units = "in", res = 300)
@@ -67,11 +77,19 @@ pauc_files = list.files(path = file.path(cfg$root_path, cfg$f_path),
                         recursive = TRUE,
                         full.names = TRUE) 
 if (TRUE %in% file.exists(pauc_files)) {
-  paucs = lapply(pauc_files, readr::read_csv) |>
-    dplyr::bind_rows(.id = "month") |>
-    dplyr::select(c("month", "value")) |>
-    dplyr::rename(pauc = "value") |>
-    dplyr::mutate(month = as.numeric(month))
+  if (startsWith(vpars[["minor"]], "094")) {
+    paucs = lapply(pauc_files, readr::read_csv) |>
+      dplyr::bind_rows(.id = "month") |>
+      dplyr::select(c("month", "value")) |>
+      dplyr::rename(pauc = "value") |>
+      dplyr::mutate(month = as.numeric(month) + 4)
+  } else {
+    paucs = lapply(pauc_files, readr::read_csv) |>
+      dplyr::bind_rows(.id = "month") |>
+      dplyr::select(c("month", "value")) |>
+      dplyr::rename(pauc = "value") |>
+      dplyr::mutate(month = as.numeric(month))
+  }
   
   pauc_plot = ggplot() +
     # geom_area(data = paucs, aes(x = month, y = pauc), color = "navy", fill = "skyblue4") +
@@ -94,10 +112,17 @@ vi_files = list.files(path = file.path(cfg$root_path, cfg$m_path),
                         recursive = TRUE,
                         full.names = TRUE) 
 if (TRUE %in% file.exists(vi_files)) {
-  vi = lapply(vi_files, readr::read_csv) |>
-    dplyr::bind_rows(.id = "month") |>
-    dplyr::select(c("month", "var", "importance")) |>
-    dplyr::mutate(month = as.numeric(month))
+  if (startsWith(vpars[["minor"]], "094")) {
+    vi = lapply(vi_files, readr::read_csv) |>
+      dplyr::bind_rows(.id = "month") |>
+      dplyr::select(c("month", "var", "importance")) |>
+      dplyr::mutate(month = as.numeric(month) + 4)
+  } else {
+    vi = lapply(vi_files, readr::read_csv) |>
+      dplyr::bind_rows(.id = "month") |>
+      dplyr::select(c("month", "var", "importance")) |>
+      dplyr::mutate(month = as.numeric(month))
+  }
   
   vi_plot = ggplot() +
     geom_bar(data = vi, aes(x = month, y = importance, fill = var),

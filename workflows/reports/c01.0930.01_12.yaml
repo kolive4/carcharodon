@@ -1,0 +1,13 @@
+version: c01.0930.01_12
+root_path: /mnt/ecocast/projects/koliveira/subprojects/carcharodon
+report_path: workflows/reports
+f_path: workflows/forecast_workflow/versions/v01/0930
+m_path: workflows/modeling_workflow/versions/v01/093
+scenario: Present Conditions
+graphics:
+  pauc_title: pAUC Values
+  vi_title: Variable Contribution
+  x: Month
+  pauc_y: pAUC
+  vi_y: Contribution
+

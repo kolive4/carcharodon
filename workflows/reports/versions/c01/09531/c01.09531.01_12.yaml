@@ -1,0 +1,12 @@
+version: c01.09531.01_12
+root_path: /mnt/ecocast/projects/koliveira/subprojects/carcharodon
+report_path: workflows/reports
+f_path: workflows/forecast_workflow/versions/v01/09531
+m_path: workflows/modeling_workflow/versions/v01/095
+scenario: RCP 4.5 2075
+graphics:
+  pauc_title: pAUC Values
+  vi_title: Variable Contribution
+  x: Month
+  pauc_y: pAUC
+  vi_y: Contribution

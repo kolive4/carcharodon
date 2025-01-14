@@ -1,0 +1,56 @@
+version: v01.0933.01
+root_path: /mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon
+gather_data_vpath: workflows/get_data_workflow/versions/v01/v01.003
+modeling_vpath: workflows/modeling_workflow/versions/v01/093/v01.093.01
+source_path: functions
+data_path: data
+figure_path: figures
+output_path: workflows/forecast_workflow
+bathy_scenario: PRESENT
+static_vars:
+- log_depth
+- gseal
+- hseal
+month: 1
+scenario: RCP45
+year: 2075
+covars:
+- Tbtm
+- SSS
+- Sbtm
+- MLD
+obs_filter:
+  basisOfRecord:
+  - PSAT
+  - SPOT
+model_version_maj: v01
+model_version_maj_minor: v01.093.01
+graphics:
+  BOR_symbol:
+  - 21
+  - 25
+  ggtitle: January 2075 RCP 4.5
+  plot_points: no
+  plot_contour: no
+contour_name: ~
+fish_path: fish_data/MDAT_Fish_SummaryProducts_NEFSC/commondata/raster_data
+spring_fish_file: fish_biomass_nefsc_2010_2019_SPRING_All.tif
+fall_fish_file: fish_biomass_nefsc_2010_2019_FALL_All.tif
+dfs_path: mapping/etopo
+dfs_file: etopo_warped_distance_to_shore_meters.tif
+mask_name: mapping/gebco/gebco_mask.tif
+fall_fish_mon:
+- 12.0
+- 1.0
+- 2.0
+- 3.0
+- 4.0
+- 5.0
+spring_fish_mon:
+- 6.0
+- 7.0
+- 8.0
+- 9.0
+- 10.0
+- 11.0
+which_fish: COMBO

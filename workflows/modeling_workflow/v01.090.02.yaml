@@ -16,8 +16,7 @@ static_covariates:
 - hseal
 obs_filter:
   basisOfRecord:
-  - HumanObservation
-  - PreservedSpecimen
+  - OBIS
   - curated
   - PSAT
   - SPOT

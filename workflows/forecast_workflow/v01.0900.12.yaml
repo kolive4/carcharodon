@@ -21,9 +21,9 @@ covars:
 - MLD
 obs_filter:
   basisOfRecord:
-  - HumanObservation
-  - PreservedSpecimen
+  - OBIS
   - curated
+  - iNaturalist
   - PSAT
   - SPOT
 model_version_maj: v01
