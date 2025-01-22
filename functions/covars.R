@@ -130,3 +130,26 @@ plot_thresh <- function(x, main){
   plot(x["sst"], col = rev(RColorBrewer::brewer.pal(8, "YlOrRd")), main = main, reset = F)
   plot(sf::st_geometry(nwa_coast), border = "black", lwd = 4, add = T)
 }
+
+
+#' function to plot histograms for covariates broken up by obs type and for background
+#' 
+#' @param joint_db filename of database that contains observation and background data for white sharks
+#' @param groups observation type or background c(PSAT, SPOT)
+#' @param cov covariate name
+#' @return plot of covariate distribution
+cov_hist = function(joint_db, groups, cov) {
+  x = read_brickman_points(joint_db, bb = nefsc_cc_bb)
+  
+  p = x |>
+    dplyr::filter(basisOfRecord %in% groups)
+  
+  b = x |>
+    dplyr::filter(id == 0)
+  
+  plot = ggplot() +
+    geom_histogram(data = b, aes(x = .data[[cov]]), color = "grey") +
+    geom_histogram(data = p, aes(x = .data[[cov]]), fill = "black") +
+    labs(title = paste(groups, collapse = ", "))
+    
+}

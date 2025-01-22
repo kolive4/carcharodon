@@ -113,7 +113,7 @@ spot$Year = as.numeric(format(spot$eventDate, "%Y"))
 satellite = bind_rows(psat, spot)
 satellite_plot = ggplot() +
   geom_coastline(bb = shark_box, color = "red") +
-  geom_sf(data = satellite, aes(shape = basisOfRecord), fill = "white", color = "black", size = 2.5) + 
+  geom_sf(data = satellite, aes(shape = basisOfRecord, color = shark_id), size = 2.5) + 
   theme_void() 
 if (!is.null(cfg$contour_name)) {
   satellite_plot = satellite_plot +
@@ -167,14 +167,14 @@ wshark <- wshark |>
   dplyr::mutate(month = format(eventDate, "%m") |>
                   as.numeric()) |>
   dplyr::mutate(Year = as.numeric(format(eventDate, "%Y"))) |>
-  dplyr::bind_rows(curated, inat, satellite) |>
+  #dplyr::bind_rows(curated, inat, satellite) |>
   dplyr::mutate(extractDate = as.Date(sprintf("2020-%0.2i-01", month))) |>
   dplyr::rename(c(obis_sst = sst, obis_depth = depth)) |>
   dplyr::filter(!is.na(month)) |>
   sf::st_crop(shark_box) |>
   dplyr::mutate(basisOfRecord = dplyr::if_else(basisOfRecord == "HumanObservation", "OBIS", basisOfRecord))
 
-obis = wshark |>
+unobis = wshark |>
   dplyr::filter(basisOfRecord == "OBIS")
 
 obis_plot = ggplot() +
@@ -439,3 +439,9 @@ obs_bg_brick = bind_rows(list(wshark, bg_brick), .id = "id") |>
   dplyr::mutate(id = as.numeric(id == 1)) |>
   write_sf(file.path(vpath, "brickman_covar_obs_bg.gpkg"))
 
+sss_nonsat_plot = cov_hist(joint_db = file.path(vpath, "brickman_covar_obs_bg.gpkg"), groups = c("OBIS", "iNaturalist", "curated"), cov = "brick_sss")
+sss_nonsat_plot
+sss_sat_plot = cov_hist(joint_db = file.path(vpath, "brickman_covar_obs_bg.gpkg"), groups = c("PSAT", "SPOT"), cov = "brick_sss")
+sss_sat_plot
+sss_spot_plot = cov_hist(joint_db = file.path(vpath, "brickman_covar_obs_bg.gpkg"), groups = c("SPOT"), cov = "brick_sss")
+sss_spot_plot 

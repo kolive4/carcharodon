@@ -76,11 +76,11 @@ load_seal = function(scenario = c("RCP85", "RCP45", "PRESENT")[1],
   
   if(band_as_time == TRUE) {
     time = switch(scenario,
-                  "PRESENT" = seq(from = as.Date("2020-01-01"), length = 12, by = "month"),
-                  "2075" = seq(from = as.Date("2075-01-01"), length = 12, by = "month") ,
-                  "2055" = seq(from = as.Date("2055-01-01"), length = 12, by = "month") )
+                  "PRESENT" = NULL,
+                  "2075" = NULL ,
+                  "2055" = NULL)
     dims = stars::st_dimensions(x)
-    x = stars::st_set_dimensions(x, "band", names = "time", values = time)
+    x = stars::st_set_dimensions(x, "band", names = "band", values = time)
   }
   
   return(x)
