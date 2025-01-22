@@ -300,23 +300,53 @@ predict_1 = function(x, thinned, preds, mask = NULL, thin = TRUE, figure_path = 
   print(model_eval)
   dev.off()
   
-  # glms = models |>
-  #   dplyr::filter(wflow_id == "default_glm")
-  # glm = simple_ensemble() |>
-  #   add_member(glms, metric = "roc_auc")
+  glm = models |>
+    dplyr::filter(wflow_id == "default_glm") |>
+    write_model(filename = file.path(model_path, "glm_model.rds"))
+  rf = models |>
+    dplyr::filter(wflow_id == "default_rf") |>
+    write_model(filename = file.path(model_path, "rf_model.rds"))
+  gbm = models |>
+    dplyr::filter(wflow_id == "default_gbm") |>
+    write_model(filename = file.path(model_path, "gbm_model.rds"))
+  maxent = models |>
+    dplyr::filter(wflow_id == "default_maxent") |>
+    write_model(filename = file.path(model_path, "maxent_model.rds"))
   
-  ensemble = simple_ensemble() |>
-    add_member(models, metric = "roc_auc")
-  ensemble_eval = autoplot(ensemble)
-  png(filename = file.path(figure_path, "ensemble_eval.png"), bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
-  print(ensemble_eval)
+  tss_ensemble = simple_ensemble() |>
+    add_member(models, metric = "tss_max")
+  tss_ensemble_eval = autoplot(tss_ensemble)
+  png(filename = file.path(figure_path, "tss_ensemble_eval.png"), bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
+  print(tss_ensemble_eval)
   dev.off()
+  write_ensemble(tss_ensemble, filename = file.path(model_path, "tss_ensemble.rds"))
   
-  ensemble_metrics = ensemble |>
+  boyce_ensemble = simple_ensemble() |>
+    add_member(models, metric = "boyce_cont")
+  boyce_ensemble_eval = autoplot(boyce_ensemble)
+  png(filename = file.path(figure_path, "boyce_ensemble_eval.png"), bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
+  print(boyce_ensemble_eval)
+  dev.off()
+  write_ensemble(boyce_ensemble, filename = file.path(model_path, "boyce_ensemble.rds"))  
+  
+  auc_ensemble = simple_ensemble() |>
+    add_member(models, metric = "roc_auc")
+  auc_ensemble_eval = autoplot(auc_ensemble)
+  png(filename = file.path(figure_path, "auc_ensemble_eval.png"), bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
+  print(auc_ensemble_eval)
+  dev.off()
+  write_ensemble(auc_ensemble, filename = file.path(model_path, "auc_ensemble.rds"))  
+  tss_ensemble_metrics = tss_ensemble |>
     collect_metrics()
-  ok = dir.create(tidy_data_path, recursive = TRUE)
-  write.csv(ensemble_metrics , file.path(tidy_data_path, "ensemble_metrics.csv"))
+  write.csv(tss_ensemble_metrics , file.path(model_path, "tss_ensemble_metrics.csv"))
   
+  boyce_ensemble_metrics = boyce_ensemble |>
+    collect_metrics()
+  write.csv(boyce_ensemble_metrics , file.path(model_path, "boyce_ensemble_metrics.csv"))
+  
+  auc_ensemble_metrics = auc_ensemble |>
+    collect_metrics()
+  write.csv(auc_ensemble_metrics , file.path(model_path, "auc_ensemble_metrics.csv"))
 }
 
 
