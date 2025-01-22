@@ -86,6 +86,30 @@ rasterize_point_density <- function(x, y,
   r
 }
 
+#' Write and read models and ensembles.
+#' 
+#' @param x a model or ensemble
+#' @param filename chr, the name of the file to write to
+#' @param ... extra keywords passed to [`readr::write_rds`] and [`readr::read_rds`].
+#' @return a model or ensemble (invisibly for writing)
+write_model = function(x, filename = "model.rds", ...){
+  readr::write_rds(x, filename, ...)
+}
+
+#' @rdname write_model
+read_model = function(filename, ...){
+  readr::read_rds(filename, ...)
+}
+
+#' @rdname write_model
+write_ensemble = function(x, filename = "ensemble.rds", ...){
+  readr::write_rds(x, filename, ...)
+}
+
+#' @rdname write_model
+read_ensemble = function(filename, ...){
+  readr::read_rds(filename, ...)
+}
 
 #' Sample (possibly weighted) time relative to a time series 
 #' 
@@ -126,60 +150,58 @@ sample_time = function(x = read_obis(form = "sf") |>
 #' Slicing function
 #' 
 #' @param obs obs data
-#' @param dyn dynamic data
-#' @param static static variables
+#' @param thinned thinned obs data
+#' @param preds predictive covariates
 #' @param figure_path path to save figures to
 #' @param tidy_data_path path to save data to
 #' @return obs and dyn data that has been sliced
-predict_by_mon = function(obs, dyn, static, mask = NULL, figure_path = NULL, tidy_data_path = NULL, ...){
+predict_by_mon = function(obs, thinned, dyn, static, mask = NULL, figure_path = NULL, tidy_data_path = NULL, ...){
+  if(FALSE){
+    mon = 8
+    obs = obs
+    thinned = thinned_obs
+    preds = preds
+    mask = mask
+    figure_path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidysdm_workflow/figures"
+    tidy_data_path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/data/tidysdm"
+  }
   u_mon = unique(obs$month)
   lapply(u_mon, function(mon){
     cat("Month is", mon, "\n")
     x = obs |>
       dplyr::filter(month == mon)
-    d = dyn |>
+    thinned = thinned |>
+      dplyr::filter(month == mon)
+    preds = preds |>
       dplyr::slice(along = "band", index = mon)
-    if (mon %in% c(12, 1, 2, 3, 4, 5)) {
-      vars = c(depth, dfs, fall_fish)
-      static = dplyr::select(static, dplyr::all_of(names(vars)))
-    } else {
-      vars = c(depth, dfs, spring_fish)
-      static = dplyr::select(static, dplyr::all_of(names(vars)))
-    }
-    d = twinkle::bind_attrs(list(d, static))
     figure_path = file.path(figure_path, mon)
     ok = dir.create(figure_path, recursive = TRUE, showWarnings = FALSE)
     tidy_data_path = file.path(tidy_data_path, mon)
     ok = dir.create(tidy_data_path, recursive = TRUE, showWarnings = FALSE)
-    predict_1(x, d, mask = mask, figure_path = figure_path, tidy_data_path = tidy_data_path, ...)
+    predict_1(x, thinned, preds, mask = mask, figure_path = figure_path, tidy_data_path = tidy_data_path)
   })
 }
 
 #' Splitting things by month
 #' 
 #' @param x presliced obs
-#' @param d presliced dynamic and static data 
+#' @param thinned presliced thinned obs
+#' @param preds presliced predictive covariate data 
 #' @param mask mask to base thinning
 #' @param thin logical, do we want to thin or not
 #' @param figure_path path to save figures to
 #' @param tidy_data_path path to save data to
+#' @param v number of folds for cross folding step
 #' @return hsi map as a stars map
-predict_1 = function(x, d, mask = NULL, thin = TRUE, figure_path = NULL, tidy_data_path = NULL){
-  thinned_obs = tidysdm::thin_by_cell(x, mask) |>
-    thin_by_dist(dist_min = tidysdm::km2m(20))
-  png(filename = file.path(figure_path, "thinned_obs.png"), bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
-  plot(mask, breaks = "equal", axes = TRUE, reset = FALSE)
-  plot(sf::st_geometry(thinned_obs), pch = "+", add = TRUE)
-  plot(coast, col = "orange", add = TRUE)
-  dev.off()
-  
+predict_1 = function(x, thinned, preds, mask = NULL, thin = TRUE, figure_path = NULL, tidy_data_path = NULL, v = 10){
+
   observation_density_raster = rasterize_point_density(x, mask, dilate = 3)
   png(filename = file.path(figure_path, "obs_density.png"), bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
   plot(observation_density_raster)
   dev.off()
   
   model_input = tidysdm::sample_background(
-    data = thinned_obs,
+    data = thinned,
     raster = observation_density_raster,
     n = 2*nrow(thinned_obs),
     method = "bias",
@@ -204,8 +226,6 @@ predict_1 = function(x, d, mask = NULL, thin = TRUE, figure_path = NULL, tidy_da
                             weighted = TRUE)
   model_input$time[!ix] = days_sample
   
-  preds = d
-  
   input_data = stars::st_extract(preds, at = model_input)|>
     sf::st_as_sf() |>
     dplyr::as_tibble() |>
@@ -225,19 +245,22 @@ predict_1 = function(x, d, mask = NULL, thin = TRUE, figure_path = NULL, tidy_da
   
   model_input |>
     dplyr::select(dplyr::all_of(c("class", names(preds)))) |>
-    tidysdm::dist_pres_vs_bg(class)
+    tidysdm::dist_pres_vs_bg(class) |>
+    write.csv(file.path(figure_path, "dist_pres_vs_bg.csv"))
   
   png(filename = file.path(figure_path, "preds_matrix.png"), bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
   print(pairs(preds))
   dev.off()
   
   vars_uncor = tidysdm::filter_collinear(preds, cutoff = 0.7, 
-                                         method = "cor_caret", verbose = TRUE)
+                                         method = "vif_cor", verbose = TRUE)
   vars_uncor
-  preds = dplyr::select(preds, dplyr::all_of(vars_uncor))
+  vars_keep = c("mld", "hseal", "tbtm", "gseal", "sbtm", "log_depth")
+  preds = dplyr::select(preds, dplyr::all_of(vars_keep))
   
   model_input = dplyr::select(model_input,
                               dplyr::all_of(c("class", names(preds)))) |>
+    na.omit() |>
     sf::write_sf(file.path(tidy_data_path, "model_input.gpkg"))
   
   rec = recipe(head(model_input),
@@ -251,7 +274,7 @@ predict_1 = function(x, d, mask = NULL, thin = TRUE, figure_path = NULL, tidy_da
                         cross = TRUE) |>
     option_add(control = tidysdm::control_ensemble_grid())
   
-  input_cv = spatial_block_cv(data = model_input, v = 3, n = 5)
+  input_cv = spatial_block_cv(data = model_input, v = v, n = 5)
   
   folds = autoplot(input_cv)
   png(filename = file.path(figure_path, "folds.png"), bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
@@ -268,6 +291,11 @@ predict_1 = function(x, d, mask = NULL, thin = TRUE, figure_path = NULL, tidy_da
   png(filename = file.path(figure_path, "model_eval.png"), bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
   print(model_eval)
   dev.off()
+  
+  # glms = models |>
+  #   dplyr::filter(wflow_id == "default_glm")
+  # glm = simple_ensemble() |>
+  #   add_member(glms, metric = "roc_auc")
   
   ensemble = simple_ensemble() |>
     add_member(models, metric = "roc_auc")

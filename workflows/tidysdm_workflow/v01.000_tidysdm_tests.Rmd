@@ -1,0 +1,100 @@
+This markdown will be used to run tests of different tidysdm models on the white shark data.
+
+```{r}
+suppressPackageStartupMessages(library(tidysdm))
+for (f in list.files("/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/functions", pattern = "^.*\\.R$", full.names = TRUE)){
+  source(f)
+}
+```
+
+Block that loads all of my envi layers, observation data loaded. Then thin the background. Reinterpolate the envi data to one format.
+
+We'll first pull our observations that we have from the gather_data.R script.
+```{r}
+bb = cofbb::get_bb("nefsc_carcharodon", form = "sf")
+coast = rnaturalearth::ne_coastline(scale = "large", returnclass = "sf") |>
+  sf::st_geometry()
+
+vars = c("eventDate", "Year", "month", "basisOfRecord", "geom", "log_depth", "brick_tbtm", "brick_mld", "brick_sss", "brick_sbtm", "gseal", "hseal")
+
+obs = read_brickman_points(file = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/get_data_workflow/versions/v01/v01.003/brickman_covar_obs_bg.gpkg") |>
+  sf::st_as_sf() |>
+  dplyr::filter(id == 1) |>
+  dplyr::select(all_of(vars))
+```
+
+Next we'll pull the covariates. These are stored in the data directory.
+```{r}
+data_path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/data"
+depth_path = "brickman/bathy"
+brick_path = "brickman/gom_carcharodon"
+fish_path = "fish_data/MDAT_Fish_SummaryProducts_NEFSC/commondata/raster_data"
+etopo_path = "mapping/etopo"
+
+mon_no = seq(from = 1, to = 12)
+depth = stars::read_stars(file.path(data_path, depth_path, "PRESENT_PRESENT_Bathy_depth_mon.tif")) |>
+  dplyr::rename(log_depth = "PRESENT_PRESENT_Bathy_depth_mon.tif") |>
+  dplyr::mutate(log_depth = log(log_depth))
+dd = sapply(mon_no, function(mon) {depth}, simplify = FALSE)
+depth = do.call(c, append(dd, list(along = list(band = mon_no)))) |>
+  stars::st_set_dimensions("band", offset = NA_real_, delta = NA_real_)
+tbtm = stars::read_stars(file.path(data_path, brick_path, "PRESENT_PRESENT_Tbtm_mon.tif")) |>
+  dplyr::rename(tbtm = "PRESENT_PRESENT_Tbtm_mon.tif")
+mld = stars::read_stars(file.path(data_path, brick_path, "PRESENT_PRESENT_MLD_mon.tif")) |>
+  dplyr::rename(mld = "PRESENT_PRESENT_MLD_mon.tif")
+sss = stars::read_stars(file.path(data_path, brick_path, "PRESENT_PRESENT_SSS_mon.tif")) |>
+  dplyr::rename(sss = "PRESENT_PRESENT_SSS_mon.tif")
+sbtm = stars::read_stars(file.path(data_path, brick_path, "PRESENT_PRESENT_Sbtm_mon.tif")) |>
+  dplyr::rename(sbtm = "PRESENT_PRESENT_Sbtm_mon.tif")
+gseal = load_seal(scenario = "PRESENT", year = NA, species = "gray") |>
+  dplyr::rename(gseal = "prediction.tif")
+hseal = load_seal(scenario = "PRESENT", species = "harbor") |>
+  dplyr::rename(hseal = "prediction.tif")
+
+dynamic_names = c("tbtm", "mld", "sss", "sbtm", "gseal", "hseal")
+dynamic_preds = twinkle::bind_attrs(list(tbtm, mld, sss, sbtm, gseal, hseal)) |>
+  set_names(dynamic_names)
+
+preds = c(dynamic_preds,  depth)
+
+```
+
+Set up a mask for our data
+```{r}
+mask = stars::read_stars(file.path(data_path, etopo_path, "etopo_warped_mask.tif")) |>
+  rlang::set_names("mask") |>
+  stars::st_warp(dest = slice(depth, band, 1)) |>
+  dplyr::mutate(mask = if_else(mask == 0, factor(NA_character_), factor(1))) 
+
+plot(mask, breaks = "equal", axes = TRUE, reset = FALSE)
+plot(sf::st_geometry(obs), pch = "+", add = TRUE)
+plot(coast, col = "orange", add = TRUE)
+```
+
+Now we will thin our obs by using the function thin_by_cell(). 
+```{r}
+psat = obs |>
+  dplyr::filter(basisOfRecord == "PSAT")
+non_psat_obs = obs |>
+  dplyr::filter(basisOfRecord != "PSAT")
+thinned_psat = tidysdm::thin_by_cell(psat, raster = mask)
+thinned_psat2 = tidysdm::thin_by_dist(thinned_psat, dist_min = km2m(20))
+thinned_obs <- rbind(non_psat_obs, thinned_psat2)
+plot(mask, breaks = "equal", axes = TRUE, reset = FALSE)
+plot(sf::st_geometry(thinned_obs), pch = "+", add = TRUE)
+plot(coast, col = "orange", add = TRUE)
+
+```
+
+```{r}
+predict_by_mon(obs = obs, 
+               thinned = thinned_obs, 
+               preds = preds, 
+               mask = mask, 
+               figure_path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidysdm_workflow/figures",
+               tidy_data_path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/data/tidysdm",
+               model_path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidysdm_workflow/models",
+               v = 10)
+
+```
+

@@ -1,0 +1,245 @@
+This markdown will be used to run tests of different tidysdm models on the white shark data.
+
+```{r}
+suppressPackageStartupMessages(library(tidysdm))
+for (f in list.files("/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/functions", pattern = "^.*\\.R$", full.names = TRUE)){
+  source(f)
+}
+```
+
+Block that loads all of my envi layers, observation data loaded. Then thin the background. Reinterpolate the envi data to one format.
+
+We'll first pull our observations that we have from the gather_data.R script.
+```{r}
+bb = cofbb::get_bb("nefsc_carcharodon", form = "sf")
+coast = rnaturalearth::ne_coastline(scale = "large", returnclass = "sf") |>
+  sf::st_geometry()
+
+vars = c("eventDate", "Year", "month", "basisOfRecord", "geom", "log_depth", "brick_tbtm", "brick_mld", "brick_sss", "brick_sbtm", "gseal", "hseal")
+
+obs = read_brickman_points(file = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/get_data_workflow/versions/v01/v01.003/brickman_covar_obs_bg.gpkg") |>
+  sf::st_as_sf() |>
+  dplyr::filter(id == 1) |>
+  dplyr::select(all_of(vars))
+```
+
+Next we'll pull the covariates. These are stored in the data directory.
+```{r}
+data_path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/data"
+depth_path = "brickman/bathy"
+brick_path = "brickman/gom_carcharodon"
+fish_path = "fish_data/MDAT_Fish_SummaryProducts_NEFSC/commondata/raster_data"
+etopo_path = "mapping/etopo"
+
+mon_no = seq(from = 1, to = 12)
+depth = stars::read_stars(file.path(data_path, depth_path, "PRESENT_PRESENT_Bathy_depth_mon.tif")) |>
+  dplyr::rename(log_depth = "PRESENT_PRESENT_Bathy_depth_mon.tif") |>
+  dplyr::mutate(log_depth = log(log_depth))
+dd = sapply(mon_no, function(mon) {depth}, simplify = FALSE)
+depth = do.call(c, append(dd, list(along = list(band = mon_no)))) |>
+  stars::st_set_dimensions("band", offset = NA_real_, delta = NA_real_)
+tbtm = stars::read_stars(file.path(data_path, brick_path, "PRESENT_PRESENT_Tbtm_mon.tif")) |>
+  dplyr::rename(tbtm = "PRESENT_PRESENT_Tbtm_mon.tif")
+mld = stars::read_stars(file.path(data_path, brick_path, "PRESENT_PRESENT_MLD_mon.tif")) |>
+  dplyr::rename(mld = "PRESENT_PRESENT_MLD_mon.tif")
+sss = stars::read_stars(file.path(data_path, brick_path, "PRESENT_PRESENT_SSS_mon.tif")) |>
+  dplyr::rename(sss = "PRESENT_PRESENT_SSS_mon.tif")
+sbtm = stars::read_stars(file.path(data_path, brick_path, "PRESENT_PRESENT_Sbtm_mon.tif")) |>
+  dplyr::rename(sbtm = "PRESENT_PRESENT_Sbtm_mon.tif")
+gseal = load_seal(scenario = "PRESENT", year = NA, species = "gray") |>
+  dplyr::rename(gseal = "prediction.tif")
+hseal = load_seal(scenario = "PRESENT", species = "harbor") |>
+  dplyr::rename(hseal = "prediction.tif")
+
+dynamic_names = c("tbtm", "mld", "sss", "sbtm", "gseal", "hseal")
+dynamic_preds = twinkle::bind_attrs(list(tbtm, mld, sss, sbtm, gseal, hseal)) |>
+  set_names(dynamic_names)
+
+preds = c(dynamic_preds,  depth)
+
+```
+
+Set up a mask for our data
+```{r}
+mask = stars::read_stars(file.path(data_path, etopo_path, "etopo_warped_mask.tif")) |>
+  rlang::set_names("mask") |>
+  stars::st_warp(dest = slice(depth, band, 1)) |>
+  dplyr::mutate(mask = if_else(mask == 0, factor(NA_character_), factor(1))) 
+
+plot(mask, breaks = "equal", axes = TRUE, reset = FALSE)
+plot(sf::st_geometry(obs), pch = "+", add = TRUE)
+plot(coast, col = "orange", add = TRUE)
+```
+
+Now we will thin our obs by using the function thin_by_cell(). 
+```{r}
+psat = obs |>
+  dplyr::filter(basisOfRecord == "PSAT")
+non_psat_obs = obs |>
+  dplyr::filter(basisOfRecord != "PSAT")
+thinned_psat = tidysdm::thin_by_cell(psat, raster = mask)
+thinned_psat2 = tidysdm::thin_by_dist(thinned_psat, dist_min = km2m(20))
+thinned_obs <- rbind(non_psat_obs, thinned_psat2)
+plot(mask, breaks = "equal", axes = TRUE, reset = FALSE)
+plot(sf::st_geometry(thinned_obs), pch = "+", add = TRUE)
+plot(coast, col = "orange", add = TRUE)
+
+```
+
+
+```{r}
+observation_density_raster = rasterize_point_density(obs, mask, dilate = 3)
+pal = terra::map.pal("viridis", 50)
+plot(observation_density_raster, 
+     #col = pal, 
+     #nbreaks = length(pal) + 1, 
+     #breaks = "equal", 
+     reset = FALSE)
+plot(coast, col = "orange", add = TRUE)   
+```
+
+```{r}
+model_input <- tidysdm::sample_background(
+    data = thinned_obs, 
+    raster = observation_density_raster,
+    n = 2*nrow(thinned_obs),
+    method = "bias",
+    class_label = "background",
+    return_pres = TRUE) |>
+  dplyr::mutate(time = lubridate::NA_Date_, .after = 1)
+ix = model_input$class == "presence"
+model_input$time[ix] <- thinned_obs$eventDate
+
+plot(model_input['class'], pch = 1, cex = 0.2, reset = FALSE, axes = TRUE)
+plot(coast, col = "black", add = TRUE)
+```
+
+```{r}
+nback = sum(!ix)
+days_sample = sample_time(obs$eventDate, 
+                          size = nback, 
+                          by = "month", 
+                          replace = TRUE, 
+                          weighted = TRUE)
+# recall ix is the logical identifying the class "presence"
+model_input$time[!ix] <- days_sample
+```
+
+
+extract points data from covariates
+
+issue coming from the way that preds is created, need to go back and modify that
+```{r}
+input_data = stars::st_extract(preds, at = model_input) |>
+  sf::st_as_sf() |>
+  dplyr::as_tibble() |>
+  dplyr::select(dplyr::all_of(names(preds)))
+model_input = dplyr::bind_cols(model_input, input_data) |>
+  dplyr::select(-dplyr::all_of("time")) |>
+  dplyr::relocate(dplyr::all_of("class"), .before = 1) |>
+  dplyr::glimpse()
+```
+
+
+```{r}
+na.omit(model_input) |>
+  dplyr::select(dplyr::all_of(c("class", names(preds)))) |>
+  tidysdm::plot_pres_vs_bg(class)
+```
+
+```{r}
+model_input |>
+  dplyr::select(dplyr::all_of(c("class", names(preds)))) |>
+  na.omit() |>
+  tidysdm::dist_pres_vs_bg(class)
+```
+
+```{r}
+pairs(preds)
+```
+
+```{r}
+vars_uncor <- tidysdm::filter_collinear(preds, cutoff = 0.7, method = "vif_cor", verbose = TRUE)
+```
+
+```{r}
+vars_uncor
+```
+
+```{r}
+vars_keep = c("mld", "hseal", "tbtm", "gseal", "sbtm")
+model_input = dplyr::select(model_input,
+                           dplyr::all_of(c("class", vars_keep))) |>
+  na.omit()
+model_input
+#|>
+#  sf::write_sf(file.path(data_path, "tidysdm/obs/model_input.gpkg"))
+```
+
+Setting up recipe
+```{r}
+rec = recipe(head(model_input), formula = class ~ .)
+rec
+```
+
+```{r}
+models = workflow_set(preproc = list(default = rec),
+                      models = list(maxent = tidysdm::sdm_spec_maxent()),
+                      cross = TRUE) |>
+  option_add(control = tidysdm::control_ensemble_grid())
+models
+```
+
+Cross folding
+```{r}
+input_cv = spatial_block_cv(data = model_input, v = 10, n = 5)
+autoplot(input_cv)
+```
+
+```{r}
+models = models |>
+  workflow_map("tune_grid",
+               resamples = input_cv,
+               grid = 10,
+               metrics = tidysdm::sdm_metric_set(),
+               verbose = TRUE)
+models
+autoplot(models)
+```
+```{r}
+ensemble = simple_ensemble() |>
+  add_member(models, metric = "roc_auc")
+ensemble
+autoplot(ensemble)
+```
+
+```{r}
+prediction_present = predict_raster(ensemble, slice(vars_keep, "time", 1))
+plot(p, reset = FALSE, zlim = c(0,1), main = format(times[1], "%Y-%m-%d"), 
+     breaks = seq(from = 0, to = 1, by = 0.1), 
+     axes = TRUE)
+plot(coast, add = TRUE, col = "orange")
+
+```
+
+
+
+
+```{r}
+predict_by_mon(obs = obs, 
+               dyn = dynamic_preds, 
+               static = static_preds, 
+               mask = mask, 
+               figure_path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidysdm_workflow/figures",
+               tidy_data_path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/data/tidysdm")
+
+if(FALSE){
+  mon = 8
+  obs = obs
+  dyn = dynamic_preds
+  static = static_preds 
+  mask = mask
+  figure_path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidysdm_workflow/figures"
+  tidy_data_path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/data/tidysdm"
+}
+```
