@@ -150,20 +150,24 @@ sample_time = function(x = read_obis(form = "sf") |>
 #' Slicing function
 #' 
 #' @param obs obs data
-#' @param thinned thinned obs data
-#' @param preds predictive covariates
+#' @param thinned pre-thinned observation data
+#' @param preds combined dynamic and static predictors
 #' @param figure_path path to save figures to
 #' @param tidy_data_path path to save data to
+#' @param model_path path to save models to
+#' @param v number of folds in the cross folding step
 #' @return obs and dyn data that has been sliced
-predict_by_mon = function(obs, thinned, dyn, static, mask = NULL, figure_path = NULL, tidy_data_path = NULL, ...){
+predict_by_mon = function(obs, thinned, preds, mask = NULL, figure_path = NULL, tidy_data_path = NULL, model_path = NULL, v = 10, ...){
   if(FALSE){
     mon = 8
     obs = obs
     thinned = thinned_obs
-    preds = preds
+    preds = preds 
     mask = mask
     figure_path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidysdm_workflow/figures"
     tidy_data_path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/data/tidysdm"
+    model_path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidysdm_workflow/models"
+    v = 10
   }
   u_mon = unique(obs$month)
   lapply(u_mon, function(mon){
@@ -178,9 +182,12 @@ predict_by_mon = function(obs, thinned, dyn, static, mask = NULL, figure_path = 
     ok = dir.create(figure_path, recursive = TRUE, showWarnings = FALSE)
     tidy_data_path = file.path(tidy_data_path, mon)
     ok = dir.create(tidy_data_path, recursive = TRUE, showWarnings = FALSE)
-    predict_1(x, thinned, preds, mask = mask, figure_path = figure_path, tidy_data_path = tidy_data_path)
+    model_path = file.path(model_path, mon)
+    ok = dir.create(model_path, recursive = TRUE, showWarnings = FALSE)
+    predict_1(x, thinned, preds, mask = mask, figure_path = figure_path, tidy_data_path = tidy_data_path, model_path = model_path, v)
   })
 }
+
 
 #' Splitting things by month
 #' 
@@ -191,9 +198,10 @@ predict_by_mon = function(obs, thinned, dyn, static, mask = NULL, figure_path = 
 #' @param thin logical, do we want to thin or not
 #' @param figure_path path to save figures to
 #' @param tidy_data_path path to save data to
+#' @param model_path path to save models to
 #' @param v number of folds for cross folding step
 #' @return hsi map as a stars map
-predict_1 = function(x, thinned, preds, mask = NULL, thin = TRUE, figure_path = NULL, tidy_data_path = NULL, v = 10){
+predict_1 = function(x, thinned, preds, mask = NULL, thin = TRUE, figure_path = NULL, tidy_data_path = NULL, model_path = NULL, v = 10){
 
   observation_density_raster = rasterize_point_density(x, mask, dilate = 3)
   png(filename = file.path(figure_path, "obs_density.png"), bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
