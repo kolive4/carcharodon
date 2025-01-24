@@ -63,7 +63,7 @@ Set up a mask for our data
 ```{r}
 mask = stars::read_stars(file.path(data_path, etopo_path, "etopo_warped_mask.tif")) |>
   rlang::set_names("mask") |>
-  stars::st_warp(dest = slice(depth, band, 1)) |>
+  stars::st_warp(dest = dplyr::slice(depth, band, 1)) |>
   dplyr::mutate(mask = if_else(mask == 0, factor(NA_character_), factor(1))) 
 
 plot(mask, breaks = "equal", axes = TRUE, reset = FALSE)
@@ -97,4 +97,23 @@ predict_by_mon(obs = obs,
                v = 10)
 
 ```
+
+```{r}
+model_path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidysdm_workflow/models"
+aug_brt_model = read_model(filename = file.path(model_path, "8/gbm_model.rds"))
+aug_maxent_model = read_model(filename = file.path(model_path, "8/maxent_model.rds"))
+aug_rf_model = read_model(filename = file.path(model_path, "8/rf_model.rds"))
+aug_tss_ensemble = read_ensemble(filename = file.path(model_path, "8/tss_ensemble.rds"))
+vars_keep = c("mld", "hseal", "tbtm", "gseal", "sbtm", "log_depth")
+aug_preds = dplyr::select(preds, dplyr::all_of(vars_keep))
+aug_tss_predict_test = predict_raster(z, aug_preds, probability = TRUE)
+plot(aug_tss_predict_test, reset = FALSE, 
+     breaks = seq(from = 0, to = 1, by = 0.1))
+plot(coast, col = "orange", add = TRUE)
+
+```
+
+
+
+
 

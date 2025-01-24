@@ -1,0 +1,164 @@
+
+```{r}
+bb = cofbb::get_bb("nefsc_carcharodon", form = "sf")
+coast = rnaturalearth::ne_coastline(scale = "large", returnclass = "sf") |>
+  sf::st_geometry()
+
+vars = c("eventDate", "Year", "month", "basisOfRecord", "geom", "log_depth", "brick_tbtm", "brick_mld", "brick_sss", "brick_sbtm", "gseal", "hseal")
+
+aug_obs = read_brickman_points(file = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/get_data_workflow/versions/v01/v01.003/brickman_covar_obs_bg.gpkg") |>
+  sf::st_as_sf() |>
+  dplyr::filter(id == 1) |>
+  dplyr::select(all_of(vars)) |>
+  dplyr::filter(month == 8) |>
+  dplyr::mutate(class = "presence")
+
+aug_bg = read_brickman_points(file = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/get_data_workflow/versions/v01/v01.003/brickman_covar_obs_bg.gpkg") |>
+  sf::st_as_sf() |>
+  dplyr::filter(id == 0) |>
+  dplyr::select(all_of(vars)) |>
+  dplyr::filter(month == 8) |>
+  dplyr::mutate(class = "background")
+
+aug_data = dplyr::bind_rows(aug_obs, aug_bg) |>
+  select(-all_of(c("eventDate", "Year", "month")))
+
+```
+
+Stratified split into testing/training
+```{r}
+split_data = rsample::initial_split(sf::st_drop_geometry(aug_data) |>
+                                      select(-all_of("basisOfRecord")) |>
+                                      na.omit(), 
+                                    prop = 4/5, 
+                                    strata = class)
+```
+
+empty workflow: container that has 2 bits: recipe and a model
+```{r}
+wflow = workflows::workflow()
+rec = recipes::recipe(head(rsample::training(split_data)), class ~ .)
+```
+
+Start modeling engine. vroom vroom
+```{r}
+model = maxent(
+  mode = "classification",
+  engine = "maxnet",
+  feature_classes = NULL,
+  regularization_multiplier = NULL
+)
+
+model_rf = rand_forest(
+  mode = "classification",
+  engine = "ranger",
+  mtry = NULL,
+  trees = NULL,
+  min_n = NULL
+)
+```
+
+Adding the model engine and recipe to the workflow
+```{r}
+wflow = wflow |>
+  workflows::add_recipe(rec) |>
+  workflows::add_model(model)
+
+wflow_rf = workflow() |>
+  workflows::add_recipe(rec) |>
+  workflows::add_model(model_rf)
+```
+
+Fit the data
+```{r}
+fitted_wflow = parsnip::fit(wflow, data = rsample::training(split_data))
+
+fitted_wflow_rf = parsnip::fit(wflow_rf, data = rsample::training(split_data))
+```
+
+Diagnostic testing
+```{r}
+p = predict(fitted_wflow, rsample::testing(split_data), type = "prob") |>
+  dplyr::mutate(.pred_class = ifelse(.pred_presence >= 0.5, "presence", "background") |>
+                  factor(levels = c("presence", "background")),
+                class = testing(split_data)$class |>
+                  factor(levels = c("presence", "background")))
+
+cm = yardstick::conf_mat(p, truth = class, estimate = .pred_class)
+autoplot(cm, type = "heatmap")
+
+roc = yardstick::roc_curve(p, .pred_presence, truth = class)
+auc = yardstick::roc_auc(p, .pred_presence, truth = class)
+
+plot_roc(p, truth = class, pred = .pred_presence, title = "Maxent ROC")
+
+```
+
+```{r}
+p_rf = predict(fitted_wflow_rf, rsample::testing(split_data), type = "prob") |>
+  dplyr::mutate(.pred_class = ifelse(.pred_presence >= 0.5, "presence", "background") |>
+                  factor(levels = c("presence", "background")),
+                class = testing(split_data)$class |>
+                  factor(levels = c("presence", "background")))
+
+cm_rf = yardstick::conf_mat(p_rf, truth = class, estimate = .pred_class)
+autoplot(cm_rf, type = "heatmap")
+
+roc_rf = yardstick::roc_curve(p_rf, .pred_presence, truth = class)
+auc_rf = yardstick::roc_auc(p_rf, .pred_presence, truth = class)
+
+plot_roc(p_rf, truth = class, pred = .pred_presence, title = "Random Forest ROC")
+
+```
+
+
+Next we'll pull the covariates. These are stored in the data directory.
+```{r}
+data_path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/data"
+depth_path = "brickman/bathy"
+brick_path = "brickman/gom_carcharodon"
+fish_path = "fish_data/MDAT_Fish_SummaryProducts_NEFSC/commondata/raster_data"
+etopo_path = "mapping/etopo"
+
+mon_no = seq(from = 1, to = 12)
+depth = stars::read_stars(file.path(data_path, depth_path, "PRESENT_PRESENT_Bathy_depth_mon.tif")) |>
+  dplyr::rename(log_depth = "PRESENT_PRESENT_Bathy_depth_mon.tif") |>
+  dplyr::mutate(log_depth = log(log_depth))
+dd = sapply(mon_no, function(mon) {depth}, simplify = FALSE)
+depth = do.call(c, append(dd, list(along = list(band = mon_no)))) |>
+  stars::st_set_dimensions("band", offset = NA_real_, delta = NA_real_)
+tbtm = stars::read_stars(file.path(data_path, brick_path, "PRESENT_PRESENT_Tbtm_mon.tif")) |>
+  dplyr::rename(tbtm = "PRESENT_PRESENT_Tbtm_mon.tif")
+mld = stars::read_stars(file.path(data_path, brick_path, "PRESENT_PRESENT_MLD_mon.tif")) |>
+  dplyr::rename(mld = "PRESENT_PRESENT_MLD_mon.tif")
+sss = stars::read_stars(file.path(data_path, brick_path, "PRESENT_PRESENT_SSS_mon.tif")) |>
+  dplyr::rename(sss = "PRESENT_PRESENT_SSS_mon.tif")
+sbtm = stars::read_stars(file.path(data_path, brick_path, "PRESENT_PRESENT_Sbtm_mon.tif")) |>
+  dplyr::rename(sbtm = "PRESENT_PRESENT_Sbtm_mon.tif")
+gseal = load_seal(scenario = "PRESENT", year = NA, species = "gray") |>
+  dplyr::rename(gseal = "prediction.tif")
+hseal = load_seal(scenario = "PRESENT", species = "harbor") |>
+  dplyr::rename(hseal = "prediction.tif")
+
+dynamic_names = c("tbtm", "mld", "sss", "sbtm", "gseal", "hseal")
+dynamic_preds = twinkle::bind_attrs(list(tbtm, mld, sss, sbtm, gseal, hseal)) |>
+  set_names(dynamic_names)
+
+preds = c(dynamic_preds,  depth) |>
+  dplyr::slice(band, 8)
+
+```
+
+
+```{r}
+predict(fitted_wflow, preds, type = "prob")
+```
+
+
+```{r}
+split_obs = tidysdm::spatial_initial_split(aug_obs, 0.2, spatial_block_cv)
+training(split_obs)
+
+```
+
+

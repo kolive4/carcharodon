@@ -154,9 +154,10 @@ sample_time = function(x = read_obis(form = "sf") |>
 #' @param preds combined dynamic and static predictors
 #' @param figure_path path to save figures to
 #' @param tidy_data_path path to save data to
+#' @param model_path path to save models to
 #' @param v number of folds in the cross folding step
 #' @return obs and dyn data that has been sliced
-predict_by_mon = function(obs, thinned, preds, mask = NULL, figure_path = NULL, tidy_data_path = NULL, v = 10, ...){
+predict_by_mon = function(obs, thinned, preds, mask = NULL, figure_path = NULL, tidy_data_path = NULL, model_path = NULL, v = 10, ...){
   if(FALSE){
     mon = 8
     obs = obs
@@ -166,6 +167,7 @@ predict_by_mon = function(obs, thinned, preds, mask = NULL, figure_path = NULL, 
     figure_path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidysdm_workflow/figures"
     tidy_data_path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/data/tidysdm"
     model_path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidysdm_workflow/models"
+    v = 10
   }
   u_mon = unique(obs$month)
   lapply(u_mon, function(mon){
@@ -182,33 +184,34 @@ predict_by_mon = function(obs, thinned, preds, mask = NULL, figure_path = NULL, 
     ok = dir.create(tidy_data_path, recursive = TRUE, showWarnings = FALSE)
     model_path = file.path(model_path, mon)
     ok = dir.create(model_path, recursive = TRUE, showWarnings = FALSE)
-    predict_1(x, thinned, preds, mask = mask, figure_path = figure_path, tidy_data_path = tidy_data_path, v)
+    predict_1(x, thinned, preds, mask = mask, figure_path = figure_path, tidy_data_path = tidy_data_path, model_path = model_path, v)
   })
 }
+
 
 #' Splitting things by month
 #' 
 #' @param x presliced obs
 #' @param thinned presliced thinned obs
-#' @param preds presliced dynamic and static data 
+#' @param preds presliced predictive covariate data 
 #' @param mask mask to base thinning
 #' @param thin logical, do we want to thin or not
 #' @param figure_path path to save figures to
 #' @param tidy_data_path path to save data to
-#' @param v number of folds
+#' @param model_path path to save models to
+#' @param v number of folds for cross folding step
 #' @return hsi map as a stars map
-predict_1 = function(x, thinned, preds, mask = NULL, figure_path = NULL, tidy_data_path = NULL, v = 10, model_path = NULL){
-  
+predict_1 = function(x, thinned, preds, mask = NULL, thin = TRUE, figure_path = NULL, tidy_data_path = NULL, model_path = NULL, v = 10){
+
   observation_density_raster = rasterize_point_density(x, mask, dilate = 3)
   png(filename = file.path(figure_path, "obs_density.png"), bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
-  plot(observation_density_raster, reset = FALSE)
-  plot(coast, col = "orange", add = TRUE)
+  plot(observation_density_raster)
   dev.off()
   
   model_input = tidysdm::sample_background(
     data = thinned,
     raster = observation_density_raster,
-    n = 2*nrow(thinned),
+    n = 2*nrow(thinned_obs),
     method = "bias",
     class_label = "background",
     return_pres = TRUE
@@ -216,10 +219,10 @@ predict_1 = function(x, thinned, preds, mask = NULL, figure_path = NULL, tidy_da
     dplyr::mutate(time = lubridate::NA_Date_, .after = 1)
   
   ix = model_input$class == "presence"
-  model_input$time[ix] = thinned$month
+  model_input$time[ix] = thinned_obs$month
 
   png(filename = file.path(figure_path, "model_input.png"), bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
-  plot(model_input['class'], pch = 1, cex = 0.2, reset = FALSE, axes = TRUE)
+  plot(model_input['class'], pch = 1, cex = 0.2,reset = FALSE, axes = TRUE)
   plot(coast, col = "black", add = TRUE)
   dev.off()
   
@@ -239,29 +242,27 @@ predict_1 = function(x, thinned, preds, mask = NULL, figure_path = NULL, tidy_da
     dplyr::select(-dplyr::all_of("time")) |>
     dplyr::relocate(dplyr::all_of("class"), .before = 1) 
   
-  pres_vs_bg_mi = model_input |>
+  model_input = model_input |>
     dplyr::select(dplyr::all_of(c("class", names(preds)))) |>
     na.omit()
-  
-  pres_vs_bg = tidysdm::plot_pres_vs_bg(pres_vs_bg_mi, class)
+  pres_vs_bg = tidysdm::plot_pres_vs_bg(model_input, class)
   png(filename = file.path(figure_path, "pres_vs_bg_preds.png"), bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
   print(pres_vs_bg)
   dev.off()
   
-  dist_pres_vs_bg_mi = na.omit(model_input) |>
+  model_input |>
     dplyr::select(dplyr::all_of(c("class", names(preds)))) |>
     tidysdm::dist_pres_vs_bg(class) |>
     write.csv(file.path(figure_path, "dist_pres_vs_bg.csv"))
-  
   
   png(filename = file.path(figure_path, "preds_matrix.png"), bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
   print(pairs(preds))
   dev.off()
   
   vars_uncor = tidysdm::filter_collinear(preds, cutoff = 0.7, 
-                                         method = "cor_caret", verbose = TRUE)
+                                         method = "vif_cor", verbose = TRUE)
   vars_uncor
-  vars_keep = c("mld", "hseal", "tbtm", "gseal", "sbtm")
+  vars_keep = c("mld", "hseal", "tbtm", "gseal", "sbtm", "log_depth")
   preds = dplyr::select(preds, dplyr::all_of(vars_keep))
   
   model_input = dplyr::select(model_input,
@@ -272,7 +273,7 @@ predict_1 = function(x, thinned, preds, mask = NULL, figure_path = NULL, tidy_da
   rec = recipe(head(model_input),
                formula = class ~ .)
   
-  models = workflow_set(preproc = list(default = rec),
+  glm_models = workflow_set(preproc = list(default = rec),
                         models = list(glm = tidysdm::sdm_spec_glm(),
                                       rf = tidysdm::sdm_spec_rf(),
                                       gbm = tidysdm::sdm_spec_boost_tree(),
@@ -290,7 +291,7 @@ predict_1 = function(x, thinned, preds, mask = NULL, figure_path = NULL, tidy_da
   models = models |>
     workflow_map("tune_grid",
                  resamples = input_cv,
-                 grid = 3,
+                 grid = 5,
                  metrics = tidysdm::sdm_metric_set(),
                  verbose = TRUE)
   model_eval = autoplot(models)
@@ -345,7 +346,93 @@ predict_1 = function(x, thinned, preds, mask = NULL, figure_path = NULL, tidy_da
   auc_ensemble_metrics = auc_ensemble |>
     collect_metrics()
   write.csv(auc_ensemble_metrics , file.path(model_path, "auc_ensemble_metrics.csv"))
-  
 }
 
 
+plot_roc = function(x, truth, pred, title = "ROC"){
+  
+  #' Plot an annotated ROC with AUC
+  #' 
+  #' @param x table of predictive outcomes - see `predict_model`
+  #' @param truth the truth column, usually `class`
+  #' @param pred the prediction column, usually .pred_presense
+  #' @param title chr the optional title
+  #' @return ggplot2 object suitable for printing
+  
+  auc = yardstick::roc_auc(x, {{truth}}, {{pred}}) |>
+    dplyr::pull(.estimate)
+  roc_curve(x, {{truth}}, {{pred}}) |>
+    ggplot(aes(x = 1 - specificity, y = sensitivity)) +
+    geom_path() +
+    geom_abline(lty = 3) +
+    coord_equal() +
+    theme_bw() + 
+    labs(x = "False Positive Rate (Specificity)",
+         y = "True Positive Rate (Sensitivity)",
+         title = title) + 
+    ggplot2::annotate("text", x = 0.8, y= 0.05, 
+                      label = sprintf("AUC: %0.3f", auc)) 
+}
+
+predict_stars = function(wflow, newdata, type = "prob", threshold = 0.5, ...){
+  
+  #' Predict a classification from stars object
+  #' 
+  #' @param wflow a workflow object
+  #' @param newdata stars data
+  #' @param typ chr the type of prediction, by default "prob" - see `?predict.model_fit`
+  #' @param threshold num the aribitray threshold used to define the outcome
+  #' @param ... other arguments for `predict.model_fit`
+  #' @return a stars object
+  lvls = c("presence", "background")
+  predict(newdata, wflow, type = type, ...) |>
+    dplyr::mutate(.pred = if_else(.pred_presence >= threshold, lvls[1], lvls[2]) |>
+                    factor(levels = lvls))
+}
+
+partial_dependence_plot = function(x, 
+                                   share_y = "all", 
+                                   filename = NULL, 
+                                   v = NULL,
+                                   data = NULL,
+                                   outcome = "class",
+                                   ...){
+  
+  #' Given a workflow or fitted model generate a partial dependence plot
+  #' 
+  #' @param x workflow with a fitted model
+  #' @param share_y chr, by default "all" but see `?plot.EffectsData`
+  #' @param v chr, variable names `?plot.EffectsData`. Not needed for workflow.
+  #' @param data table with outcomes and predictors. Not needed for workflow.
+  #' @param outcome chr, the name of the column (variable) that defines the outcome
+  #' @param ... other arguments for `?plot.EffectsData`
+  #' @return plot object as ggplot or plotly see `?plot.EffectsData`
+  
+  if (inherits(x, "workflow")){
+    stopifnot(is_trained_workflow(x))
+    # extract the mold
+    mold = workflows::extract_mold(x)
+    # build training data
+    data = dplyr::bind_cols(mold$outcomes, mold$predictors)
+    # extract the fitted model engine
+    x = workflows::extract_fit_engine(x)
+    v = colnames(mold$predictors)
+  } else {
+    if (is.null(data)) stop("if not proving a workflow, please provide data and v")
+    nm = colnames(data)
+    v = nm[!(nm %in% outcome)]
+    x = x$fit
+  }
+  # compute the partial effects
+  pd = effectplots::partial_dependence(x, 
+                                       v = v, 
+                                       data = data) 
+  # plot
+  p = plot(pd, share_y = share_y, ...)
+  # save if requested
+  if (!is.null(filename)){
+    ggplot2::ggsave(filename, plot = p)
+  }
+  
+  return(p)
+}
