@@ -1,0 +1,60 @@
+version: v01.09002.02
+root_path: /mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon
+gather_data_vpath: workflows/get_data_workflow/versions/v01/v01.003
+modeling_vpath: workflows/modeling_workflow/versions/v01/0901/v01.0901.02
+source_path: functions
+data_path: data
+figure_path: figures
+output_path: workflows/forecast_workflow
+bathy_scenario: PRESENT
+static_vars:
+- log_depth
+- hseal
+- gseal
+month: 2
+scenario: PRESENT
+year: PRESENT
+covars:
+- Tbtm
+- MLD
+obs_filter:
+  basisOfRecord:
+  - OBIS
+  - iNaturalist
+  - curated
+  - PSAT
+  - SPOT
+model_version_maj: v01
+model_version_maj_minor: v01.0901.02
+graphics:
+  BOR_symbol:
+  - 15
+  - 3
+  - 4
+  - 21
+  - 25
+  ggtitle: February Nowcast
+  plot_points: yes
+  plot_contour: no
+contour_name: ~
+fish_path: fish_data/MDAT_Fish_SummaryProducts_NEFSC/commondata/raster_data
+spring_fish_file: fish_biomass_nefsc_2010_2019_SPRING_All.tif
+fall_fish_file: fish_biomass_nefsc_2010_2019_FALL_All.tif
+dfs_path: mapping/etopo
+dfs_file: etopo_warped_distance_to_shore_meters.tif
+mask_name: mapping/gebco/gebco_mask.tif
+fall_fish_mon:
+- 12.0
+- 1.0
+- 2.0
+- 3.0
+- 4.0
+- 5.0
+spring_fish_mon:
+- 6.0
+- 7.0
+- 8.0
+- 9.0
+- 10.0
+- 11.0
+which_fish: SPRING

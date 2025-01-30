@@ -29,9 +29,11 @@ Stratified split into testing/training
 ```{r}
 split_data = rsample::initial_split(sf::st_drop_geometry(aug_data) |>
                                       select(-all_of("basisOfRecord")) |>
-                                      na.omit(), 
+                                      na.omit() |>
+                                      dplyr::mutate(class = factor(class)), 
                                     prop = 4/5, 
-                                    strata = class)
+                                    strata = class) 
+split_data
 ```
 
 empty workflow: container that has 2 bits: recipe and a model
@@ -56,6 +58,22 @@ model_rf = rand_forest(
   trees = NULL,
   min_n = NULL
 )
+
+model_rf = sdm_spec_rand_forest()
+
+
+model_brt = boost_tree(
+  mode = "classification",
+  engine = "xgboost",
+  mtry = NULL,
+  trees = NULL,
+  min_n = NULL,
+  tree_depth = NULL,
+  learn_rate = NULL,
+  loss_reduction = NULL,
+  sample_size = NULL,
+  stop_iter = NULL
+)
 ```
 
 Adding the model engine and recipe to the workflow
@@ -67,6 +85,10 @@ wflow = wflow |>
 wflow_rf = workflow() |>
   workflows::add_recipe(rec) |>
   workflows::add_model(model_rf)
+
+wflow_brt = workflow() |>
+  workflows::add_recipe(rec) |>
+  workflows::add_model(model_brt)
 ```
 
 Fit the data
@@ -74,6 +96,8 @@ Fit the data
 fitted_wflow = parsnip::fit(wflow, data = rsample::training(split_data))
 
 fitted_wflow_rf = parsnip::fit(wflow_rf, data = rsample::training(split_data))
+
+fitted_wflow_brt = parsnip::fit(wflow_brt, data = rsample::training(split_data))
 ```
 
 Diagnostic testing
@@ -111,8 +135,32 @@ plot_roc(p_rf, truth = class, pred = .pred_presence, title = "Random Forest ROC"
 
 ```
 
+```{r}
+# |>
+#                    data.matrix() |>
+#                    xgboost::xgb.DMatrix()
 
-Next we'll pull the covariates. These are stored in the data directory.
+p_brt = predict(fitted_wflow_brt, 
+                rsample::testing(split_data), 
+                type = "prob") |>
+  dplyr::mutate(.pred_class = ifelse(.pred_presence >= 0.5, "presence", "background") |>
+                  factor(levels = c("presence", "background")),
+                class = testing(split_data)$class |>
+                  factor(levels = c("presence", "background")))
+
+cm_brt = yardstick::conf_mat(p_brt, truth = class, estimate = .pred_class)
+autoplot(cm_brt, type = "heatmap")
+
+roc_brt = yardstick::roc_curve(p_brt, .pred_presence, truth = class)
+auc_brt = yardstick::roc_auc(p_brt, .pred_presence, truth = class)
+
+plot_roc(p_brt, truth = class, pred = .pred_presence, title = "Boosted Regression Tree ROC")
+
+```
+
+
+
+Next we'll load the current covariates. These are stored in the data directory.
 ```{r}
 data_path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/data"
 depth_path = "brickman/bathy"
@@ -140,7 +188,7 @@ gseal = load_seal(scenario = "PRESENT", year = NA, species = "gray") |>
 hseal = load_seal(scenario = "PRESENT", species = "harbor") |>
   dplyr::rename(hseal = "prediction.tif")
 
-dynamic_names = c("tbtm", "mld", "sss", "sbtm", "gseal", "hseal")
+dynamic_names = c("brick_tbtm", "brick_mld", "brick_sss", "brick_sbtm", "gseal", "hseal")
 dynamic_preds = twinkle::bind_attrs(list(tbtm, mld, sss, sbtm, gseal, hseal)) |>
   set_names(dynamic_names)
 
@@ -149,16 +197,59 @@ preds = c(dynamic_preds,  depth) |>
 
 ```
 
-
+Likelihood curves
 ```{r}
-predict(fitted_wflow, preds, type = "prob")
+maxent_likelihood = partial_dependence_plot(fitted_wflow)
+plot(maxent_likelihood)
+
+rf_likelihood = partial_dependence_plot(fitted_wflow_rf)
+plot(rf_likelihood)
+
+brt_likelihood = partial_dependence_plot(fitted_wflow_brt)
+plot(brt_likelihood)
 ```
 
 
-```{r}
-split_obs = tidysdm::spatial_initial_split(aug_obs, 0.2, spatial_block_cv)
-training(split_obs)
 
+Raster/stars nowcast maps
+```{r}
+maxent_p = predict_stars(fitted_wflow, preds, type = "prob")
+maxent_p_plot = ggplot() +
+  geom_stars(data = maxent_p) +
+  scale_fill_binned(type = "viridis", 
+                    name = "Habitat Suitability", 
+                    limits = c(0, 1), 
+                    n.breaks = 11) +
+  geom_coastline(bb = cofbb::get_bb("nefsc_carcharodon", form = "bb")) +
+  theme_void()
+maxent_p_plot
+
+rf_p = predict_stars(fitted_wflow_rf, preds, type = "prob")
+rf_p_plot = ggplot() +
+  geom_stars(data = rf_p) +
+  scale_fill_binned(type = "viridis", 
+                    name = "Habitat Suitability", 
+                    limits = c(0, 1), 
+                    n.breaks = 11) +
+  geom_coastline(bb = cofbb::get_bb("nefsc_carcharodon", form = "bb")) +
+  theme_void() # +
+  # geom_sf(data = aug_obs, 
+  #           aes(shape = basisOfRecord), 
+  #           fill = "white", 
+  #           show.legend = "point")
+rf_p_plot
+
+brt_p = predict_stars(fitted_wflow_brt, preds, type = "prob")
+brt_p_plot = ggplot() +
+  geom_stars(data = brt_p) +
+  scale_fill_binned(type = "viridis", 
+                    name = "Habitat Suitability", 
+                    limits = c(0, 1), 
+                    n.breaks = 11) +
+  geom_coastline(bb = cofbb::get_bb("nefsc_carcharodon", form = "bb")) +
+  theme_void()
+brt_p_plot
 ```
+
 
 

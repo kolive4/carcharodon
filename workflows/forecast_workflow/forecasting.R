@@ -27,7 +27,7 @@ args = argparser::arg_parser("forecasting for white shark habitat suitability",
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/forecast_workflow/v01.0901.01.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/forecast_workflow/v01.09012.01.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -141,13 +141,13 @@ if("dfs" %in% cfg$static_vars) {
 if("hseal" %in% cfg$static_vars) {
   if("seal_scenario" %in% names(cfg)) {
     hseal_layer = load_seal(scenario = cfg$seal_scenario, year = cfg$seal_year, species = "harbor") |>
-      dplyr::slice(time, as.numeric(cfg$month)) |>
+      dplyr::slice(band, as.numeric(cfg$month)) |>
       dplyr::rename(hseal = "prediction.tif") |>
       stars::st_warp(dest = combo_covar)
     combo_covar = c(combo_covar, hseal_layer) 
   } else if (!"seal_scenario" %in% names(cfg)){
     hseal_layer = load_seal(scenario = cfg$scenario, year = cfg$year, species = "harbor") |>
-      dplyr::slice(time, as.numeric(cfg$month)) |>
+      dplyr::slice(band, as.numeric(cfg$month)) |>
       dplyr::rename(hseal = "prediction.tif") |>
       stars::st_warp(dest = combo_covar)
     combo_covar = c(combo_covar, hseal_layer) 
@@ -157,13 +157,13 @@ if("hseal" %in% cfg$static_vars) {
 if("gseal" %in% cfg$static_vars) {
   if("seal_scenario" %in% names(cfg)) {
     gseal_layer = load_seal(scenario = cfg$seal_scenario, year = cfg$seal_year, species = "gray") |>
-      dplyr::slice(time, as.numeric(cfg$month)) |>
+      dplyr::slice(band, as.numeric(cfg$month)) |>
       dplyr::rename(gseal = "prediction.tif") |>
       stars::st_warp(dest = combo_covar)
     combo_covar = c(combo_covar, gseal_layer) 
   } else if (!"seal_scenario" %in% names(cfg)){
     gseal_layer = load_seal(scenario = cfg$scenario, year = cfg$year, species = "gray") |>
-      dplyr::slice(time, as.numeric(cfg$month)) |>
+      dplyr::slice(band, as.numeric(cfg$month)) |>
       dplyr::rename(gseal = "prediction.tif") |>
       stars::st_warp(dest = combo_covar)
     combo_covar = c(combo_covar, gseal_layer) 

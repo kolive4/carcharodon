@@ -385,7 +385,7 @@ predict_stars = function(wflow, newdata, type = "prob", threshold = 0.5, ...){
   #' @param ... other arguments for `predict.model_fit`
   #' @return a stars object
   lvls = c("presence", "background")
-  predict(newdata, wflow, type = type, ...) |>
+  predict_raster(wflow, newdata, type = type, ...) |>
     dplyr::mutate(.pred = if_else(.pred_presence >= threshold, lvls[1], lvls[2]) |>
                     factor(levels = lvls))
 }
@@ -424,11 +424,26 @@ partial_dependence_plot = function(x,
     x = x$fit
   }
   # compute the partial effects
-  pd = effectplots::partial_dependence(x, 
-                                       v = v, 
-                                       data = data) 
+  if(inherits(x, "maxnet")) {
+    pd = effectplots::partial_dependence(x, 
+                                         v = v, 
+                                         data = data,
+                                         prob = TRUE,
+                                         type = "cloglog")
+  } else if (inherits(x, "xgb.Booster")) {
+    pd = effectplots::partial_dependence(x, 
+                                         v = v, 
+                                         data = data |>
+                                           dplyr::select(-class) |>
+                                           data.matrix())
+  } else {
+    pd = effectplots::partial_dependence(x, 
+                                         v = v, 
+                                         data = data)
+  }
+  
   # plot
-  p = plot(pd, share_y = share_y, ...)
+  p = plot(pd, share_y = share_y, ylim = c(0, 1), ...)
   # save if requested
   if (!is.null(filename)){
     ggplot2::ggsave(filename, plot = p)
