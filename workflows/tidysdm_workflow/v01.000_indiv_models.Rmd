@@ -91,12 +91,6 @@ ws_models <-
 ws_models
 ```
 
-Create folds with training data
-```{r}
-cv = spatialsample::spatial_block_cv(data = rsample::training(split_data), v = 5, n = 5)
-```
-
-
 
 Adding the model engine and recipe to the workflow
 ```{r}

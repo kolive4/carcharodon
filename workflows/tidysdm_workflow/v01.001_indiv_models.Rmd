@@ -1,0 +1,342 @@
+```{r}
+source("/mnt/ecocast/projects/koliveira/subprojects/carcharodon/setup.R")
+```
+
+```{r}
+bb = cofbb::get_bb("nefsc_carcharodon", form = "sf")
+coast = rnaturalearth::ne_coastline(scale = "large", returnclass = "sf") |>
+  sf::st_geometry()
+
+vars = c("eventDate", "Year", "month", "basisOfRecord", "geom", "log_depth", "brick_tbtm", "brick_mld", "brick_sss", "brick_sbtm", "gseal", "hseal")
+
+aug_obs = read_brickman_points(file = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/get_data_workflow/versions/v01/v01.003/brickman_covar_obs_bg.gpkg") |>
+  sf::st_as_sf() |>
+  dplyr::filter(id == 1) |>
+  dplyr::select(all_of(vars)) |>
+  dplyr::filter(month == 8) |>
+  dplyr::mutate(class = "presence")
+
+aug_bg = read_brickman_points(file = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/get_data_workflow/versions/v01/v01.003/brickman_covar_obs_bg.gpkg") |>
+  sf::st_as_sf() |>
+  dplyr::filter(id == 0) |>
+  dplyr::select(all_of(vars)) |>
+  dplyr::filter(month == 8) |>
+  dplyr::mutate(class = "background")
+
+aug_data = dplyr::bind_rows(aug_obs, aug_bg) |>
+  select(-all_of(c("eventDate", "Year", "month", "basisOfRecord"))) |>
+  na.omit() |>
+  dplyr::mutate(class = factor(class, levels = c("presence", "background")))
+
+aug_split = initial_split(aug_data,
+                          prop = 4/5)
+
+ggplot() +
+  geom_sf(data = training(aug_split), color = "orange", alpha = 0.5) +
+  geom_sf(data = testing(aug_split), color = "navy", alpha = 0.5)
+
+```
+
+
+```{r}
+ws_aug_training = training(aug_split)
+ws_aug_train_cv = spatialsample::spatial_block_cv(data = ws_aug_training, 
+                                                  v = 5, 
+                                                  n = 5)
+autoplot(ws_aug_train_cv)
+```
+
+
+empty workflow: container that has 2 bits: recipe and a model. we have 7 predictors!
+```{r}
+wflow = workflows::workflow()
+rec = recipes::recipe(head(aug_data), class ~ .)
+```
+
+Start modeling engine. vroom vroom. We choose parameters most important to tune for species distribution modeling based on the tidysdm workflow.
+```{r}
+model_maxent = maxent(
+  mode = "classification",
+  engine = "maxnet",
+  feature_classes = tune(),
+  regularization_multiplier = tune()
+)
+
+model_rf = rand_forest(
+  mode = "classification",
+  engine = "ranger",
+  mtry = tune(),
+  trees = NULL,
+  min_n = NULL
+) |>
+  set_mode("classification") |>
+  set_engine("ranger", importance = "permutation", probability = TRUE)
+
+model_brt = boost_tree(
+  mode = "classification",
+  engine = "xgboost",
+  mtry = tune(),
+  trees = tune(),
+  min_n = NULL,
+  tree_depth = tune(),
+  learn_rate = tune(),
+  loss_reduction = tune(),
+  sample_size = NULL,
+  stop_iter = tune()
+)
+```
+
+```{r}
+ws_models <-
+  workflow_set(
+    preproc = list(
+      simple = rec
+    ),
+    models = list(
+      brt = model_brt, 
+      rf = model_rf,
+      maxent = model_maxent
+    ),
+    cross = TRUE
+  ) |>
+  option_add(control = control_ensemble_grid())
+ws_models
+```
+
+
+```{r}
+ws_models <-
+  ws_models |>
+  # The first argument is a function name from the {{tune}} package
+  # such as `tune_grid()`, `fit_resamples()`, etc.
+  workflow_map("tune_grid",
+    resamples = ws_aug_train_cv, 
+    grid = 20,
+    control = control_grid(save_pred = TRUE, save_workflow = TRUE),
+    metrics = tidysdm::sdm_metric_set(accuracy), verbose = TRUE
+  )
+
+ws_models
+```
+
+```{r}
+autoplot(ws_models)
+```
+
+Extract tuning results and select based on metrics
+```{r}
+rf_results = ws_models |>
+  extract_workflow_set_result("simple_rf")
+rf_results
+
+best_accuracy = show_best(rf_results, metric = "accuracy")
+best_roc = show_best(rf_results, metric = "roc_auc")
+best_boyce = show_best(rf_results, metric = "boyce_cont")
+best_tss = show_best(rf_results, metric = "tss_max")
+
+best_tbl = dplyr::bind_rows(best_accuracy, best_roc, best_boyce, best_tss)
+best_tbl
+```
+After looking at the table and comparing the metric values with mtry, we can see that mtry = 1 is the best performing model across roc_auc, boyce_cont, 2nd best in accuracy and 3rd in tss. When we finalize, we'll want to specify which mtry we'll use by saying mtry = 1. We can also just put full faith into one model evaluation metric and pass along `finalize_workflow(best_*)` replacing * with whatever metric we deem best.
+
+
+Extract individual random forest workflow and finalize the model. Our tuning step will then be complete!
+```{r}
+rf_ws_workflow_final = ws_models |>
+  extract_workflow("simple_rf") |>
+  finalize_workflow(tibble(mtry = 1))
+rf_ws_workflow_final
+```
+
+Now we should fit our model to the training data and use the test data to estimate model performance. We can use the function last_fit() with our finalized model; this function fits the finalized model on the full training data set and evaluates the finalized model on the testing data. <- from https://www.tidymodels.org/start/tuning/#final-model
+```{r}
+rf_ws_fit_final = rf_ws_workflow_final |>
+  last_fit(aug_split)
+
+fit_final_metrics = rf_ws_fit_final |>
+  collect_metrics(summarize = FALSE)
+
+final_fit_roc = rf_ws_fit_final |>
+  collect_predictions() |>
+  roc_curve(class, .pred_presence) |>
+  autoplot()
+final_fit_roc
+```
+
+
+Extract the final random forest
+```{r}
+final_rf_workflow = extract_workflow(rf_ws_fit_final)
+final_rf_workflow
+
+final_rf_model = extract_fit_engine(rf_ws_fit_final)
+final_rf_model
+
+```
+
+```{r}
+p_rf = predict(final_rf_workflow, rsample::testing(aug_split), type = "prob") |>
+  dplyr::mutate(.pred_class = ifelse(.pred_presence >= 0.5, "presence", "background") |>
+                  factor(levels = c("presence", "background")),
+                class = testing(aug_split)$class |>
+                  factor(levels = c("presence", "background")))
+
+cm_rf = yardstick::conf_mat(p_rf, truth = class, estimate = .pred_class)
+autoplot(cm_rf, type = "heatmap")
+
+roc_rf = yardstick::roc_curve(p_rf, .pred_presence, truth = class)
+auc_rf = yardstick::roc_auc(p_rf, .pred_presence, truth = class)
+
+plot_roc(p_rf, truth = class, pred = .pred_presence, title = "Random Forest ROC")
+
+```
+
+
+Use DALEX to visualize additional model metrics
+```{r}
+explainer_rf_final = explain(final_rf_workflow)
+
+```
+
+```{r}
+final_rf_workflow |>
+  extract_fit_parsnip() |>
+  vip::vip()
+```
+
+
+
+```{r}
+ws_ensemble = tidysdm::simple_ensemble() |>
+  tidysdm::add_member(ws_models, metric = "roc_auc")
+ws_ensemble
+autoplot(ws_ensemble)
+```
+
+```{r}
+tidy_explainer = tidysdm::explain_tidysdm(ws_ensemble, by_workflow = TRUE)
+```
+
+
+```{r}
+var_names = c("log_depth", "brick_tbtm", "brick_mld", "brick_sss", "brick_sbtm", "gseal", "hseal")
+profile_list <- lapply(tidy_explainer, model_profile,
+  N = 500,
+  variables = var_names
+)
+plot(profile_list)
+```
+Or use the partial_dependence method
+
+```{r}
+rf_likelihood = partial_dependence_plot(final_rf_workflow)
+plot(rf_likelihood)
+
+```
+
+
+Next we'll load the current covariates. These are stored in the data directory.
+```{r}
+data_path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/data"
+depth_path = "brickman/bathy"
+brick_path = "brickman/gom_carcharodon"
+fish_path = "fish_data/MDAT_Fish_SummaryProducts_NEFSC/commondata/raster_data"
+etopo_path = "mapping/etopo"
+
+mon_no = seq(from = 1, to = 12)
+depth = stars::read_stars(file.path(data_path, depth_path, "PRESENT_PRESENT_Bathy_depth_mon.tif")) |>
+  dplyr::rename(log_depth = "PRESENT_PRESENT_Bathy_depth_mon.tif") |>
+  dplyr::mutate(log_depth = log(log_depth))
+dd = sapply(mon_no, function(mon) {depth}, simplify = FALSE)
+depth = do.call(c, append(dd, list(along = list(band = mon_no)))) |>
+  stars::st_set_dimensions("band", offset = NA_real_, delta = NA_real_)
+tbtm = stars::read_stars(file.path(data_path, brick_path, "PRESENT_PRESENT_Tbtm_mon.tif")) |>
+  dplyr::rename(tbtm = "PRESENT_PRESENT_Tbtm_mon.tif")
+mld = stars::read_stars(file.path(data_path, brick_path, "PRESENT_PRESENT_MLD_mon.tif")) |>
+  dplyr::rename(mld = "PRESENT_PRESENT_MLD_mon.tif")
+sss = stars::read_stars(file.path(data_path, brick_path, "PRESENT_PRESENT_SSS_mon.tif")) |>
+  dplyr::rename(sss = "PRESENT_PRESENT_SSS_mon.tif")
+sbtm = stars::read_stars(file.path(data_path, brick_path, "PRESENT_PRESENT_Sbtm_mon.tif")) |>
+  dplyr::rename(sbtm = "PRESENT_PRESENT_Sbtm_mon.tif")
+gseal = load_seal(scenario = "PRESENT", year = NA, species = "gray") |>
+  dplyr::rename(gseal = "prediction.tif")
+hseal = load_seal(scenario = "PRESENT", species = "harbor") |>
+  dplyr::rename(hseal = "prediction.tif")
+
+dynamic_names = c("brick_tbtm", "brick_mld", "brick_sss", "brick_sbtm", "gseal", "hseal")
+dynamic_preds = twinkle::bind_attrs(list(tbtm, mld, sss, sbtm, gseal, hseal)) |>
+  set_names(dynamic_names)
+
+preds = c(dynamic_preds,  depth) |>
+  dplyr::slice(band, 8)
+
+```
+
+```{r}
+rf_p = predict_stars(final_rf_workflow, preds, type = "prob")
+rf_p_plot = ggplot() +
+  geom_stars(data = rf_p) +
+  scale_fill_binned(type = "viridis", 
+                    name = "Habitat Suitability", 
+                    limits = c(0, 1), 
+                    n.breaks = 11) +
+  geom_coastline(bb = cofbb::get_bb("nefsc_carcharodon", form = "bb")) +
+  theme_void() #+
+  # geom_sf(data = aug_obs, 
+  #           aes(shape = basisOfRecord), 
+  #           fill = "white",
+  #         alpha = 0.5,
+  #           show.legend = "point")
+rf_p_plot
+```
+
+```{r}
+data_path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/data"
+depth_path = "brickman/bathy"
+brick_path = "brickman/gom_carcharodon"
+fish_path = "fish_data/MDAT_Fish_SummaryProducts_NEFSC/commondata/raster_data"
+etopo_path = "mapping/etopo"
+
+future_scenario = "RCP85_2075_"
+
+mon_no = seq(from = 1, to = 12)
+depth = stars::read_stars(file.path(data_path, depth_path, "PRESENT_PRESENT_Bathy_depth_mon.tif")) |>
+  dplyr::rename(log_depth = "PRESENT_PRESENT_Bathy_depth_mon.tif") |>
+  dplyr::mutate(log_depth = log(log_depth))
+dd = sapply(mon_no, function(mon) {depth}, simplify = FALSE)
+depth = do.call(c, append(dd, list(along = list(band = mon_no)))) |>
+  stars::st_set_dimensions("band", offset = NA_real_, delta = NA_real_)
+tbtm = stars::read_stars(file.path(data_path, brick_path, paste0(future_scenario, "Tbtm_mon.tif"))) |>
+  dplyr::rename(tbtm = paste0(future_scenario, "Tbtm_mon.tif"))
+mld = stars::read_stars(file.path(data_path, brick_path, paste0(future_scenario, "MLD_mon.tif"))) |>
+  dplyr::rename(mld = paste0(future_scenario, "MLD_mon.tif"))
+sss = stars::read_stars(file.path(data_path, brick_path, paste0(future_scenario, "SSS_mon.tif"))) |>
+  dplyr::rename(sss = paste0(future_scenario, "SSS_mon.tif"))
+sbtm = stars::read_stars(file.path(data_path, brick_path, paste0(future_scenario, "Sbtm_mon.tif"))) |>
+  dplyr::rename(sbtm = paste0(future_scenario, "Sbtm_mon.tif"))
+gseal = load_seal(scenario = "PRESENT", year = NA, species = "gray") |>
+  dplyr::rename(gseal = "prediction.tif")
+hseal = load_seal(scenario = "PRESENT", species = "harbor") |>
+  dplyr::rename(hseal = "prediction.tif")
+
+dynamic_names = c("brick_tbtm", "brick_mld", "brick_sss", "brick_sbtm", "gseal", "hseal")
+dynamic_preds = twinkle::bind_attrs(list(tbtm, mld, sss, sbtm, gseal, hseal)) |>
+  set_names(dynamic_names)
+
+future_preds = c(dynamic_preds,  depth) |>
+  dplyr::slice(band, 8)
+
+```
+
+```{r}
+rf_p_rcp45_2055 = predict_stars(final_rf_workflow, future_preds, type = "prob")
+rf_p_rcp45_2055_plot = ggplot() +
+  geom_stars(data = rf_p_rcp45_2055) +
+  scale_fill_binned(type = "viridis", 
+                    name = "Habitat Suitability", 
+                    limits = c(0, 1), 
+                    n.breaks = 11) +
+  geom_coastline(bb = cofbb::get_bb("nefsc_carcharodon", form = "bb")) +
+  theme_void() 
+rf_p_rcp45_2055_plot
+```
