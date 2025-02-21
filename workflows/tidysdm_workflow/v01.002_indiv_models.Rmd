@@ -71,9 +71,7 @@ model_rf = rand_forest(
   mtry = tune(),
   trees = NULL,
   min_n = NULL
-) # |>
-  # set_mode("classification") |>
-  # set_engine("ranger", importance = "permutation", probability = TRUE)
+) 
 
 model_brt = boost_tree(
   mode = "classification",
@@ -101,8 +99,7 @@ ws_models <-
       maxent = model_maxent
     ),
     cross = TRUE
-  ) # |>
-  # option_add(control = control_ensemble_grid())
+  )
 ws_models
 ```
 
@@ -211,45 +208,6 @@ plot_roc(p2, truth = class, pred = .pred_presence, title = "Maxent ROC")
 
 ```
 
-
-
-Use DALEX to visualize additional model metrics
-```{r}
-explainer_rf_final = explain(final_rf_workflow)
-
-```
-
-```{r}
-final_rf_workflow |>
-  extract_fit_parsnip() |>
-  vip::vip()
-```
-
-
-We can also create an ensemble of the models.
-```{r}
-ws_ensemble = tidysdm::simple_ensemble() |>
-  tidysdm::add_member(ws_models, metric = "roc_auc")
-ws_ensemble
-autoplot(ws_ensemble)
-```
-
-And use the `explain_tidysdm()` function to help us gather more details
-```{r}
-tidy_explainer = tidysdm::explain_tidysdm(ws_ensemble, by_workflow = TRUE)
-```
-
-Like partial dependence plots by each model type
-```{r}
-var_names = c("log_depth", "brick_tbtm", "brick_mld", "brick_sss", "brick_sbtm", "gseal", "hseal")
-profile_list <- lapply(tidy_explainer, model_profile,
-  N = 500,
-  variables = var_names
-)
-plot(profile_list)
-```
-
-
 Manual partial dependence plots
 ```{r}
 presence_col = extract_fit_engine(final_rf_workflow)$predictions[1]
@@ -262,11 +220,12 @@ fe = feature_effects(object = extract_fit_engine(final_rf_workflow),
                      which_pred = "presence",
                      prob = TRUE)
 
-pd = partial_dependence(object = extract_fit_engine(final_rf_workflow), 
-                     v = extract_var_names(final_rf_workflow), 
+pd = partial_dependence(object = extract_fit_engine(rf_ws_fit_final2), 
+                     v = extract_var_names(rf_ws_fit_final2), 
                      data = training(aug_split) |>
                        dplyr::select(-class) |>
                        sf::st_drop_geometry(),
+                     which_pred = "presence",
                      prob = TRUE)
 
 plot(pd, share_y = "all")
@@ -278,17 +237,17 @@ fe |>
 ```
 
 ```{r}
-variable_importance(x = final_rf_workflow, y = training(aug_split), type = "prob")
-```
+vi = variable_importance(x = final_rf_workflow, y = training(aug_split), type = "prob")
 
-
-Or use the partial_dependence method to take a look at just the final random forest workflow
-```{r}
-rf_likelihood = partial_dependence_plot(final_rf_workflow)
-plot(rf_likelihood)
-
-rf_likelihood2 = partial_dependence_plot(rf_ws_fit_final2)
-plot(rf_likelihood2)
+vi_plot = ggplot() +
+    geom_bar(data = vi, aes(x = 8, y = importance, fill = var),
+             position = "fill", stat = "identity") +
+    scale_x_continuous(breaks = seq(from = 1, to = 12, by = 1)) +
+    theme_classic() +
+    viridis::scale_fill_viridis(discrete = TRUE) +
+    ggtitle("variable importance") 
+vi_plot
+  
 ```
 
 Next we'll load the current covariates. These are stored in the data directory.

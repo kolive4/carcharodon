@@ -415,8 +415,8 @@ partial_dependence_plot = function(x,
     # build training data
     data = dplyr::bind_cols(mold$outcomes, mold$predictors)
     # extract the fitted model engine
-    x = workflows::extract_fit_engine(x)
-    v = colnames(mold$predictors)
+    m = workflows::extract_fit_engine(x)
+    v = extract_var_names(x)
   } else {
     if (is.null(data)) stop("if not proving a workflow, please provide data and v")
     nm = colnames(data)
@@ -424,22 +424,24 @@ partial_dependence_plot = function(x,
     x = x$fit
   }
   # compute the partial effects
-  if(inherits(x, "maxnet")) {
-    pd = effectplots::partial_dependence(x, 
+  if(inherits(m, "maxnet")) {
+    pd = effectplots::partial_dependence(m, 
                                          v = v, 
                                          data = data,
                                          prob = TRUE,
                                          type = "cloglog")
-  } else if (inherits(x, "xgb.Booster")) {
-    pd = effectplots::partial_dependence(x, 
+  } else if (inherits(m, "xgb.Booster")) {
+    pd = effectplots::partial_dependence(m, 
                                          v = v, 
                                          data = data |>
                                            dplyr::select(-class) |>
-                                           data.matrix())
+                                           data.matrix(),
+                                         prob = TRUE)
   } else {
-    pd = effectplots::partial_dependence(x, 
+    pd = effectplots::partial_dependence(m, 
                                          v = v, 
-                                         data = data)
+                                         data = data,
+                                         prob = TRUE)
   }
   
   # plot
@@ -450,4 +452,77 @@ partial_dependence_plot = function(x,
   }
   
   return(p)
+}
+
+#' Extracting variable names
+#' 
+#' @param wf final fitted workflow
+#' @return list of variable names
+extract_var_names = function(wf) {
+  x = workflowsets::extract_preprocessor(wf) |>
+    summary() |>
+    dplyr::filter(role == "predictor") |>
+    dplyr::pull(var = 1)
+  
+  return(x)
+}
+
+#' Compute permutation importance for model covariates
+#'
+#' This is adapted from Peter D Wilson's [fitMaxnet R package](https://github.com/peterbat1/fitMaxnet).
+#'
+#'
+#' @export
+#' @param x fitted workflow
+#' @param y table of occurrence and background environmental data (data.frame,
+#'   tibble, or matrix with column names)
+#' @param n num, number of iterations
+#' @param arrange char, one of "none" (default), "decreasing" or "increasing" to arrange
+#'    the output order
+#' @param ... other arguments for \code{\link[maxnet]{predict}} such
+#'   as \code{clamp} and \code{type}
+#' @return table of premutation importance scoires (and raw values)
+variable_importance = function(x, y,
+                               n = 5,
+                               arrange = c("none", "increasing", "decreasing")[1],
+                               ...){
+  if (FALSE) {
+    x = final_rf_workflow
+    y = training(aug_split)
+  }
+  if (inherits(y, "sf")) {
+    y = sf::st_drop_geometry(y)
+  }
+  vnames = extract_var_names(x)
+  y = dplyr::select(y, dplyr::all_of(vnames))
+  baseline = predict(x, y, ...) |>
+    dplyr::pull(var = 1) # the staring point of the model
+  ny = nrow(y)
+  r = sapply(vnames,
+             function(varname){          # shuffle each variable n times
+               orig_values = y[,varname, drop = TRUE]
+               r = sapply(seq_len(n),
+                          function(iter){
+                            index = sample(ny,ny)   # shuffle the variable
+                            y[,varname] <- orig_values[index]
+                            m = predict(x, y, ...) |>
+                              dplyr::pull(var = 1)
+                            cor(baseline,m)       # correlate to original
+                          })
+               y[,varname] <- orig_values
+               c(mean(r),sd(r), fivenum(r))
+             }) |>
+    t()
+  colnames(r) = c("mean", "sd", "min", "q25", "med", "q75", "max")
+  mean_data =sum(1-r[,1, drop = TRUE])
+  r = dplyr::as_tibble(r, rownames = "var") |>
+    dplyr::mutate(importance = round(100*(1-.data$mean)/mean_data,2), .after = 1)
+  # if the correlations with original are high that means shuffling the variable
+  # had little effect on the output models.  Thus the variable has low influence.
+  # invert the importance so ones with low mean correlation are now higher valued.
+  # just a convenience for the user
+  switch(tolower(arrange[1]),
+         "decreasing" = dplyr::arrange(r, dplyr::desc(importance)),
+         "increasing" = dplyr::arrange(r, importance),
+         r)
 }
