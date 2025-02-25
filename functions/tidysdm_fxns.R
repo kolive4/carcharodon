@@ -526,3 +526,51 @@ variable_importance = function(x, y,
          "increasing" = dplyr::arrange(r, importance),
          r)
 }
+
+#' function to extract the number of unique models
+#'
+#' @param x an extract_workflow_set_result output assigned from a model type
+#' @return the number of unique models
+n_metric = function(x) {
+  n = length(unique(x$.metrics[[1]]$.config))
+  return(n)
+}
+
+#' function that takes a workflow set and returns a metric table
+#' 
+#' @param wf_set a workflow set
+#' @param model_type chr, one of simple_rf, simple_brt, or simple_maxent
+#' @return a ranked table of models ranked based on the average mean of metrics
+metric_table = function(wf_set, model_type){
+  results = wf_set |>
+    workflowsets::extract_workflow_set_result(model_type)
+  
+  best_accuracy = tune::show_best(results, metric = "accuracy", n = n_metric(results))
+  best_roc = tune::show_best(results, metric = "roc_auc", n = n_metric(results))
+  best_boyce = tune::show_best(results, metric = "boyce_cont", n = n_metric(results))
+  best_tss = tune::show_best(results, metric = "tss_max", n = n_metric(results))
+  
+  best_tbl = dplyr::bind_rows(best_accuracy, best_roc, best_boyce, best_tss)
+  
+  model_ranking = best_tbl |>
+    dplyr::group_by(.config) |>
+    dplyr::mutate(avg_mean = mean(mean, na.rm = TRUE)) |>
+    arrange(desc(avg_mean))
+  
+  return(model_ranking)
+}
+
+#' function to extract the hyperparameters from the highest ranking model
+#' 
+#' @param ranked_tbl a ranked table of models ranked based on the average mean of metrics
+#' @return tibble of model metrics to be used to finalize the final workflow
+best_hyperparams = function(ranked_tbl){
+  non_params = c(".metric", ".estimator", "mean", "n", "std_err", ".config", "avg_mean")
+  
+  hyperparams = ranked_tbl |>
+    dplyr::ungroup() |>
+    dplyr::select(-all_of(non_params)) |>
+    head(1)
+  
+  return(hyperparams)
+}

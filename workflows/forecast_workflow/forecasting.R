@@ -1,13 +1,13 @@
-# usage: maxent_modeling.R [--] [--help] [--config CONFIG]
+# usage: forecasting.R [--] [--help] [--config CONFIG]
 # 
-# maxent modeling for white shark obs
+# forecasting for white shark obs
 # 
 # flags:
 #   -h, --help    show this help message and exit
 # 
 # optional arguments:
 #   -c, --config  the name of the configuration file [default:
-#                                                       /mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/modeling_workflow/v0.000.yaml]
+#                                                       /mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/forecasting_workflow/v0.000.yaml]
 
 
 suppressPackageStartupMessages({

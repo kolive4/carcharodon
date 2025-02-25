@@ -1,7 +1,7 @@
 ```{r}
 source("/mnt/ecocast/projects/koliveira/subprojects/carcharodon/setup.R")
 ```
-
+Load in observations and background and do an initial split of the data into training and testing datasets.
 ```{r}
 bb = cofbb::get_bb("nefsc_carcharodon", form = "sf")
 coast = rnaturalearth::ne_coastline(scale = "large", returnclass = "sf") |>
@@ -39,7 +39,7 @@ ggplot() +
   
 ```
 
-
+Using the training data from the previous step, complete a spatial cross validation using `spatial_block_cv()`. This allows us to divide up the area of interest into folds to address spatial correlation.
 ```{r}
 ws_aug_training = training(aug_split)
 ws_aug_train_cv = spatialsample::spatial_block_cv(data = ws_aug_training, 
@@ -50,13 +50,13 @@ autoplot(ws_aug_train_cv) +
 ```
 
 
-empty workflow: container that has 2 bits: recipe and a model. we have 7 predictors!
+Create an empty workflow: container that has 2 bits: recipe and a model. we have 7 predictors!
 ```{r}
 wflow = workflows::workflow()
 rec = recipes::recipe(head(aug_data), class ~ .)
 ```
 
-Start modeling engine. vroom vroom. We choose parameters most important to tune for species distribution modeling based on the tidysdm workflow.
+Start modeling engine. vroom vroom. We choose parameters most important to tune for species distribution modeling based on the tidysdm workflow. With increased computing power we could potentially tune all parameters.
 ```{r}
 model_maxent = maxent(
   mode = "classification",
@@ -87,6 +87,7 @@ model_brt = boost_tree(
 )
 ```
 
+Set up a workflow set, which sets up a set of model and pre-processor combinations. If there were other pre-processors we wanted to implement, we could add them here to create new combinations.
 ```{r}
 ws_models <-
   workflow_set(
@@ -100,10 +101,13 @@ ws_models <-
     ),
     cross = TRUE
   )
-ws_models
+ws_models 
+
 ```
 
+Now we enter the tuning phase, where we apply the function `tune_grid()` to our grid of possible tuning parameter combinations. Because we are only tuning mtry in the random forest model which is based on our 7 covariates, there are only 7 possible parameter combinations and models. In maxent and brt, there are more than 20 combinations of tuning parameters, so there should be at least 20 models output from this function. 
 
+Remember our 5 spatial cross folds from earlier? `workflow_map()` has 5 iterations of outputs from the 5 cross folds.
 ```{r}
 ws_models <-
   ws_models |>
@@ -120,7 +124,8 @@ ws_models
 ```
 
 ```{r}
-autoplot(ws_models)
+autoplot(ws_models) +
+  scale_color_viridis_d()
 ```
 
 Extract tuning results and select based on metrics
@@ -129,22 +134,34 @@ rf_results = ws_models |>
   extract_workflow_set_result("simple_rf")
 rf_results
 
-best_accuracy = show_best(rf_results, metric = "accuracy")
-best_roc = show_best(rf_results, metric = "roc_auc")
-best_boyce = show_best(rf_results, metric = "boyce_cont")
-best_tss = show_best(rf_results, metric = "tss_max")
+best_accuracy = show_best(rf_results, metric = "accuracy", n = n_metric(rf_results))
+best_roc = show_best(rf_results, metric = "roc_auc", n = n_metric(rf_results))
+best_boyce = show_best(rf_results, metric = "boyce_cont", n = n_metric(rf_results))
+best_tss = show_best(rf_results, metric = "tss_max", n = n_metric(rf_results))
 
 best_tbl = dplyr::bind_rows(best_accuracy, best_roc, best_boyce, best_tss)
 best_tbl
+model_group = best_tbl |>
+  group_by(.config) |>
+  mutate(avg_mean = mean(mean, na.rm = TRUE)) |>
+  arrange(desc(avg_mean))
+model_group
+
 ```
-After looking at the table and comparing the metric values with mtry, we can see that mtry = 1 is the best performing model across roc_auc, boyce_cont, 2nd best in accuracy and 3rd in tss. When we finalize, we'll want to specify which mtry we'll use by saying mtry = 1. We can also just put full faith into one model evaluation metric and pass along `finalize_workflow(best_*)` replacing * with whatever metric we deem best.
+After looking at the table and comparing the metric values with mtry, we can see that mtry = 1 is the best performing model across roc_auc, boyce_cont, 2nd best in accuracy and 3rd in tss. When we finalize, we'll want to specify which mtry we'll use by saying mtry = 1. We can also just put full faith into one model evaluation metric and pass along `finalize_workflow(best_*)` replacing * with whatever metric we deem best. 
 
 
 Extract individual random forest workflow and finalize the model. Our tuning step will then be complete!
 ```{r}
+non_params = c(".metric", ".estimator", "mean", "n", "std_err", ".config", "avg_mean")
+hyperparams = model_group |>
+  dplyr::ungroup() |>
+  dplyr::select(-all_of(non_params)) |>
+  head(1)
+
 rf_ws_workflow_final = ws_models |>
   extract_workflow("simple_rf") |>
-  finalize_workflow(tibble(mtry = 2))
+  finalize_workflow(hyperparams)
 rf_ws_workflow_final
 ```
 
@@ -238,6 +255,7 @@ fe |>
 
 ```{r}
 vi = variable_importance(x = final_rf_workflow, y = training(aug_split), type = "prob")
+vi
 
 vi_plot = ggplot() +
     geom_bar(data = vi, aes(x = 8, y = importance, fill = var),
