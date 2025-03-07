@@ -145,6 +145,7 @@ if(cfg$brickman_subset){
 }
 
 log_brickman_bathymetry = log10(brickman_bathymetry)
+uv_s = read_vel_mag(scenario = cfg$scenario, year = cfg$year, band_as_time = TRUE)
 
 # if including in later steps, prediction and other spatial stuff gets cropped to this layer
 fish_layer = read_stars(file.path(cfg$data_path, cfg$fish_path, cfg$fish_file)) |>
@@ -171,12 +172,13 @@ dfs = st_extract(dfs_layer, at = species) |>
   sf::st_as_sf() |>
   dplyr::as_tibble() 
 covars = brickman_extract(monthly_brick_cov, species, time_column = "extractDate") # changed to eventDate because it is consistent amongst all obs
+vel_mag = brickman_extract(uv_s, species, time_column = "extractDate")
 
 species = dplyr::mutate(species, fish_biomass = fish$fish_biomass) |>
   dplyr::mutate(species, dfs = dfs$dfs) |>
   dplyr::mutate(species, brick_depth = depth$Bathy_depth) |>
   dplyr::mutate(species, log_depth = log_depth$Bathy_depth) |>
-  dplyr::bind_cols(covars) |>
+  dplyr::bind_cols(covars, vel_mag) |>
   write_sf(file.path(cfg$data_path, "covars", sprintf("%s_brickman_covars_occs.gpkg", cfg$version)))
 
 # random bg selection
@@ -217,12 +219,14 @@ brick_bg_log_depth = stars::st_extract(log_brickman_bathymetry, at = bg_brick)
 brick_bg_fish = stars::st_extract(fish_layer, at = bg_brick)
 brick_bg_dfs = stars::st_extract(dfs_layer, at = bg_brick)
 brick_bg_covars = brickman_extract(monthly_brick_cov, bg_brick, time_column = "time", interpolate_time = FALSE)
+brick_bg_vel_mag = brickman_extract(uv_s, bg_brick, time_column = "time")
+
 
 bg_brick = dplyr::mutate(bg_brick, brick_depth = brick_bg_depth$Bathy_depth) |>
   dplyr::mutate(bg_brick, fish_biomass = brick_bg_fish$fish_biomass) |>
   dplyr::mutate(bg_brick, dfs = brick_bg_dfs$dfs) |>
   dplyr::mutate(bg_brick, log_depth = brick_bg_log_depth$Bathy_depth) |>
-  dplyr::bind_cols(brick_bg_covars) |>
+  dplyr::bind_cols(brick_bg_covars, brick_bg_vel_mag) |>
   write_sf(file.path(vpath, "brickman_covar_bg.gpkg"))
 
 bg = ggplot() +

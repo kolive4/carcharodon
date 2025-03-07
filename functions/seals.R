@@ -15,8 +15,8 @@ load_seal = function(scenario = c("RCP85", "RCP45", "PRESENT")[1],
                      band_as_time = TRUE
                          ){
   if(FALSE){
-    scenario = c("RCP85", "RCP45", "PRESENT")[1]
-    year = c(2055, 2075, NA)[1]
+    scenario = c("RCP85", "RCP45", "PRESENT")[3]
+    year = c(2055, 2075, NA)[3]
     species = c("harbor", "gray")[1]
     months = seq(1, 12, by = 1)
     path = here::here("workflows/forecast_workflow/versions")
@@ -25,7 +25,7 @@ load_seal = function(scenario = c("RCP85", "RCP45", "PRESENT")[1],
   
   if(scenario == "PRESENT") year = "PRESENT"
   
-  x = lapply(seq_along(months), 
+  filenames = lapply(seq_along(months), 
          function(month){
            if (species == "harbor") {
              if (scenario == "PRESENT") {
@@ -69,17 +69,19 @@ load_seal = function(scenario = c("RCP85", "RCP45", "PRESENT")[1],
                }
              }
            }
-         x = stars::read_stars(filename)
+         return(filename)
          }
   )
-  x = twinkle::bind_bands(x)
-  
+  x = stars::read_stars(filenames, along = list(band = seq(1, 12))) |>
+    stars::st_set_dimensions("band", delta = NA_real_, offset = NA_real_)
+
   if(band_as_time == TRUE) {
     time = switch(scenario,
-                  "PRESENT" = NULL,
+                  "PRESENT" = seq(from = as.Date("2020-01-01"), 
+                                  to = as.Date("2020-12-01"), 
+                                  by = "month"),
                   "2075" = NULL ,
                   "2055" = NULL)
-    dims = stars::st_dimensions(x)
     x = stars::st_set_dimensions(x, "band", names = "band", values = time)
   }
   

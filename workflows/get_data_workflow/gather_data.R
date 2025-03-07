@@ -167,14 +167,14 @@ wshark <- wshark |>
   dplyr::mutate(month = format(eventDate, "%m") |>
                   as.numeric()) |>
   dplyr::mutate(Year = as.numeric(format(eventDate, "%Y"))) |>
-  #dplyr::bind_rows(curated, inat, satellite) |>
+  dplyr::bind_rows(curated, inat, satellite) |>
   dplyr::mutate(extractDate = as.Date(sprintf("2020-%0.2i-01", month))) |>
   dplyr::rename(c(obis_sst = sst, obis_depth = depth)) |>
   dplyr::filter(!is.na(month)) |>
   sf::st_crop(shark_box) |>
   dplyr::mutate(basisOfRecord = dplyr::if_else(basisOfRecord == "HumanObservation", "OBIS", basisOfRecord))
 
-unobis = wshark |>
+obis = wshark |>
   dplyr::filter(basisOfRecord == "OBIS")
 
 obis_plot = ggplot() +
@@ -190,7 +190,6 @@ png(filename = file.path(vpath, "figures", paste0(cfg$version, "_obis_occs.png")
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 obis_plot
 dev.off()
-
 
 wshark.mask = st_extract(mask, wshark)
 
@@ -281,6 +280,7 @@ if(cfg$brickman_subset){
 }
 
 log_brickman_bathymetry = log10(brickman_bathymetry)
+uv_s = read_vel_mag(scenario = cfg$scenario, year = cfg$year, band_as_time = TRUE)
 
 fall_fish_layer = read_stars(file.path(cfg$data_path, cfg$fish_path, cfg$fall_fish_file)) |>
   sf::st_crop(shark_box) |>
@@ -291,15 +291,15 @@ spring_fish_layer = read_stars(file.path(cfg$data_path, cfg$fish_path, cfg$sprin
 
 #seal layers
 if(cfg$hseal == "harbor") {
-  hseal_layer = load_seal(scenario = cfg$scenario, year = cfg$year, species = cfg$hseal) |>
+  hseal_layer = load_seal(scenario = cfg$scenario, year = cfg$year, species = cfg$hseal, band_as_time = TRUE) |>
     dplyr::rename(hseal = "prediction.tif") |>
-    stars::st_warp(dest = brickman_bathymetry)
+    stars::st_warp(dest = brickman_bathymetry) 
 } 
 
 if(cfg$gseal == "gray") {
   gseal_layer = load_seal(scenario = cfg$scenario, year = cfg$year, species = cfg$gseal) |>
     dplyr::rename(gseal = "prediction.tif") |>
-    stars::st_warp(dest = brickman_bathymetry)
+    stars::st_warp(dest = brickman_bathymetry) 
 }
 
 #distance from shore layer
@@ -346,14 +346,16 @@ if (cfg$which_fish == "COMBO") {
 shark_dfs = st_extract(dfs_layer, at = wshark) |>
   sf::st_as_sf() |>
   dplyr::as_tibble() 
-shark_covars = brickman_extract(monthly_brick_cov, wshark, time_column = "extractDate") # changed to eventDate because it is consistent amongst all obs
+shark_covars = brickman_extract(monthly_brick_cov, wshark, time_column = "extractDate") # changed to eventDate because it is consistent among all obs
 shark_hseal = brickman_extract(hseal_layer, wshark, time_column = "extractDate")
 shark_gseal = brickman_extract(gseal_layer, wshark, time_column = "extractDate")
+shark_vel_mag = brickman_extract(uv_s, wshark, time_column = "extractDate")
 
 wshark = dplyr::mutate(wshark, fish_biomass = shark_fish$fish_biomass) |>
   dplyr::mutate(wshark, dfs = shark_dfs$dfs) |>
   dplyr::mutate(wshark, brick_depth = shark_depth$Bathy_depth) |>
   dplyr::mutate(wshark, log_depth = log_shark_depth$Bathy_depth) |>
+  dplyr::mutate(wshark, vel_mag = shark_vel_mag$vel_mag) |>
   dplyr::bind_cols(shark_covars, shark_gseal, shark_hseal) |>
   write_sf(file.path(cfg$data_path, "covars", "brickman_covars_shark_occs.gpkg"))
 
@@ -414,13 +416,15 @@ brick_bg_depth = stars::st_extract(brickman_bathymetry, at = bg_brick)
 brick_bg_log_depth = stars::st_extract(log_brickman_bathymetry, at = bg_brick)
 brick_bg_dfs = stars::st_extract(dfs_layer, at = bg_brick)
 brick_bg_covars = brickman_extract(monthly_brick_cov, bg_brick, time_column = "time", interpolate_time = FALSE)
-brick_bg_gseal = brickman_extract(gseal_layer, bg_brick, time_column = "time", interpolate_time = FALSE)
-brick_bg_hseal = brickman_extract(hseal_layer, bg_brick, time_column = "time", interpolate_time = FALSE)
+brick_bg_hseal = brickman_extract(hseal_layer, bg_brick, time_column = "time")
+brick_bg_gseal = brickman_extract(gseal_layer, bg_brick, time_column = "time")
+brick_bg_vel_mag = brickman_extract(uv_s, bg_brick, time_column = "time")
 
 bg_brick = dplyr::mutate(bg_brick, brick_depth = brick_bg_depth$Bathy_depth) |>
   dplyr::mutate(bg_brick, fish_biomass = brick_bg_fish$fish_biomass) |>
   dplyr::mutate(bg_brick, dfs = brick_bg_dfs$dfs) |>
   dplyr::mutate(bg_brick, log_depth = brick_bg_log_depth$Bathy_depth) |>
+  dplyr::mutate(bg_brick, vel_mag = brick_bg_vel_mag$vel_mag) |>
   dplyr::bind_cols(brick_bg_covars, brick_bg_gseal, brick_bg_hseal) |>
   write_sf(file.path(vpath, "brickman_covar_bg.gpkg"))
 
@@ -439,9 +443,9 @@ obs_bg_brick = bind_rows(list(wshark, bg_brick), .id = "id") |>
   dplyr::mutate(id = as.numeric(id == 1)) |>
   write_sf(file.path(vpath, "brickman_covar_obs_bg.gpkg"))
 
-sss_nonsat_plot = cov_hist(joint_db = file.path(vpath, "brickman_covar_obs_bg.gpkg"), groups = c("OBIS", "iNaturalist", "curated"), cov = "brick_sss")
-sss_nonsat_plot
-sss_sat_plot = cov_hist(joint_db = file.path(vpath, "brickman_covar_obs_bg.gpkg"), groups = c("PSAT", "SPOT"), cov = "brick_sss")
-sss_sat_plot
-sss_spot_plot = cov_hist(joint_db = file.path(vpath, "brickman_covar_obs_bg.gpkg"), groups = c("SPOT"), cov = "brick_sss")
-sss_spot_plot 
+all_points = ggplot() +
+  geom_coastline(bb = shark_box) +
+  geom_sf(data = obs_bg_brick, aes(), color = "black", size = 0.1) +
+  theme_void() 
+all_points
+

@@ -12,7 +12,8 @@ installed = rownames(installed.packages())
 
 cran_packages = c("rlang", "dplyr", "readr", "ggplot2", "robis", "rappdirs", "mapr",
                   "ncmeta", "stars", "rlist", "RColorBrewer", "sf", "twinkle",
-                  "ENMeval", "here", "tidymodels", "effectplots", "DALEX")
+                  "ENMeval", "here", "tidymodels", "effectplots", "DALEX",
+                  "docstring", "agua", "butcher")
 ix = (cran_packages %in% installed)
 for (package in cran_packages[!ix]) {
   install.packages(package)

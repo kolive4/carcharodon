@@ -1,0 +1,50 @@
+version: t02.00030.12
+root_path: /mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon
+source_path: functions
+output_path: workflows/tidy_workflow
+gather_data_path: workflows/get_data_workflow/versions/v02/v02.000
+vars:
+  - eventDate
+  - Year
+  - month
+  - basisOfRecord
+  - geom
+  - log_depth
+  - brick_sst
+  - brick_tbtm
+  - brick_sss
+  - brick_sbtm
+  - brick_mld
+  - dfs
+  - vel_mag
+  - brick_xbtm
+month: 12
+n_folds: 5
+n_grid: 20
+data_path: data
+depth_path: brickman/bathy
+dfs_path: mapping/gebco
+brick_path: brickman/gom_carcharodon
+fish_path: fish_data/MDAT_Fish_SummaryProducts_NEFSC/commondata/raster_data
+etopo_path: mapping/etopo
+dynamic_names: 
+  - brick_sst
+  - brick_tbtm
+  - brick_sss
+  - brick_sbtm
+  - brick_mld
+  - vel_mag
+  - brick_xbtm 
+add_pres_pts: FALSE
+scenario: PRESENT
+year: PRESENT
+graphics:
+  ggtitle: December Nowcast Habitat Suitability
+  add_pres_pts: yes
+  plot_contour: no
+contour_name: ~
+mask_name: ~
+prediction: nowcast
+obs_filter:
+  basisOfRecord:
+  - HumanObservation

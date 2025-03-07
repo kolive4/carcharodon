@@ -180,6 +180,11 @@ buffer_depth = function(x, covar, depth, value = NA) {
 #' @param ... extra arguments for st_extract, such as: time_column
 #' @return tibble of data
 brickman_extract = function(x, y, ...){
+  if (FALSE) {
+    x = hseal_layer
+    y = wshark
+    time_column = "month"
+  }
 
   #' Function to extract data at points for specific covariates
   #' 
@@ -188,13 +193,18 @@ brickman_extract = function(x, y, ...){
   #' @param points stars, points stars object at which to extract points
   #' @return stars object 
   covariate_extract = function(obj, i, points, ...) {
+    if(FALSE){
+      obj = hseal_layer
+      i = "hseal"
+      points = wshark
+    }
     r = stars::st_extract(obj[i,,,], at = points, ...) |>
         sf::st_as_sf() |>
         sf::st_drop_geometry() |>
         dplyr::as_tibble()
     if(length(dim(obj)) < 3){
       r = rlang::set_names(r, as.name(i))
-    } else if ((dim(obj)[3] == 12) && (ncol(r) ==12)) {
+    } else if ((dim(obj)[3] == 12) && (ncol(r) == 12)) {
       r = rlang::set_names(r, paste(as.name(i), month.abb, sep = "_"))
     }
     return(r)

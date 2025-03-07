@@ -1,0 +1,5 @@
+"",".metric",".estimator",".estimate",".config"
+"1","accuracy","binary",0.875,"Preprocessor1_Model1"
+"2","boyce_cont","binary",0.255719812772751,"Preprocessor1_Model1"
+"3","roc_auc","binary",0.978723404255319,"Preprocessor1_Model1"
+"4","tss_max","binary",0.957446808510638,"Preprocessor1_Model1"
