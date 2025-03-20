@@ -183,9 +183,9 @@ brickman_extract = function(x, y, ...){
   if (FALSE) {
     x = hseal_layer
     y = wshark
-    time_column = "month"
+    time_column = "extractDate"
   }
-
+  
   #' Function to extract data at points for specific covariates
   #' 
   #' @param obj stars object to pass in
@@ -194,10 +194,11 @@ brickman_extract = function(x, y, ...){
   #' @return stars object 
   covariate_extract = function(obj, i, points, ...) {
     if(FALSE){
-      obj = hseal_layer
+      obj = x
       i = "hseal"
-      points = wshark
+      points = y
     }
+    
     r = stars::st_extract(obj[i,,,], at = points, ...) |>
         sf::st_as_sf() |>
         sf::st_drop_geometry() |>

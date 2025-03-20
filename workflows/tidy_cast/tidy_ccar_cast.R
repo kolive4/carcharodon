@@ -30,7 +30,7 @@ args = argparser::arg_parser("tidymodels/tidysdm casting for white shark habitat
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_cast/t01.00030.01.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_cast/t01.02010.01.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -57,7 +57,7 @@ obs = read_brickman_points(file = file.path(cfg$root_path, cfg$gather_data_path,
   sf::st_as_sf() |>
   dplyr::filter(id == 1, basisOfRecord %in% cfg$obs_filter$basisOfRecord) |>
   dplyr::select(all_of(cfg$vars)) |>
-  dplyr::filter(month == as.numeric(cfg$month)) |>
+  dplyr::filter(month %in% as.numeric(cfg$month)) |>
   dplyr::mutate(class = "presence")
 
 var_list = list()
@@ -142,17 +142,19 @@ if ("log_depth" %in% cfg$vars) {
 
 if (exists("depth") && exists("dfs")) {
   preds = c(dynamic_preds, depth, dfs) |>
-    dplyr::slice(band, as.numeric(cfg$month))
+    dplyr::slice(band, as.integer(cfg$month))
 } else if (exists("depth") && !exists("dfs")) {
   preds = c(dynamic_preds, depth) |>
-    dplyr::slice(band, as.numeric(cfg$month))
+    dplyr::slice(band, as.integer(cfg$month))
 } else if (!exists("depth") && exists("dfs")) {
   preds = c(dynamic_preds, dfs) |>
-    dplyr::slice(band, as.numeric(cfg$month))
+    dplyr::slice(band, as.integer(cfg$month))
 } else {
   preds = dynamic_preds |>
-    dplyr::slice(band, as.numeric(cfg$month))
+    dplyr::slice(band, as.integer(cfg$month))
 }
+
+preds = avg_covs(preds)
 
 if (!is.null(cfg$mask_name)) {
   mask = stars::read_stars(file.path(cfg$root_path, cfg$data_path, cfg$mask_name)) |>
@@ -201,7 +203,7 @@ print(rf_pred_plot)
 dev.off()
 
 # bt pred----
-final_bt_workflow = readr::read_rds(file.path(cfg$root_path, cfg$wf_path, cfg$wf_version, sprintf("%s_final_bt_wf.Rds", cfg$version)))
+final_bt_workflow = readr::read_rds(file.path(cfg$root_path, cfg$wf_path, cfg$wf_version, sprintf("%s_final_bt_wf.Rds", cfg$wf_version)))
 
 bt_pred = predict_stars(final_bt_workflow, preds, type = "prob") |>
   write_stars(file.path(vpath, "bt_prediction.tif"))
@@ -232,7 +234,7 @@ print(bt_pred_plot)
 dev.off()
 
 #maxent pred----
-final_maxent_workflow = readr::read_rds(file.path(cfg$root_path, cfg$wf_path, cfg$wf_version, sprintf("%s_final_maxent_wf.Rds", cfg$version)))
+final_maxent_workflow = readr::read_rds(file.path(cfg$root_path, cfg$wf_path, cfg$wf_version, sprintf("%s_final_maxent_wf.Rds", cfg$wf_version)))
 
 maxent_pred = predict_stars(final_maxent_workflow, preds, type = "prob") |>
   write_stars(file.path(vpath, "maxent_prediction.tif"))

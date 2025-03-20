@@ -87,3 +87,51 @@ load_seal = function(scenario = c("RCP85", "RCP45", "PRESENT")[1],
   
   return(x)
 }
+
+#' function to load seal prediction data from tidy_workflow
+#' 
+#' @param species chr, species common names (harbor or gray)
+#' @param scenario chr, RCP scenario to pass in, always present in this case
+#' @param model_type chr, which model do you want to pull predictions from
+#' @param path file path where predictions are saved
+#' @param band_as_time logical, convert band to appropriate time/date stamp
+#' @return stars object
+load_tidy_seal = function(species = c("harbor", "gray")[1],
+                          scenario = "PRESENT",
+                          model_type = c("rf", "bt", "maxent")[3],
+                          path = here::here("workflows/tidy_workflow/versions"),
+                          band_as_time = FALSE){
+  if(FALSE){
+    species = "harbor"
+    model_type = "maxent"
+    band_as_time = TRUE
+  }
+  
+  if (species == "gray") {
+    s_path = file.path(path, "t02/00020")
+  } else if (species == "harbor") {
+    s_path = file.path(path, "t03/00020")
+  }
+  
+  t = list.dirs(s_path, recursive = FALSE, full.names = TRUE)
+  
+  tifs = lapply(t, function(filepath){
+    filename = file.path(filepath, sprintf("%s_prediction.tif", model_type))
+    return(filename)
+  })
+  x = stars::read_stars(tifs, along = list(band = c(seq(1, 12)))) |>
+    stars::st_set_dimensions("band", delta = NA_real_, offset = NA_real_)
+  
+  if(band_as_time == TRUE) {
+    time = switch(scenario,
+                  "PRESENT" = seq(from = as.Date("2020-01-01"), 
+                                  to = as.Date("2020-12-01"), 
+                                  by = "month"),
+                  "2075" = NULL ,
+                  "2055" = NULL)
+    x = stars::st_set_dimensions(x, "band", names = "band", values = time)
+  }
+  
+  return(x)
+  
+}

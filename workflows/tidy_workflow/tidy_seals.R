@@ -30,12 +30,12 @@ args = argparser::arg_parser("tidymodels/tidysdm modeling and forecasting for wh
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_workflow/t02.00030.02.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_workflow/t03.00030.w.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
 cfg = charlier::read_config(args$config)
-for (f in list.files(cfg$source_path, pattern = "^.*\\.R$", full.names = TRUE)){
+for (f in list.files(file.path(cfg$root_path, cfg$source_path), pattern = "^.*\\.R$", full.names = TRUE)){
   source(f)
 }
 
@@ -57,14 +57,14 @@ obs = read_brickman_points(file = file.path(cfg$root_path, cfg$gather_data_path,
   sf::st_as_sf() |>
   dplyr::filter(id == 1, basisOfRecord %in% cfg$obs_filter$basisOfRecord) |>
   dplyr::select(all_of(cfg$vars)) |>
-  dplyr::filter(month == as.numeric(cfg$month)) |>
+  dplyr::filter(month %in% as.numeric(cfg$month)) |>
   dplyr::mutate(class = "presence")
 
 bg = read_brickman_points(file = file.path(cfg$root_path, cfg$gather_data_path, "brickman_covar_obs_bg.gpkg")) |>
   sf::st_as_sf() |>
   dplyr::filter(id == 0) |>
   dplyr::select(all_of(cfg$vars)) |>
-  dplyr::filter(month == as.numeric(cfg$month)) |>
+  dplyr::filter(month %in% as.numeric(cfg$month)) |>
   dplyr::mutate(class = "background")
 
 data = dplyr::bind_rows(obs, bg) |>
@@ -191,7 +191,7 @@ rf_roc_plot = plot_roc(p_rf, truth = class, pred = .pred_presence, title = "Rand
 png(filename = file.path(vpath, sprintf("%s_rf_pauc.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 print(rf_roc_plot)
-dev.off()
+ok = dev.off()
 
 rf_pd = partial_dependence(object = extract_fit_engine(rf_ws_fit_final), 
                            v = extract_var_names(rf_ws_fit_final), 
@@ -204,7 +204,7 @@ rf_pd_plot = plot(rf_pd, share_y = "all")
 png(filename = file.path(vpath, sprintf("%s_rf_pd.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 print(rf_pd_plot)
-dev.off()
+ok = dev.off()
 
 rf_vi = variable_importance(x = final_rf_workflow, y = training(split), type = "prob") |>
   write.csv(file.path(vpath, paste0(cfg$version, "_rf_vi.csv")))
@@ -242,7 +242,7 @@ bt_roc_plot = plot_roc(p_bt, truth = class, pred = .pred_presence, title = "Boos
 png(filename = file.path(vpath, sprintf("%s_bt_pauc.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 print(bt_roc_plot)
-dev.off()
+ok = dev.off()
 
 bt_pd = partial_dependence(object = extract_fit_engine(bt_ws_fit_final), 
                            v = extract_var_names(bt_ws_fit_final), 
@@ -256,7 +256,7 @@ bt_pd_plot = plot(bt_pd, share_y = "all")
 png(filename = file.path(vpath, sprintf("%s_bt_pd.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 print(bt_pd_plot)
-dev.off()
+ok = dev.off()
 
 bt_vi = variable_importance(x = final_bt_workflow, y = training(split), type = "prob") |>
   write.csv(file.path(vpath, paste0(cfg$version, "_bt_vi.csv")))
@@ -295,7 +295,7 @@ maxent_roc_plot = plot_roc(p_maxent, truth = class, pred = .pred_presence, title
 png(filename = file.path(vpath, sprintf("%s_maxent_pauc.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 print(maxent_roc_plot)
-dev.off()
+ok = dev.off()
 
 maxent_pd = partial_dependence(object = extract_fit_engine(maxent_ws_fit_final), 
                                v = extract_var_names(maxent_ws_fit_final), 
@@ -308,7 +308,7 @@ maxent_pd_plot = plot(maxent_pd, share_y = "all")
 png(filename = file.path(vpath, sprintf("%s_maxent_pd.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 print(maxent_pd_plot)
-dev.off()
+ok = dev.off()
 
 maxent_vi = variable_importance(x = final_maxent_workflow, y = training(split), type = "prob") |>
   write.csv(file.path(vpath, paste0(cfg$version, "_maxent_vi.csv")))
@@ -383,17 +383,19 @@ if ("log_depth" %in% cfg$vars) {
 
 if (exists("depth") && exists("dfs")) {
   preds = c(dynamic_preds, depth, dfs) |>
-    dplyr::slice(band, as.numeric(cfg$month))
+    dplyr::slice(band, as.integer(cfg$month))
 } else if (exists("depth") && !exists("dfs")) {
   preds = c(dynamic_preds, depth) |>
-    dplyr::slice(band, as.numeric(cfg$month))
+    dplyr::slice(band, as.integer(cfg$month))
 } else if (!exists("depth") && exists("dfs")) {
   preds = c(dynamic_preds, dfs) |>
-    dplyr::slice(band, as.numeric(cfg$month))
+    dplyr::slice(band, as.integer(cfg$month))
 } else {
   preds = dynamic_preds |>
-    dplyr::slice(band, as.numeric(cfg$month))
+    dplyr::slice(band, as.integer(cfg$month))
 }
+
+preds = avg_covs(preds)
 
 if (!is.null(cfg$mask_name)) {
   mask = stars::read_stars(file.path(cfg$root_path, cfg$data_path, cfg$mask_name)) |>
@@ -412,6 +414,7 @@ if (!is.null(cfg$contour_name)) {
 
 #rf pred----
 rf_pred = predict_stars(final_rf_workflow, preds, type = "prob") |>
+  dplyr::select(.pred_presence) |>
   write_stars(file.path(vpath, "rf_prediction.tif"))
 rf_pred_plot = ggplot() +
   geom_stars(data = rf_pred) +
@@ -437,7 +440,7 @@ rf_pred_plot
 png(filename = file.path(vpath, sprintf("%s_rf_prediction.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 print(rf_pred_plot)
-dev.off()
+ok = dev.off()
 
 # bt pred----
 bt_pred = predict_stars(final_bt_workflow, preds, type = "prob") |>

@@ -1,0 +1,14 @@
+version: c01.02013.01_12
+root_path: /mnt/ecocast/projects/koliveira/subprojects/carcharodon
+source_path: functions
+report_path: workflows/tidy_reports
+tidy_cast_path: workflows/tidy_cast/versions/t01/02013
+tidy_wf_path: workflows/tidy_workflow/versions/t01/02010
+scenario: RCP8.5 2055
+graphics:
+  rf_metrics_title: Random Forest Metric Values
+  bt_metrics_title: Boosted Trees Metric Values
+  maxent_metrics_title: Maxent Metric Values
+  vi_title: Variable Contribution
+  x: Month
+  vi_y: Contribution

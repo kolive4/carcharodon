@@ -18,12 +18,14 @@ args = argparser::arg_parser("a tool to cast monthly predictions into one figure
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_reports/c02.00030.01_12.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_reports/c01.10010.01_12.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
 cfg = charlier::read_config(args$config)
-
+for (f in list.files(cfg$source_path, pattern = "^.*\\.R$", full.names = TRUE)){
+  source(f)
+}
 vpars = charlier::parse_version(cfg$version)
 vpath = file.path(cfg$root_path, cfg$report_path, "versions", vpars[["major"]], vpars[["minor"]])
 if (!dir.exists(vpath)) 
@@ -51,12 +53,12 @@ rf_cast_files = list.files(path = file.path(cfg$root_path, cfg$tidy_cast_path),
                            recursive = TRUE,
                            full.names = TRUE) 
 
-z = basename(dirname(rf_cast_files))
-len = nchar(z) 
-imonth = substring(z, len -1) |>
+rf_z = basename(dirname(rf_cast_files))
+rf_len = nchar(rf_z) 
+rf_imonth = substring(rf_z, rf_len -1) |>
   as.numeric()
 
-rf_cast_plots = stars::read_stars(rf_cast_files, along = list(month = month.abb[imonth])) |>
+rf_cast_plots = stars::read_stars(rf_cast_files, along = list(month = month.abb[rf_imonth])) |>
   dplyr::rename("Habitat Suitability Index" = "rf_prediction.tif")
 
 png(file.path(vpath, paste0(cfg$version, "rf_compiled_casts.png")), 
@@ -71,8 +73,12 @@ bt_cast_files = list.files(path = file.path(cfg$root_path, cfg$tidy_cast_path),
                            pattern = "bt_prediction.tif",
                            recursive = TRUE,
                            full.names = TRUE) 
+bt_z = basename(dirname(bt_cast_files))
+bt_len = nchar(bt_z) 
+bt_imonth = substring(bt_z, bt_len -1) |>
+  as.numeric()
 
-bt_cast_plots = stars::read_stars(bt_cast_files, along = list(month = month.abb[imonth])) |>
+bt_cast_plots = stars::read_stars(bt_cast_files, along = list(month = month.abb[bt_imonth])) |>
   dplyr::rename("Habitat Suitability Index" = "bt_prediction.tif")
 
 png(file.path(vpath, paste0(cfg$version, "bt_compiled_casts.png")), 
@@ -88,7 +94,12 @@ maxent_cast_files = list.files(path = file.path(cfg$root_path, cfg$tidy_cast_pat
                            recursive = TRUE,
                            full.names = TRUE) 
 
-maxent_cast_plots = stars::read_stars(maxent_cast_files, along = list(month = month.abb[imonth])) |>
+maxent_z = basename(dirname(maxent_cast_files))
+maxent_len = nchar(maxent_z) 
+maxent_imonth = substring(maxent_z, maxent_len -1) |>
+  as.numeric()
+
+maxent_cast_plots = stars::read_stars(maxent_cast_files, along = list(month = month.abb[maxent_imonth])) |>
   dplyr::rename("Habitat Suitability Index" = "maxent_prediction.tif")
 
 png(file.path(vpath, paste0(cfg$version, "maxent_compiled_casts.png")), 
@@ -251,3 +262,95 @@ if (TRUE %in% file.exists(maxent_vi_files)) {
          width = 11, height = 8.5, units = "in", dpi = 300)
 }
 
+mon_colors =  c("01" = "#5978a3",
+                "02" = "#83b9e2",
+                "03" = "#003c00",
+                "04" = "#30662d",
+                "05" = "#5b9359",
+                "06" = "#be9200",
+                "07" = "#dbb142",
+                "08" = "#ffda7a",
+                "09" = "#9a0000",
+                "10" = "#a83f38",
+                "11" = "#ad7272",
+                "12" = "#292f56")
+
+rf_pd_files = list.files(path = file.path(cfg$root_path, cfg$tidy_wf_path), 
+                         pattern = "rf_pd.rds",
+                         recursive = TRUE,
+                         full.names = TRUE) 
+rf_pd_names = basename(rf_pd_files) |>
+  substring(11, 12)
+if (TRUE %in% file.exists(rf_pd_files)) {
+  rf_pd = lapply(rf_pd_files, readr::read_rds) |>
+    rlang::set_names(rf_pd_names)
+  rf_pd = pd_cov(rf_pd)
+  rf_pd_plot = ggplot() +
+    geom_line(data = rf_pd, aes(x = bin_mid,
+                                y = pd, 
+                                color = month)) +
+    scale_y_continuous(limits = c(0, 1)) +
+    scale_color_manual(values = mon_colors) +
+    theme_classic() +
+    # ggtitle(cfg$graphics$rf_metrics_title) +
+    # labs(x = cfg$graphics$x)  +
+    facet_wrap(~ covar, scales = "free_x")
+  rf_pd_plot
+  ggsave(filename = sprintf("%s_rf_pd.png", cfg$version),
+         plot = rf_pd_plot, 
+         path = vpath, 
+         width = 11, height = 8.5, units = "in", dpi = 300)
+}
+
+bt_pd_files = list.files(path = file.path(cfg$root_path, cfg$tidy_wf_path), 
+                         pattern = "bt_pd.rds",
+                         recursive = TRUE,
+                         full.names = TRUE) 
+bt_pd_names = basename(bt_pd_files) |>
+  substring(11, 12)
+if (TRUE %in% file.exists(bt_pd_files)) {
+  bt_pd = lapply(bt_pd_files, readr::read_rds) |>
+    rlang::set_names(bt_pd_names)
+  bt_pd = pd_cov(bt_pd)
+  bt_pd_plot = ggplot() +
+    geom_line(data = bt_pd, aes(x = bin_mid,
+                                y = pd, 
+                                color = month)) +
+    scale_y_continuous(limits = c(0, 1)) +
+    scale_color_manual(values = mon_colors) +
+    theme_classic() +
+    # ggtitle(cfg$graphics$rf_metrics_title) +
+    # labs(x = cfg$graphics$x)  +
+    facet_wrap(~ covar, scales = "free_x")
+  bt_pd_plot
+  ggsave(filename = sprintf("%s_bt_pd.png", cfg$version),
+         plot = bt_pd_plot, 
+         path = vpath, 
+         width = 11, height = 8.5, units = "in", dpi = 300)
+}
+
+maxent_pd_files = list.files(path = file.path(cfg$root_path, cfg$tidy_wf_path), 
+                         pattern = "maxent_pd.rds",
+                         recursive = TRUE,
+                         full.names = TRUE) 
+maxent_pd_names = basename(maxent_pd_files) |>
+  substring(11, 12)
+if (TRUE %in% file.exists(maxent_pd_files)) {
+  maxent_pd = lapply(maxent_pd_files, readr::read_rds) |>
+    rlang::set_names(maxent_pd_names)
+  maxent_pd = pd_cov(maxent_pd)
+  maxent_pd_plot = ggplot() +
+    geom_line(data = maxent_pd, aes(x = bin_mid,
+                                y = pd, 
+                                color = month)) +
+    scale_color_manual(values = mon_colors) +
+    theme_classic() +
+    # ggtitle(cfg$graphics$rf_metrics_title) +
+    # labs(x = cfg$graphics$x)  +
+    facet_wrap(~ covar, scales = "free")
+  maxent_pd_plot
+  ggsave(filename = sprintf("%s_maxent_pd.png", cfg$version),
+         plot = maxent_pd_plot, 
+         path = vpath, 
+         width = 11, height = 8.5, units = "in", dpi = 300)
+}

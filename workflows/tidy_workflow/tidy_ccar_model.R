@@ -31,7 +31,7 @@ args = argparser::arg_parser("tidymodels/tidysdm modeling and forecasting for wh
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_workflow/t01.00030.01.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_workflow/t01.00010.07.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -58,14 +58,14 @@ obs = read_brickman_points(file = file.path(cfg$root_path, cfg$gather_data_path,
   sf::st_as_sf() |>
   dplyr::filter(id == 1, basisOfRecord %in% cfg$obs_filter$basisOfRecord) |>
   dplyr::select(all_of(cfg$vars)) |>
-  dplyr::filter(month == as.numeric(cfg$month)) |>
+  dplyr::filter(month %in% as.numeric(cfg$month)) |>
   dplyr::mutate(class = "presence")
 
 bg = read_brickman_points(file = file.path(cfg$root_path, cfg$gather_data_path, "brickman_covar_obs_bg.gpkg")) |>
   sf::st_as_sf() |>
   dplyr::filter(id == 0) |>
   dplyr::select(all_of(cfg$vars)) |>
-  dplyr::filter(month == as.numeric(cfg$month)) |>
+  dplyr::filter(month %in% as.numeric(cfg$month)) |>
   dplyr::mutate(class = "background")
 
 data = dplyr::bind_rows(obs, bg) |>
@@ -201,7 +201,8 @@ rf_pd = partial_dependence(object = extract_fit_engine(rf_ws_fit_final),
                              dplyr::select(-class) |>
                              sf::st_drop_geometry(),
                            which_pred = "presence",
-                           prob = TRUE)
+                           prob = TRUE) |>
+  readr::write_rds(file.path(vpath, paste0(cfg$version, "_rf_pd.rds")))
 rf_pd_plot = plot(rf_pd, share_y = "all")
 png(filename = file.path(vpath, sprintf("%s_rf_pd.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
@@ -254,7 +255,8 @@ bt_pd = partial_dependence(object = extract_fit_engine(bt_ws_fit_final),
                              sf::st_drop_geometry() |>
                              as.matrix(),
                            which_pred = "presence",
-                           prob = TRUE)
+                           prob = TRUE) |>
+  readr::write_rds(file.path(vpath, paste0(cfg$version, "_bt_pd.rds")))
 bt_pd_plot = plot(bt_pd, share_y = "all")
 png(filename = file.path(vpath, sprintf("%s_bt_pd.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
@@ -307,7 +309,8 @@ maxent_pd = partial_dependence(object = extract_fit_engine(maxent_ws_fit_final),
                                  dplyr::select(-class) |>
                                  sf::st_drop_geometry(),
                                which_pred = "presence",
-                               prob = TRUE)
+                               prob = TRUE) |>
+  readr::write_rds(file.path(vpath, paste0(cfg$version, "_maxent_pd.rds")))
 maxent_pd_plot = plot(maxent_pd, share_y = "all")
 png(filename = file.path(vpath, sprintf("%s_maxent_pd.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)

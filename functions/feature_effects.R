@@ -242,3 +242,26 @@ feature_effects.default <- function(
   }
   structure(out, class = "EffectData")
 }
+
+#' pull data from partial dependence
+#' 
+#' @param x list of partial dependence dataframes
+#' @return list of covariates with partial dependence for month
+pd_cov = function(x) {
+  if (FALSE) {
+    x = rf_pd
+  }
+  covars = names(x[[1]])
+  xx = lapply(covars,
+              function(covar){
+                y = lapply(names(x),
+                           function(mon){
+                             x[[mon]][[covar]] |>
+                               dplyr::as_tibble() |>
+                               dplyr::mutate(covar = covar, month = mon, .before = 1)
+                           }) |>
+                  dplyr::bind_rows()
+                
+              }) |>
+    dplyr::bind_rows()
+}

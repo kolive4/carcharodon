@@ -1,0 +1,65 @@
+version: v01.004
+root_path: /mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon
+output_path: workflows/get_data_workflow
+source_path: /mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/functions
+gseal_path: workflows/tidy_workflow/versions/t02/00020
+hseal_path: workflows/tidy_workflow/versions/t03/00020
+fetch_obis: no
+species: Carcharodon carcharias
+start_date: '2000-01-01'
+end_date: '2024-01-01'
+bbox_name: nefsc_carcharodon
+months:
+- May
+- Jun
+- Jul
+- Aug
+- Sep
+- Oct
+- Nov
+mon_covariates:
+- SST
+- Tbtm
+- MLD
+- SSS
+- Sbtm
+- U
+- V
+- Xbtm
+static_covariates: Bathy_depth
+data_path: /mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/data
+figure_path: /mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/figures
+fish_path: fish_data/MDAT_Fish_SummaryProducts_NEFSC/commondata/raster_data
+spring_fish_file: fish_biomass_nefsc_2010_2019_SPRING_All.tif
+fall_fish_file: fish_biomass_nefsc_2010_2019_FALL_All.tif
+dfs_path: mapping/etopo
+dfs_file: etopo_warped_distance_to_shore_meters.tif
+brickman_subset: no
+mask_name: mapping/gebco/gebco_mask.tif
+contour_name: ~
+bg_number: 10000.0
+bg_m: 10.0
+polygon: brickman/bathy/PRESENT_PRESENT_Bathy_depth_750.gpkg
+bg_seed: ~
+year: NA
+scenario: PRESENT
+fall_fish_mon:
+- 12.0
+- 1.0
+- 2.0
+- 3.0
+- 4.0
+- 5.0
+spring_fish_mon:
+- 6.0
+- 7.0
+- 8.0
+- 9.0
+- 10.0
+- 11.0
+which_fish: COMBO
+inat_file: inaturalist/observations-507834.csv
+seal_tidy: yes
+seal_model_type: maxent
+hseal: harbor
+gseal: gray

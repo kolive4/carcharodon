@@ -1,9 +1,9 @@
-yamls = list.files(path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/reports", 
-                   pattern = glob2rx("c01.00010.*.yaml"),
+yamls = list.files(path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_reports", 
+                   pattern = glob2rx("c01.**01*.*.yaml"),
                    full.names = TRUE)
 
 # Rscript workflows/modeling_workflow/maxent_modeling.R --config workflows/modeling_workflow/v01.2012.yaml
-script = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/reports/compiled_report.R"
+script = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_reports/compiled_report_sharks.R"
 
 for (yaml in yamls) {
   cmd = sprintf("Rscript %s --config %s", script, yaml)

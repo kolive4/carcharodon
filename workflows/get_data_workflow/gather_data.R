@@ -25,7 +25,7 @@ args = argparser::arg_parser("assembling observation and background data",
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/get_data_workflow/v01.003.yaml",
+                          default = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/get_data_workflow/v01.004.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -80,7 +80,7 @@ curated_plot
 png(filename = file.path(vpath, "figures", paste0(cfg$version, "_curated_occs.png")), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 curated_plot
-dev.off()
+ok = dev.off()
 
 psat = read.csv(file.path(cfg$data_path, "satellite/Skomal_PSAT_data.csv")) |>
   sf::st_as_sf(coords = c("Longitude", "Latitude"), crs = 4326) |>
@@ -123,7 +123,7 @@ if (!is.null(cfg$contour_name)) {
 png(filename = file.path(vpath, "figures", paste0(cfg$version, "_satellite_occs.png")), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 satellite_plot
-dev.off()
+ok = dev.off()
 
 inat_removed_cols = c("uuid", "observed_on_string", "url", "image_url", "sound_url", "tag_list", "captive_cultivated", "oauth_application_id", "private_place_guess", "private_latitude", "private_longitude", "geoprivacy", "taxon_geoprivacy", "coordinates_obscured", "species_guess")
 inat = read.csv(file.path(cfg$data_path, cfg$inat_file)) |>
@@ -147,7 +147,7 @@ if (!is.null(cfg$contour_name)) {
 png(filename = file.path(vpath, "figures", paste0(cfg$version, "_inat_occs.png")), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 inat_plot
-dev.off()
+ok = dev.off()
 
 if(cfg$fetch_obis){
   fetch_obis(scientificname =  cfg$species)
@@ -189,7 +189,7 @@ if (!is.null(cfg$contour_name)) {
 png(filename = file.path(vpath, "figures", paste0(cfg$version, "_obis_occs.png")), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 obis_plot
-dev.off()
+ok = dev.off()
 
 wshark.mask = st_extract(mask, wshark)
 
@@ -229,7 +229,7 @@ occs
 png(filename = file.path(vpath, "figures", paste0(cfg$version, "_occs.png")), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 occs
-dev.off()
+ok = dev.off()
 
 non_sat_BOR = c("OBIS", "curated", "iNaturalist")
 non_sat = ggplot() +
@@ -247,7 +247,7 @@ non_sat
 png(filename = file.path(vpath, "figures", paste0(cfg$version, "_non_sat_occs.png")), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 non_sat
-dev.off()
+ok = dev.off()
   
 
 # load covariates from brickman
@@ -290,16 +290,30 @@ spring_fish_layer = read_stars(file.path(cfg$data_path, cfg$fish_path, cfg$sprin
   st_warp(dest = brickman_bathymetry)
 
 #seal layers
-if(cfg$hseal == "harbor") {
-  hseal_layer = load_seal(scenario = cfg$scenario, year = cfg$year, species = cfg$hseal, band_as_time = TRUE) |>
-    dplyr::rename(hseal = "prediction.tif") |>
-    stars::st_warp(dest = brickman_bathymetry) 
-} 
-
-if(cfg$gseal == "gray") {
-  gseal_layer = load_seal(scenario = cfg$scenario, year = cfg$year, species = cfg$gseal) |>
-    dplyr::rename(gseal = "prediction.tif") |>
-    stars::st_warp(dest = brickman_bathymetry) 
+if (cfg$seal_tidy == TRUE) {
+  if(cfg$hseal == "harbor") {
+    hseal_layer = load_tidy_seal(species = cfg$hseal, model_type = cfg$seal_model_type, band_as_time = TRUE) |>
+      dplyr::rename(hseal = sprintf("%s_prediction.tif", cfg$seal_model_type)) |>
+      stars::st_warp(dest = brickman_bathymetry) 
+  } 
+  
+  if(cfg$gseal == "gray") {
+    gseal_layer = load_tidy_seal(species = cfg$gseal, model_type = cfg$seal_model_type, band_as_time = TRUE) |>
+      dplyr::rename(gseal = sprintf("%s_prediction.tif", cfg$seal_model_type)) |>
+      stars::st_warp(dest = brickman_bathymetry)  
+  }
+} else if(cfg$seal_tidy == FALSE) {
+  if(cfg$hseal == "harbor") {
+    hseal_layer = load_seal(scenario = cfg$scenario, year = cfg$year, species = cfg$hseal, path = file.path(cfg$root_path, cfg$hseal_path), band_as_time = TRUE) |>
+      dplyr::rename(hseal = "prediction.tif") |>
+      stars::st_warp(dest = brickman_bathymetry) 
+  } 
+  
+  if(cfg$gseal == "gray") {
+    gseal_layer = load_seal(scenario = cfg$scenario, year = cfg$year, species = cfg$gseal, path = file.path(cfg$root_path, cfg$seal_path), band_as_time = TRUE) |>
+      dplyr::rename(gseal = "prediction.tif") |>
+      stars::st_warp(dest = brickman_bathymetry) 
+  }
 }
 
 #distance from shore layer
