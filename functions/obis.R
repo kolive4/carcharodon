@@ -334,3 +334,41 @@ group_stats <- function(x, grouping_var = "basisOfRecord") {
     dplyr::bind_rows()
   return(y)
 }
+
+
+#' Function to reassign coordinates from a species observation database to be within the bounds of a covariate data layer
+#' 
+#' @param obs sf object observation data
+#' @param mask_path path to mask stars layer
+#' @param lut_path path to look up table that indexes to the closest non-missing cell
+#' @return sf object observation data with reassigned coordinates within the mask
+reassign_coords = function(obs, mask_path, lut_path) {
+  if (FALSE) {
+    obs = species
+    mask_path = file.path(cfg$data_path, "mapping/brick_mask.tif")
+    lut_path = file.path(vpath, sprintf("%s_brick_nearest_lut.tif", cfg$version))
+  }
+  mask = read_stars(mask_path)
+  
+  lut = read_stars(lut_path)
+  
+  index = twinkle::closest_available_cell(x = species,
+                                          lut = brick_lut) |>
+    dplyr::mutate(reassign = index != original)
+  
+  obs = obs |>
+    dplyr::mutate(reassign = index$reassign)
+  
+  s_obs_index = split(index, index$reassign)
+  s_obs = split(obs, obs$reassign)
+  
+  s_obs_index[["TRUE"]] = twinkle::stars_index_to_loc(index = s_obs_index[["TRUE"]]$index,
+                                                      x = mask,
+                                                      form = "sf")
+  
+  st_geometry(s_obs[["TRUE"]]) = st_geometry(s_obs_index[["TRUE"]])
+  
+  obs = dplyr::bind_rows(s_obs)
+  
+  return(obs)
+}

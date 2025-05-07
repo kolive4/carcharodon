@@ -1,5 +1,6 @@
 version: c01.00030.01_12
 root_path: /mnt/ecocast/projects/koliveira/subprojects/carcharodon
+source_path: functions
 report_path: workflows/tidy_reports
 tidy_wf_path: workflows/tidy_workflow/versions/t01/00030
 tidy_cast_path: workflows/tidy_cast/versions/t01/00030

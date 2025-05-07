@@ -1,0 +1,46 @@
+version: t81.12010.01
+root_path: /mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon
+source_path: functions
+output_path: workflows/tidy_cast
+gather_data_path: /workflows/get_data_workflow/versions/v01/v01.104
+month: 01
+vars:
+  - eventDate
+  - Year
+  - month
+  - basisOfRecord
+  - geom
+  - log_depth
+  - brick_tbtm
+  - brick_mld
+  - brick_sss
+  - brick_sbtm
+  - gseal
+  - hseal
+dynamic_names: 
+  - brick_tbtm
+  - brick_mld 
+  - brick_sss
+  - brick_sbtm 
+  - gseal
+  - hseal
+obs_filter:
+  basisOfRecord:
+  - OBIS
+  - curated
+  - iNaturalist
+data_path: data
+depth_path: brickman/bathy
+brick_path: brickman/gom_carcharodon
+fish_path: fish_data/MDAT_Fish_SummaryProducts_NEFSC/commondata/raster_data
+etopo_path: mapping/etopo
+wf_path: workflows/tidy_workflow/versions/t81/12010
+wf_version: t81.12010.01
+mask_name: mapping/gebco/gebco_750_mask.tif
+contour_name: mapping/etopo/etopo_warped_750_contour.gpkg
+scenario: PRESENT
+year: PRESENT
+graphics:
+  ggtitle: January Nowcast Habitat Suitability
+  add_pres_pts: yes
+  plot_contour: yes

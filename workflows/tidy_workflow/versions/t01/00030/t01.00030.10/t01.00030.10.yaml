@@ -2,7 +2,7 @@ version: t01.00030.10
 root_path: /mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon
 source_path: functions
 output_path: workflows/tidy_workflow
-gather_data_path: workflows/get_data_workflow/versions/v01/v01.003
+gather_data_path: workflows/get_data_workflow/versions/v01/v01.004
 vars:
 - eventDate
 - Year

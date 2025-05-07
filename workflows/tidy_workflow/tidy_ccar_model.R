@@ -31,7 +31,7 @@ args = argparser::arg_parser("tidymodels/tidysdm modeling and forecasting for wh
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_workflow/t01.00010.07.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_workflow/t01.10010.07.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -84,7 +84,7 @@ split_data = ggplot() +
 png(filename = file.path(vpath, sprintf("%s_initial_split.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 print(split_data)
-dev.off()
+ok = dev.off()
 
 ws_training = training(split)
 ws_train_cv = spatialsample::spatial_block_cv(data = ws_training, 
@@ -95,7 +95,7 @@ cv_plot = autoplot(ws_train_cv) +
 png(filename = file.path(vpath, sprintf("%s_cv_plot.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 print(cv_plot)
-dev.off()
+ok = dev.off()
 
 wflow = workflows::workflow()
 rec = recipes::recipe(head(data), class ~ .)
@@ -157,7 +157,7 @@ model_comp = autoplot(ws_models) +
 png(filename = file.path(vpath, sprintf("%s_model_comp.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 print(model_comp)
-dev.off()
+ok = dev.off()
 
 #rf-----
 rf_model_ranks = metric_table(ws_models, "simple_rf")
@@ -181,9 +181,11 @@ p_rf = predict(final_rf_workflow, rsample::testing(split), type = "prob") |>
   dplyr::mutate(.pred_class = ifelse(.pred_presence >= 0.5, "presence", "background") |>
                   factor(levels = c("presence", "background")),
                 class = testing(split)$class |>
-                  factor(levels = c("presence", "background")))
+                  factor(levels = c("presence", "background"))) |>
+  readr::write_csv(file = file.path(vpath, paste0(cfg$version, "_rf_pred.csv")))
 
-cm_rf = yardstick::conf_mat(p_rf, truth = class, estimate = .pred_class)
+cm_rf = yardstick::conf_mat(p_rf, truth = class, estimate = .pred_class) |>
+  write_RDS(file = file.path(vpath, paste0(cfg$version, "_rf_conf_mat.rds")))
 autoplot(cm_rf, type = "heatmap")
 
 roc_rf = yardstick::roc_curve(p_rf, .pred_presence, truth = class)
@@ -193,7 +195,7 @@ rf_roc_plot = plot_roc(p_rf, truth = class, pred = .pred_presence, title = "Rand
 png(filename = file.path(vpath, sprintf("%s_rf_pauc.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 print(rf_roc_plot)
-dev.off()
+ok = dev.off()
 
 rf_pd = partial_dependence(object = extract_fit_engine(rf_ws_fit_final), 
                            v = extract_var_names(rf_ws_fit_final), 
@@ -207,7 +209,7 @@ rf_pd_plot = plot(rf_pd, share_y = "all")
 png(filename = file.path(vpath, sprintf("%s_rf_pd.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 print(rf_pd_plot)
-dev.off()
+ok = dev.off()
 
 rf_vi = variable_importance(x = final_rf_workflow, y = training(split), type = "prob") |>
   write.csv(file.path(vpath, paste0(cfg$version, "_rf_vi.csv")))
@@ -234,9 +236,11 @@ p_bt = predict(final_bt_workflow, rsample::testing(split), type = "prob") |>
   dplyr::mutate(.pred_class = ifelse(.pred_presence >= 0.5, "presence", "background") |>
                   factor(levels = c("presence", "background")),
                 class = testing(split)$class |>
-                  factor(levels = c("presence", "background")))
+                  factor(levels = c("presence", "background"))) |>
+  readr::write_csv(file = file.path(vpath, paste0(cfg$version, "_bt_pred.csv")))
 
-cm_bt = yardstick::conf_mat(p_bt, truth = class, estimate = .pred_class)
+cm_bt = yardstick::conf_mat(p_bt, truth = class, estimate = .pred_class) |>
+  write_RDS(file = file.path(vpath, paste0(cfg$version, "_bt_conf_mat.rds")))
 autoplot(cm_bt, type = "heatmap")
 
 roc_bt = yardstick::roc_curve(p_bt, .pred_presence, truth = class)
@@ -246,7 +250,7 @@ bt_roc_plot = plot_roc(p_bt, truth = class, pred = .pred_presence, title = "Boos
 png(filename = file.path(vpath, sprintf("%s_bt_pauc.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 print(bt_roc_plot)
-dev.off()
+ok = dev.off()
 
 bt_pd = partial_dependence(object = extract_fit_engine(bt_ws_fit_final), 
                            v = extract_var_names(bt_ws_fit_final), 
@@ -261,7 +265,7 @@ bt_pd_plot = plot(bt_pd, share_y = "all")
 png(filename = file.path(vpath, sprintf("%s_bt_pd.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 print(bt_pd_plot)
-dev.off()
+ok = dev.off()
 
 bt_vi = variable_importance(x = final_bt_workflow, y = training(split), type = "prob") |>
   write.csv(file.path(vpath, paste0(cfg$version, "_bt_vi.csv")))
@@ -289,9 +293,11 @@ p_maxent = predict(final_maxent_workflow, rsample::testing(split), type = "prob"
   dplyr::mutate(.pred_class = ifelse(.pred_presence >= 0.5, "presence", "background") |>
                   factor(levels = c("presence", "background")),
                 class = testing(split)$class |>
-                  factor(levels = c("presence", "background")))
+                  factor(levels = c("presence", "background"))) |>
+  readr::write_csv(file = file.path(vpath, paste0(cfg$version, "_maxent_pred.csv")))
 
-cm_maxent = yardstick::conf_mat(p_maxent, truth = class, estimate = .pred_class)
+cm_maxent = yardstick::conf_mat(p_maxent, truth = class, estimate = .pred_class) |>
+  write_RDS(file = file.path(vpath, paste0(cfg$version, "_maxnet_conf_mat.rds")))
 autoplot(cm_maxent, type = "heatmap")
 
 roc_maxent = yardstick::roc_curve(p_maxent, .pred_presence, truth = class)
@@ -301,7 +307,7 @@ maxent_roc_plot = plot_roc(p_maxent, truth = class, pred = .pred_presence, title
 png(filename = file.path(vpath, sprintf("%s_maxent_pauc.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 print(maxent_roc_plot)
-dev.off()
+ok = dev.off()
 
 maxent_pd = partial_dependence(object = extract_fit_engine(maxent_ws_fit_final), 
                                v = extract_var_names(maxent_ws_fit_final), 
@@ -309,13 +315,14 @@ maxent_pd = partial_dependence(object = extract_fit_engine(maxent_ws_fit_final),
                                  dplyr::select(-class) |>
                                  sf::st_drop_geometry(),
                                which_pred = "presence",
-                               prob = TRUE) |>
+                               prob = TRUE,
+                               type = "cloglog") |>
   readr::write_rds(file.path(vpath, paste0(cfg$version, "_maxent_pd.rds")))
 maxent_pd_plot = plot(maxent_pd, share_y = "all")
 png(filename = file.path(vpath, sprintf("%s_maxent_pd.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 print(maxent_pd_plot)
-dev.off()
+ok = dev.off()
 
 maxent_vi = variable_importance(x = final_maxent_workflow, y = training(split), type = "prob") |>
   write.csv(file.path(vpath, paste0(cfg$version, "_maxent_vi.csv")))

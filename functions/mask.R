@@ -62,6 +62,11 @@ distance_to_shore = function(
     x = stars::read_stars(here::here("data", "mapping", "etopo", "etopo_warped_mask.tif")) |>
       rlang::set_names("mask"),
     water = 1){
+  if (FALSE) {
+    x = stars::read_stars(here::here("data", "mapping", "etopo", "etopo_warped_mask.tif")) |>
+      rlang::set_names("mask")
+    water = 1
+  }
   
   x = rlang::set_names(x, "mask")
 

@@ -1,0 +1,13 @@
+version: d01.00000.01_12
+source_path: functions
+root_path: /mnt/ecocast/projects/koliveira/subprojects/carcharodon
+diff_path: workflows/tidy_difference
+a_path: workflows/tidy_cast/versions/t01
+a: 11010
+b_path: workflows/tidy_cast/versions/t01
+b: 12010
+tidy_wf_path: workflows/tidy_workflow/versions/t01
+data_path: data
+model_type: rf
+mask_name: mapping/gebco/gebco_750_mask.tif
+contour_name: mapping/etopo/etopo_warped_750_contour.gpkg

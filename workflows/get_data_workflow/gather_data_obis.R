@@ -25,7 +25,7 @@ args = argparser::arg_parser("assembling observation and background data",
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/get_data_workflow/v04.000.yaml",
+                          default = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/get_data_workflow/v03.000.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -48,6 +48,37 @@ charlier::write_config(cfg, filename = file.path(vpath, basename(args$config)))
 
 # read in species data & filter species by dates & subset species by bounding box
 bbox = cofbb::get_bb(cfg$bbox_name, form = "sf")
+coast = rnaturalearth::ne_coastline(scale = "large", returnclass = "sf") |>
+  sf::st_geometry()
+
+# load covariates from brickman
+if(cfg$brickman_subset){
+  monthly_brick_cov = subset_brickman(scenario = cfg$scenario, 
+                                      year = cfg$year,
+                                      vars = cfg$mon_covariates, 
+                                      interval = "mon", 
+                                      bb = bbox, 
+                                      band_as_time = TRUE, 
+                                      path = file.path(cfg$data_path, "brickman/gom_carcharodon"))
+  
+  brickman_bathymetry = subset_brickman(scenario = 'PRESENT', 
+                                        vars = cfg$static_covariates, 
+                                        bb = bbox, 
+                                        band_as_time = FALSE, # does this line need to be set to false for depth? it's static no?
+                                        path = file.path(cfg$data_path, "brickman/bathy"))
+}else{
+  monthly_brick_cov = load_brickman(scenario = cfg$scenario,
+                                    year = cfg$year,
+                                    vars = cfg$mon_covariates, 
+                                    interval = "mon", 
+                                    band_as_time = TRUE, 
+                                    path = file.path(cfg$data_path, "brickman/gom_carcharodon"))
+  
+  brickman_bathymetry = load_brickman(scenario = 'PRESENT', 
+                                      vars = cfg$static_covariates, 
+                                      band_as_time = TRUE, 
+                                      path = file.path(cfg$data_path, "brickman/bathy"))
+}
 
 if(cfg$fetch_obis){
   fetch_obis(scientificname =  cfg$species)
@@ -59,6 +90,11 @@ if(cfg$fetch_obis){
                      dwc = TRUE, 
                      path = file.path(cfg$data_path, "obis"))
 }
+
+brick_mask = brickman_bathymetry |>
+  dplyr::mutate(mask = !is.na(Bathy_depth)) |>
+  dplyr::select(mask) |>
+  stars::write_stars(file.path(cfg$data_path, "mapping/brick_mask.tif"))
 
 mask = stars::read_stars(file.path(cfg$data_path, cfg$mask_name)) |>
   rlang::set_names("mask")
@@ -77,7 +113,36 @@ species <- species |>
   dplyr::rename(c(obis_sst = sst, obis_depth = depth)) |>
   sf::st_crop(bbox)
 
-species.mask = st_extract(mask, species)
+x = reassign_coords(obs = species,
+                    mask_path = file.path(cfg$data_path, "mapping/brick_mask.tif"),
+                    lut_path = file.path(vpath, sprintf("%s_brick_nearest_lut.tif", cfg$version)))
+
+brick_lut = twinkle::make_raster_lut(x = brick_mask["mask"],
+                               mask_value = 0) |>
+  stars::write_stars(file.path(vpath, sprintf("%s_brick_nearest_lut.tif", cfg$version)))
+
+species_index = twinkle::closest_available_cell(x = species,
+                                                lut = brick_lut) |>
+  dplyr::mutate(reassign = index != original)
+
+species = species |>
+  dplyr::mutate(reassign = species_index$reassign)
+
+s_species_index = split(species_index, species_index$reassign)
+s_species = split(species, species$reassign)
+
+s_species_index[["TRUE"]] = twinkle::stars_index_to_loc(index = s_species_index[["TRUE"]]$index,
+                                                        x = brick_mask["mask"],
+                                                        form = "sf")
+
+st_geometry(s_species[["TRUE"]]) = st_geometry(s_species_index[["TRUE"]])
+
+species = dplyr::bind_rows(s_species)
+
+ggplot() +
+  geom_stars(data = brick_mask["mask"]) +
+  geom_sf(data = species_index |> filter(reassign == TRUE), color = "black", alpha = 0.5) +
+  geom_sf(data = s_species_index[["TRUE"]], color = "green", alpha = 0.5)
 
 species = species |>
   dplyr::filter(species.mask$mask == 1) |>

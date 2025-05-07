@@ -1,3 +1,8 @@
+#' Function to create and write a velocity magnitude layer based on an east-west and north-south current layer
+#' 
+#' @param scenario climate scenario
+#' @param year year projected
+#' @return velocity magnitude stars object
 write_vel_mag = function(scenario = c("RCP85", "RCP45", "PRESENT")[1], 
                          year = c(2055, 2075, NA)[1]) {
   if(FALSE) {
@@ -23,6 +28,12 @@ write_vel_mag = function(scenario = c("RCP85", "RCP45", "PRESENT")[1],
     stars::write_stars(sprintf("/mnt/ecocast/projects/koliveira/subprojects/carcharodon/data/brickman/%s_%s_vel_mag.tif", scenario, year))
 }
 
+#' Function to read in a created velocity magnitude stars layer
+#' 
+#' @param scenario climate scenario
+#' @param year year for the scenario
+#' @param band_as_time description
+#' @return stars object
 read_vel_mag = function(scenario, 
                         year, 
                         band_as_time) {
@@ -63,4 +74,23 @@ avg_covs = function(x, na.rm = FALSE){
   z = z / d[3]
   
   return(z)
+}
+
+#' function to reset the dimension of stars objects (intended for month reset)
+#' @param x stars object
+#' @param dn which dimension name to reset
+#' @return description
+reset_stars_start = function(x, dn) {
+  if(FALSE) {
+    x = a
+    dn = "month"
+  }
+  d = stars::st_dimensions(x)
+  n = abs(d[[dn]]$to - d[[dn]]$from)
+  
+  d[[dn]]$from = 1
+  d[[dn]]$to = 1 + n
+  
+  st_dimensions(x) <- d
+  return(x)
 }

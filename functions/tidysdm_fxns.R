@@ -518,7 +518,7 @@ variable_importance = function(x, y,
   r = dplyr::as_tibble(r, rownames = "var") |>
     dplyr::mutate(importance = round(100*(1-.data$mean)/mean_data,2), .after = 1)
   # if the correlations with original are high that means shuffling the variable
-  # had little effect on the output models.  Thus the variable has low influence.
+  # had little effect on the output models. Thus the variable has low influence.
   # invert the importance so ones with low mean correlation are now higher valued.
   # just a convenience for the user
   switch(tolower(arrange[1]),
@@ -542,20 +542,35 @@ n_metric = function(x) {
 #' @param model_type chr, one of simple_rf, simple_brt, or simple_maxent
 #' @return a ranked table of models ranked based on the average mean of metrics
 metric_table = function(wf_set, model_type){
+  if(FALSE){
+    wf_set = ws_models
+    model_type = "simple_bt"
+  }
   results = wf_set |>
     workflowsets::extract_workflow_set_result(model_type)
   
-  best_accuracy = tune::show_best(results, metric = "accuracy", n = n_metric(results))
-  best_roc = tune::show_best(results, metric = "roc_auc", n = n_metric(results))
-  best_boyce = tune::show_best(results, metric = "boyce_cont", n = n_metric(results))
-  best_tss = tune::show_best(results, metric = "tss_max", n = n_metric(results))
+  show.best = function(results, metric_name, n = n_metric(results)) {
+    x = try(tune::show_best(results, metric = metric_name, n = n))
+    if (inherits(x, "try-error")) {
+      x = NULL
+    }
+    return(x)
+  }
   
-  best_tbl = dplyr::bind_rows(best_accuracy, best_roc, best_boyce, best_tss)
+  best_tbl = lapply(unique(results$.metrics[[1]]$.metric), function(name){
+    show.best(results, name)
+  }) |>
+    dplyr::bind_rows() |>
+    dplyr::mutate(mean = dplyr::if_else(.metric == "brier_class", 1-mean, mean))
   
   model_ranking = best_tbl |>
     dplyr::group_by(.config) |>
-    dplyr::mutate(avg_mean = mean(mean, na.rm = TRUE)) |>
-    arrange(desc(avg_mean))
+    dplyr::group_map(function(tbl, key){
+      dplyr::mutate(tbl, avg_score = mean(.data$mean, na.rm = TRUE)) |>
+        dplyr::select(-any_of(c("mean", "std_err")))
+    }, .keep = TRUE) |>
+    dplyr::bind_rows() |>
+    arrange(desc(avg_score))
   
   return(model_ranking)
 }
@@ -565,11 +580,11 @@ metric_table = function(wf_set, model_type){
 #' @param ranked_tbl a ranked table of models ranked based on the average mean of metrics
 #' @return tibble of model metrics to be used to finalize the final workflow
 best_hyperparams = function(ranked_tbl){
-  non_params = c(".metric", ".estimator", "mean", "n", "std_err", ".config", "avg_mean")
+  non_params = c(".metric", ".estimator", "n", ".config", "avg_score")
   
   hyperparams = ranked_tbl |>
     dplyr::ungroup() |>
-    dplyr::select(-all_of(non_params)) |>
+    dplyr::select(-any_of(non_params)) |>
     head(1)
   
   return(hyperparams)
