@@ -544,7 +544,7 @@ n_metric = function(x) {
 metric_table = function(wf_set, model_type){
   if(FALSE){
     wf_set = ws_models
-    model_type = "simple_bt"
+    model_type = "simple_gam"
   }
   results = wf_set |>
     workflowsets::extract_workflow_set_result(model_type)
@@ -557,20 +557,31 @@ metric_table = function(wf_set, model_type){
     return(x)
   }
   
-  best_tbl = lapply(unique(results$.metrics[[1]]$.metric), function(name){
-    show.best(results, name)
+  nr = which(sapply(results$.metrics, nrow) != 0) 
+  
+  best_tbl = if (length(nr) == 0) {
+    "No metrics returned"
+  } else {
+    lapply(unique(results$.metrics[[nr[1]]]$.metric), function(name){
+      show.best(results, name)
   }) |>
     dplyr::bind_rows() |>
     dplyr::mutate(mean = dplyr::if_else(.metric == "brier_class", 1-mean, mean))
+  }
   
-  model_ranking = best_tbl |>
-    dplyr::group_by(.config) |>
-    dplyr::group_map(function(tbl, key){
-      dplyr::mutate(tbl, avg_score = mean(.data$mean, na.rm = TRUE)) |>
-        dplyr::select(-any_of(c("mean", "std_err")))
-    }, .keep = TRUE) |>
-    dplyr::bind_rows() |>
-    arrange(desc(avg_score))
+  
+  model_ranking = if (!inherits(best_tbl, "data.frame")) {
+    NULL
+  } else {
+    best_tbl |>
+      dplyr::group_by(.config) |>
+      dplyr::group_map(function(tbl, key){
+        dplyr::mutate(tbl, avg_score = mean(.data$mean, na.rm = TRUE)) |>
+          dplyr::select(-any_of(c("mean", "std_err")))
+        }, .keep = TRUE) |>
+      dplyr::bind_rows() |>
+      arrange(desc(avg_score))
+    }
   
   return(model_ranking)
 }
@@ -588,4 +599,63 @@ best_hyperparams = function(ranked_tbl){
     head(1)
   
   return(hyperparams)
+}
+
+#' Function to thin observations by cell and distance based on their observation type
+#' 
+#' @param x sf object, dataframe with observation data
+#' @param BoR chr, basis of record(s) by which you want to thin
+#' @param mask name of the mask used in thin_by_cell
+#' @param dist num, distance in kilometers to thin by
+#' @return thinned observation sf object 
+thin_by_BoR = function(x, BoR, mask, dist) {
+  y = x |>
+    dplyr::filter(basisOfRecord %in% BoR) |>
+    tidysdm::thin_by_cell(mask) |>
+    tidysdm::thin_by_dist(dist_min = tidysdm::km2m(dist))
+  
+  x = bind_rows(x |> dplyr::filter(!basisOfRecord %in% BoR), y)
+  
+  return(x)
+}
+
+
+#' Function to thin background based on cell and month
+#' 
+#' @param bg a background dataset, must have cell and month
+#' @param obs an observation dataset, can be thinned or not, must have cell and month
+#' @param dist optional, a buffer distance (km) around presence by which to avoid bg points
+#' @return thin background dataset
+thin_background = function(bg, obs, dist = NULL){
+  if (FALSE) {
+    obs = obs_bg |>
+      dplyr::filter(id == 1) |>
+      thin_by_BoR(BoR = c("SPOT", "PSAT"), mask = mask, dist = 10) 
+    bg = obs_bg |>
+      dplyr::filter(id == 0)
+    dist = 10
+  }
+  o_cell_mo = sprintf("%i-%0.2i", obs$cell, obs$month)
+  b_cell_mo = sprintf("%i-%0.2i", bg$cell, bg$month)
+  
+  ix = b_cell_mo %in% o_cell_mo
+  
+  x = dplyr::filter(bg, !ix)
+  
+  if (!is.null(dist)) {
+    ix = lapply(1:12,
+                function(imonth = 1, min_d = tidysdm::km2m(dist)){
+                  b = bg |> filter(month == imonth)
+                  o = obs |> filter(month == imonth)
+                  d = st_distance(b, o) |>
+                    drop_units() > min_d
+                  keep = apply(d, 1, all) |>
+                    which()
+                }) |>
+      unlist()
+    
+    x = bg |> slice(ix)
+  }
+  
+  return(x)
 }

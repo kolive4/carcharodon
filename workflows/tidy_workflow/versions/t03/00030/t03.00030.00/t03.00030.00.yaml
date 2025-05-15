@@ -55,7 +55,7 @@ graphics:
   add_pres_pts: yes
   plot_contour: no
 contour_name: ~
-mask_name: ~
+mask_name: mapping/gebco/gebco_mask.tif
 prediction: nowcast
 obs_filter:
   basisOfRecord: HumanObservation

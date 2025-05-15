@@ -52,13 +52,17 @@ charlier::write_config(cfg, filename = file.path(vpath, basename(args$config)))
 bb = cofbb::get_bb("nefsc_carcharodon", form = "sf")
 coast = rnaturalearth::ne_coastline(scale = "large", returnclass = "sf") |>
   sf::st_geometry()
+mask = stars::read_stars(file.path(cfg$data_path, cfg$mask_name)) |>
+  rlang::set_names("mask")
 
 obs = read_brickman_points(file = file.path(cfg$root_path, cfg$gather_data_path, "brickman_covar_obs_bg.gpkg")) |>
   sf::st_as_sf() |>
   dplyr::filter(id == 1, basisOfRecord %in% cfg$obs_filter$basisOfRecord) |>
   dplyr::select(all_of(cfg$vars)) |>
   dplyr::filter(month %in% as.numeric(cfg$month)) |>
-  dplyr::mutate(class = "presence")
+  dplyr::mutate(class = "presence") |>
+  tidysdm::thin_by_cell(mask) |>
+  tidysdm::thin_by_dist(km2m(10))
 
 bg = read_brickman_points(file = file.path(cfg$root_path, cfg$gather_data_path, "brickman_covar_obs_bg.gpkg")) |>
   sf::st_as_sf() |>
@@ -78,8 +82,9 @@ split = rsample::initial_split(data,
 
 split_data = ggplot() +
   geom_coastline(coast = coast, bb = bb, color = "darkgrey") +
-  geom_sf(data = training(split), aes(shape = class), color = "orange", alpha = 0.5) +
-  geom_sf(data = testing(split), aes(shape = class), color = "navy", alpha = 0.5)
+  geom_sf(data = training(split), aes(color = class), shape = 17, alpha = 0.5) +
+  geom_sf(data = testing(split), aes(color = class), shape = 13, alpha = 0.5) +
+  scale_color_manual(values = c("orange", "navy"))
 png(filename = file.path(vpath, sprintf("%s_initial_split.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 print(split_data)
@@ -152,6 +157,8 @@ ws_models <-
                                       spec = sdm_spec_gam(),
                                       formula = tidysdm::gam_formula(rec))
 
+ws_metrics = tidysdm::sdm_metric_set(accuracy, brier_class, pr_auc)
+
 ws_models <-
   ws_models |>
   # The first argument is a function name from the {{tune}} package
@@ -160,7 +167,7 @@ ws_models <-
                resamples = ws_train_cv, 
                grid = cfg$n_grid,
                control = control_grid(save_pred = TRUE, save_workflow = TRUE),
-               metrics = tidysdm::sdm_metric_set(accuracy, brier_class, pr_auc), verbose = TRUE
+               metrics = ws_metrics, verbose = TRUE
   )
 
 model_comp = autoplot(ws_models) +
@@ -177,7 +184,7 @@ rf_ws_workflow_final = ws_models |>
   finalize_workflow(best_hyperparams(rf_model_ranks))
 
 rf_ws_fit_final = rf_ws_workflow_final |>
-  tune::last_fit(split, metrics = tidysdm::sdm_metric_set(accuracy))
+  tune::last_fit(split, metrics = ws_metrics)
 
 rf_fit_final_metrics = rf_ws_fit_final |>
   tune::collect_metrics(summarize = FALSE) |>
@@ -232,7 +239,7 @@ bt_ws_workflow_final = ws_models |>
   finalize_workflow(best_hyperparams(bt_model_ranks))
 
 bt_ws_fit_final = bt_ws_workflow_final |>
-  tune::last_fit(split, metrics = tidysdm::sdm_metric_set(accuracy))
+  tune::last_fit(split, metrics = ws_metrics)
 
 bt_fit_final_metrics = bt_ws_fit_final |>
   tune::collect_metrics(summarize = FALSE) |>
@@ -289,7 +296,7 @@ maxent_ws_workflow_final = ws_models |>
   finalize_workflow(best_hyperparams(maxent_model_ranks))
 
 maxent_ws_fit_final = maxent_ws_workflow_final |>
-  tune::last_fit(split, metrics = tidysdm::sdm_metric_set(accuracy))
+  tune::last_fit(split, metrics = ws_metrics)
 
 maxent_fit_final_metrics = maxent_ws_fit_final |>
   tune::collect_metrics(summarize = FALSE) |>
@@ -345,7 +352,7 @@ gam_ws_workflow_final = ws_models |>
   finalize_workflow(best_hyperparams(gam_model_ranks))
 
 gam_ws_fit_final = gam_ws_workflow_final |>
-  tune::last_fit(split, metrics = tidysdm::sdm_metric_set(accuracy))
+  tune::last_fit(split, metrics = ws_metrics)
 
 gam_fit_final_metrics = gam_ws_fit_final |>
   tune::collect_metrics(summarize = FALSE) |>
@@ -401,7 +408,7 @@ glm_ws_workflow_final = ws_models |>
   finalize_workflow(best_hyperparams(glm_model_ranks))
 
 glm_ws_fit_final = glm_ws_workflow_final |>
-  tune::last_fit(split, metrics = tidysdm::sdm_metric_set(accuracy))
+  tune::last_fit(split, metrics = ws_metrics)
 
 glm_fit_final_metrics = glm_ws_fit_final |>
   tune::collect_metrics(summarize = FALSE) |>

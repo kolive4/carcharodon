@@ -365,13 +365,22 @@ shark_hseal = brickman_extract(hseal_layer, wshark, time_column = "extractDate")
 shark_gseal = brickman_extract(gseal_layer, wshark, time_column = "extractDate")
 shark_vel_mag = brickman_extract(uv_s, wshark, time_column = "extractDate")
 
-wshark = dplyr::mutate(wshark, fish_biomass = shark_fish$fish_biomass) |>
-  dplyr::mutate(wshark, dfs = shark_dfs$dfs) |>
-  dplyr::mutate(wshark, brick_depth = shark_depth$Bathy_depth) |>
-  dplyr::mutate(wshark, log_depth = log_shark_depth$Bathy_depth) |>
-  dplyr::mutate(wshark, vel_mag = shark_vel_mag$vel_mag) |>
-  dplyr::bind_cols(shark_covars, shark_gseal, shark_hseal) |>
+wshark = wshark |>
+  dplyr::mutate(fish_biomass = shark_fish$fish_biomass) |>
+  dplyr::mutate(dfs = shark_dfs$dfs) |>
+  dplyr::mutate(brick_depth = shark_depth$Bathy_depth) |>
+  dplyr::mutate(log_depth = log_shark_depth$Bathy_depth) |>
+  dplyr::mutate(vel_mag = shark_vel_mag$vel_mag) |>
+  dplyr::bind_cols(shark_covars, 
+                   shark_gseal, 
+                   shark_hseal
+                   ) |>
   write_sf(file.path(cfg$data_path, "covars", "brickman_covars_shark_occs.gpkg"))
+  
+# option to the above would be to thin all of the observation data regardless of observation type
+# wshark |>
+# tidysdm::thin_by_cell(mask) |>
+# tidysdm::thin_by_dist(dist_min = km2m(20))
 
 # random bg selection
 ####should we make this a new variable so we can keep the original bathymetry layer???
@@ -386,13 +395,12 @@ wshark = dplyr::mutate(wshark, fish_biomass = shark_fish$fish_biomass) |>
 #   brick_buf = brick_buf[1]
 #   write_sf(brick_buf, file.path(cfg$data_path, cfg$polygon))
 # }
-
 bg_brick = twinkle::random_points(mask, 
                                   n = cfg$bg_number, 
                                   m = cfg$bg_m, 
                                   na.rm = TRUE, 
                                   form = "sf") |>
-  filter(.data$mask == 1) # chooses points within the buffer
+  filter(.data$mask == 1)
 
 # extract covariate data at bg points
 min_date = as.Date(cfg$start_date)
@@ -404,7 +412,7 @@ bg_brick = dplyr::mutate(bg_brick, eventDate = dates) |>
   dplyr::select(eventDate) |>
   dplyr::mutate(month = as.numeric(format(eventDate, "%m"))) |>
   dplyr::mutate(time = as.Date(format(eventDate, "2020/%m/01"))) |>
-  write_sf(file.path(vpath, "standard_bg_brick.gpkg"))
+  write_sf(file.path(vpath, "bg_brick.gpkg"))
 
 if (cfg$which_fish == "SPRING") {
   brick_bg_fish = stars::st_extract(spring_fish_layer, at = bg_brick) |>
@@ -439,7 +447,10 @@ bg_brick = dplyr::mutate(bg_brick, brick_depth = brick_bg_depth$Bathy_depth) |>
   dplyr::mutate(bg_brick, dfs = brick_bg_dfs$dfs) |>
   dplyr::mutate(bg_brick, log_depth = brick_bg_log_depth$Bathy_depth) |>
   dplyr::mutate(bg_brick, vel_mag = brick_bg_vel_mag$vel_mag) |>
-  dplyr::bind_cols(brick_bg_covars, brick_bg_gseal, brick_bg_hseal) |>
+  dplyr::bind_cols(brick_bg_covars 
+                   #brick_bg_gseal, 
+                   #brick_bg_hseal
+                   ) |>
   write_sf(file.path(vpath, "brickman_covar_bg.gpkg"))
 
 bg = ggplot() +
@@ -454,8 +465,14 @@ ggsave(filename = paste0(cfg$version, "bg.png"),
 
 # bind together in a single geopackage w/ flag for bg and obs data
 obs_bg_brick = bind_rows(list(wshark, bg_brick), .id = "id") |>
-  dplyr::mutate(id = as.numeric(id == 1)) |>
+  dplyr::mutate(id = as.numeric(id == 1)) 
+
+cell = stars::st_cells(mask, obs_bg_brick)
+
+obs_bg_brick = obs_bg_brick |>
+  dplyr::mutate(cell = as.integer(cell)) |>
   write_sf(file.path(vpath, "brickman_covar_obs_bg.gpkg"))
+
 
 all_points = ggplot() +
   geom_coastline(bb = shark_box) +
