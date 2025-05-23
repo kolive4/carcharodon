@@ -30,7 +30,7 @@ args = argparser::arg_parser("tidymodels/tidysdm modeling and forecasting for wh
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_workflow/t03.00000.00.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_workflow/t12.00030.00.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -55,7 +55,13 @@ coast = rnaturalearth::ne_coastline(scale = "large", returnclass = "sf") |>
 mask = stars::read_stars(file.path(cfg$data_path, cfg$mask_name)) |>
   rlang::set_names("mask")
 
-obs = read_brickman_points(file = file.path(cfg$root_path, cfg$gather_data_path, "brickman_covar_obs_bg.gpkg")) |>
+if (cfg$thinned) {
+  obs_bg = file.path(cfg$root_path, cfg$thinned_data_path, "thinned_obs_bg.gpkg")
+} else {
+  obs_bg = file.path(cfg$root_path, cfg$gather_data_path, "brickman_covar_obs_bg.gpkg")
+}
+
+obs = read_brickman_points(file = obs_bg) |>
   sf::st_as_sf() |>
   dplyr::filter(id == 1, basisOfRecord %in% cfg$obs_filter$basisOfRecord) |>
   dplyr::select(all_of(cfg$vars)) |>
@@ -64,7 +70,7 @@ obs = read_brickman_points(file = file.path(cfg$root_path, cfg$gather_data_path,
   tidysdm::thin_by_cell(mask) |>
   tidysdm::thin_by_dist(km2m(10))
 
-bg = read_brickman_points(file = file.path(cfg$root_path, cfg$gather_data_path, "brickman_covar_obs_bg.gpkg")) |>
+bg = read_brickman_points(file = obs_bg) |>
   sf::st_as_sf() |>
   dplyr::filter(id == 0) |>
   dplyr::select(all_of(cfg$vars)) |>
@@ -157,7 +163,7 @@ ws_models <-
                                       spec = sdm_spec_gam(),
                                       formula = tidysdm::gam_formula(rec))
 
-ws_metrics = tidysdm::sdm_metric_set(accuracy, brier_class, pr_auc)
+ws_metrics = tidysdm::sdm_metric_set(accuracy, brier_class)
 
 ws_models <-
   ws_models |>
@@ -175,7 +181,7 @@ model_comp = autoplot(ws_models) +
 png(filename = file.path(vpath, sprintf("%s_model_comp.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 print(model_comp)
-dev.off()
+ok = dev.off()
 
 #rf-----
 rf_model_ranks = metric_table(ws_models, "simple_rf")

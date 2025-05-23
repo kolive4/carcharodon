@@ -472,11 +472,3 @@ cell = stars::st_cells(mask, obs_bg_brick)
 obs_bg_brick = obs_bg_brick |>
   dplyr::mutate(cell = as.integer(cell)) |>
   write_sf(file.path(vpath, "brickman_covar_obs_bg.gpkg"))
-
-
-all_points = ggplot() +
-  geom_coastline(bb = shark_box) +
-  geom_sf(data = obs_bg_brick, aes(), color = "black", size = 0.1) +
-  theme_void() 
-all_points
-

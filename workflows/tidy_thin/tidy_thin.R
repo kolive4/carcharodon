@@ -14,7 +14,7 @@ args = argparser::arg_parser("thinning observation and background data",
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_thin/v00.00000.yaml",
+                          default = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_thin/v03.00000.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -43,7 +43,7 @@ obs_bg = read_sf(file.path(cfg$gather_data_path, "brickman_covar_obs_bg.gpkg"))
 
 thin_obs = obs_bg |>
   dplyr::filter(id == 1) |>
-  thin_by_BoR(BoR = c("SPOT", "PSAT"), mask = mask, dist = 10) 
+  thin_by_BoR(BoR = cfg$bor_to_thin, mask = mask, dist = 10) 
 
 thin_bg = obs_bg |>
   dplyr::filter(id == 0) |>
@@ -52,6 +52,9 @@ thin_bg = obs_bg |>
 
 thin_obs_bg = dplyr::bind_rows(thin_obs, thin_bg) |>
   write_sf(file.path(vpath, "thinned_obs_bg.gpkg"))
+
+ggplot() +
+  geom_sf(data = thin_obs_bg, aes(color = as.factor(id)))
 
 
 

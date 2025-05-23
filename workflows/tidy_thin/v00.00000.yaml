@@ -5,3 +5,6 @@ output_path: workflows/tidy_thin
 gather_data_path: workflows/get_data_workflow/versions/v01/v01.004
 data_path: data
 mask_name: mapping/gebco/gebco_mask.tif
+bor_to_thin:
+- SPOT
+- PSAT

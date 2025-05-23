@@ -1,0 +1,41 @@
+version: t12.00020.08
+root_path: /mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon
+source_path: functions
+output_path: workflows/tidy_cast
+gather_data_path: workflows/get_data_workflow/versions/v02/v02.000
+thinned_data_path: workflows/tidy_thin/versions/t02/t02.00000
+thinned: TRUE
+month: 08
+vars:
+  - eventDate
+  - Year
+  - month
+  - basisOfRecord
+  - geom
+  - brick_sst
+  - dfs
+  - vel_mag
+  - brick_xbtm
+dynamic_names: 
+  - brick_sst
+  - vel_mag
+  - brick_xbtm 
+obs_filter:
+  basisOfRecord:
+  - HumanObservation
+data_path: data
+depth_path: brickman/bathy
+dfs_path: mapping/gebco
+brick_path: brickman/gom_carcharodon
+fish_path: fish_data/MDAT_Fish_SummaryProducts_NEFSC/commondata/raster_data
+etopo_path: mapping/etopo
+wf_path: workflows/tidy_workflow/versions/t12/00020
+wf_version: t12.00020.00
+mask_name: mapping/gebco/gebco_mask.tif
+contour_name: ~
+scenario: PRESENT
+year: PRESENT
+graphics:
+  ggtitle: August Nowcast Habitat Suitability Gray Seals
+  add_pres_pts: yes
+  plot_contour: no

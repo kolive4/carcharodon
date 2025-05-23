@@ -628,9 +628,7 @@ thin_by_BoR = function(x, BoR, mask, dist) {
 #' @return thin background dataset
 thin_background = function(bg, obs, dist = NULL){
   if (FALSE) {
-    obs = obs_bg |>
-      dplyr::filter(id == 1) |>
-      thin_by_BoR(BoR = c("SPOT", "PSAT"), mask = mask, dist = 10) 
+    obs = thin_obs 
     bg = obs_bg |>
       dplyr::filter(id == 0)
     dist = 10
@@ -648,7 +646,7 @@ thin_background = function(bg, obs, dist = NULL){
                   b = bg |> filter(month == imonth)
                   o = obs |> filter(month == imonth)
                   d = st_distance(b, o) |>
-                    drop_units() > min_d
+                    units::drop_units() > min_d
                   keep = apply(d, 1, all) |>
                     which()
                 }) |>

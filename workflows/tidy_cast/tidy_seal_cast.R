@@ -30,7 +30,7 @@ args = argparser::arg_parser("tidymodels/tidysdm casting for seal habitat suitab
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_cast/t02.00000.01.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_cast/t12.00030.01.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -53,7 +53,13 @@ bb = cofbb::get_bb("nefsc_carcharodon", form = "sf")
 coast = rnaturalearth::ne_coastline(scale = "large", returnclass = "sf") |>
   sf::st_geometry()
 
-obs = read_brickman_points(file = file.path(cfg$root_path, cfg$gather_data_path, "brickman_covar_obs_bg.gpkg")) |>
+if (cfg$thinned) {
+  obs_bg = file.path(cfg$root_path, cfg$thinned_data_path, "thinned_obs_bg.gpkg")
+} else {
+  obs_bg = file.path(cfg$root_path, cfg$gather_data_path, "brickman_covar_obs_bg.gpkg")
+}
+
+obs = read_brickman_points(file = obs_bg) |>
   sf::st_as_sf() |>
   dplyr::filter(id == 1, basisOfRecord %in% cfg$obs_filter$basisOfRecord) |>
   dplyr::select(all_of(cfg$vars)) |>
@@ -193,13 +199,13 @@ print(rf_pred_plot)
 ok = dev.off()
 
 # bt pred----
-final_rf_workflow = readr::read_rds(file.path(cfg$root_path, cfg$wf_path, cfg$wf_version, sprintf("%s_final_rf_wf.Rds", cfg$wf_version)))
+final_bt_workflow = readr::read_rds(file.path(cfg$root_path, cfg$wf_path, cfg$wf_version, sprintf("%s_final_bt_wf.Rds", cfg$wf_version)))
 
-rf_pred = predict_stars(final_rf_workflow, preds, type = "prob") |>
+bt_pred = predict_stars(final_bt_workflow, preds, type = "prob") |>
   dplyr::select(.pred_presence) |>
-  write_stars(file.path(vpath, "rf_prediction.tif"))
-rf_pred_plot = ggplot() +
-  geom_stars(data = rf_pred) +
+  write_stars(file.path(vpath, "bt_prediction.tif"))
+bt_pred_plot = ggplot() +
+  geom_stars(data = bt_pred) +
   scale_fill_binned(type = "viridis", 
                     name = cfg$graphics$ggtitle, 
                     limits = c(0, 1), 
@@ -207,7 +213,7 @@ rf_pred_plot = ggplot() +
   geom_coastline(bb = cofbb::get_bb("nefsc_carcharodon", form = "bb")) +
   theme_void() 
 if(cfg$graphics$add_pres_pts == TRUE) {
-  rf_pred_plot = rf_pred_plot +
+  bt_pred_plot = bt_pred_plot +
     geom_sf(data = obs, 
             aes(shape = basisOfRecord), 
             fill = "white",
@@ -215,13 +221,13 @@ if(cfg$graphics$add_pres_pts == TRUE) {
             show.legend = "point")
 }
 if (cfg$graphics$plot_contour) {
-  rf_pred_plot = rf_pred_plot +
+  bt_pred_plot = bt_pred_plot +
     geom_sf(data = mask_contour, color = "white")
 }
-rf_pred_plot
-png(filename = file.path(vpath, sprintf("%s_rf_prediction.png", cfg$version)), 
+bt_pred_plot
+png(filename = file.path(vpath, sprintf("%s_bt_prediction.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
-print(rf_pred_plot)
+print(bt_pred_plot)
 ok = dev.off()
 
 #maxent pred----

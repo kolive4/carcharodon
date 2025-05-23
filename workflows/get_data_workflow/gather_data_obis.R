@@ -25,7 +25,7 @@ args = argparser::arg_parser("assembling observation and background data",
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/get_data_workflow/v03.000.yaml",
+                          default = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/get_data_workflow/v02.000.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -113,39 +113,40 @@ species <- species |>
   dplyr::rename(c(obis_sst = sst, obis_depth = depth)) |>
   sf::st_crop(bbox)
 
+brick_lut = twinkle::make_raster_lut(x = brick_mask["mask"],
+                                     mask_value = 0) |>
+  stars::write_stars(file.path(vpath, sprintf("%s_brick_nearest_lut.tif", cfg$version)))
+
 x = reassign_coords(obs = species,
                     mask_path = file.path(cfg$data_path, "mapping/brick_mask.tif"),
                     lut_path = file.path(vpath, sprintf("%s_brick_nearest_lut.tif", cfg$version)))
 
-brick_lut = twinkle::make_raster_lut(x = brick_mask["mask"],
-                               mask_value = 0) |>
-  stars::write_stars(file.path(vpath, sprintf("%s_brick_nearest_lut.tif", cfg$version)))
 
-species_index = twinkle::closest_available_cell(x = species,
-                                                lut = brick_lut) |>
-  dplyr::mutate(reassign = index != original)
+# 5-22-2025: I think all of this is encapsulated in reassign_coords
+# species_index = twinkle::closest_available_cell(x = species,
+#                                                 lut = brick_lut) |>
+#   dplyr::mutate(reassign = index != original)
+# 
+# species = species |>
+#   dplyr::mutate(reassign = species_index$reassign)
+# 
+# s_species_index = split(species_index, species_index$reassign)
+# s_species = split(species, species$reassign)
+# 
+# s_species_index[["TRUE"]] = twinkle::stars_index_to_loc(index = s_species_index[["TRUE"]]$index,
+#                                                         x = brick_mask["mask"],
+#                                                         form = "sf")
+# 
+# st_geometry(s_species[["TRUE"]]) = st_geometry(s_species_index[["TRUE"]])
+# 
+# species = dplyr::bind_rows(s_species)
+# 
+# ggplot() +
+#   geom_stars(data = brick_mask["mask"]) +
+#   geom_sf(data = species_index |> filter(reassign == TRUE), color = "black", alpha = 0.5) +
+#   geom_sf(data = s_species_index[["TRUE"]], color = "green", alpha = 0.5)
 
-species = species |>
-  dplyr::mutate(reassign = species_index$reassign)
-
-s_species_index = split(species_index, species_index$reassign)
-s_species = split(species, species$reassign)
-
-s_species_index[["TRUE"]] = twinkle::stars_index_to_loc(index = s_species_index[["TRUE"]]$index,
-                                                        x = brick_mask["mask"],
-                                                        form = "sf")
-
-st_geometry(s_species[["TRUE"]]) = st_geometry(s_species_index[["TRUE"]])
-
-species = dplyr::bind_rows(s_species)
-
-ggplot() +
-  geom_stars(data = brick_mask["mask"]) +
-  geom_sf(data = species_index |> filter(reassign == TRUE), color = "black", alpha = 0.5) +
-  geom_sf(data = s_species_index[["TRUE"]], color = "green", alpha = 0.5)
-
-species = species |>
-  dplyr::filter(species.mask$mask == 1) |>
+species = x |>
   sf::write_sf(file.path(cfg$data_path, "obis", paste0(cfg$version, "_occs.gpkg")))
 
 occ_mon_hist = ggplot2::ggplot() +
@@ -306,5 +307,11 @@ ggsave(filename = paste0(cfg$version, "bg.png"),
 
 # bind together in a single geopackage w/ flag for bg and obs data
 obs_bg_brick = bind_rows(list(species, bg_brick), .id = "id") |>
-  dplyr::mutate(id = as.numeric(id == 1)) |>
+  dplyr::mutate(id = as.numeric(id == 1)) 
+
+cell = stars::st_cells(mask, obs_bg_brick)
+
+obs_bg_brick = obs_bg_brick |>
+  dplyr::mutate(cell = as.integer(cell)) |>
   write_sf(file.path(vpath, "brickman_covar_obs_bg.gpkg"))
+
