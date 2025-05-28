@@ -1,0 +1,16 @@
+version: c12.00033.01_12
+root_path: /mnt/ecocast/projects/koliveira/subprojects/carcharodon
+report_path: workflows/tidy_reports
+tidy_w_vers: t12.00030.00
+tidy_w_path: workflows/tidy_workflow/versions/t12/00030
+tidy_path: workflows/tidy_cast/versions/t12/00033
+scenario: RCP 8.5 2055 Conditions
+graphics:
+  rf_metrics_title: Random Forest Metric Values
+  bt_metrics_title: Boosted Trees Metric Values
+  maxent_metrics_title: Maxent Metric Values
+  gam_metrics_title: GAM Metric Values
+  glm_metrics_title: GLM Metric Values
+  vi_title: Variable Contribution
+  x: Month
+  vi_y: Contribution
