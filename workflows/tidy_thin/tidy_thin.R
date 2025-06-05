@@ -53,8 +53,8 @@ thin_bg = obs_bg |>
 thin_obs_bg = dplyr::bind_rows(thin_obs, thin_bg) |>
   write_sf(file.path(vpath, "thinned_obs_bg.gpkg"))
 
-ggplot() +
-  geom_sf(data = thin_obs_bg, aes(color = as.factor(id)))
+thin_obs_inst = match_institution(raw = file.path(cfg$root_path, cfg$data_path, cfg$obis_path, cfg$raw_file),
+                                  thinned = thin_obs_bg)
 
 
 

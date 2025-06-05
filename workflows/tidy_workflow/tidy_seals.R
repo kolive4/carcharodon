@@ -30,7 +30,7 @@ args = argparser::arg_parser("tidymodels/tidysdm modeling and forecasting for wh
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_workflow/t12.00030.00.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_workflow/t13.00030.00.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -78,9 +78,10 @@ bg = read_brickman_points(file = obs_bg) |>
   dplyr::mutate(class = "background")
 
 data = dplyr::bind_rows(obs, bg) |>
-  dplyr::select(-dplyr::all_of(c("eventDate", "Year", "month", "basisOfRecord"))) |>
+  dplyr::select(-dplyr::all_of(c("eventDate", "Year", "basisOfRecord"))) |>
+  # dplyr::mutate(month = factor(month, levels = seq(1, 12))) |>
   na.omit() |>
-  dplyr::mutate(class = factor(class, levels = c("presence", "background")))
+  dplyr::mutate(class = factor(class, levels = c("presence", "background"))) 
 
 split = rsample::initial_split(data,
                           prop = 4/5,
@@ -462,3 +463,4 @@ ok = dev.off()
 
 glm_vi = variable_importance(x = final_glm_workflow, y = training(split), type = "prob") |>
   write.csv(file.path(vpath, paste0(cfg$version, "_glm_vi.csv")))
+

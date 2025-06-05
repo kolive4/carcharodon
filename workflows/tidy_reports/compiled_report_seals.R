@@ -46,6 +46,24 @@ plot_coast = function() {
 pal = terra::map.pal("magma", 10)
 breaks = seq(from = 0, to = 1, length.out = length(pal) + 1)
 
+if (stringr::str_sub(vpars["minor"], start = -1) == 0) {
+  rf_png_files = list.files(path = file.path(cfg$root_path, cfg$tidy_path), 
+                             pattern = "rf_prediction.png",
+                             recursive = TRUE,
+                             full.names = TRUE) 
+  
+  rf_png_plots = lapply(rf_png_files, function(file){
+    img = readPNG(file)
+    raster = grid::rasterGrob(img, width = unit(1, "npc"), height = unit(1, "npc"))
+    ggplot() +
+      annotation_custom(raster, -Inf, Inf, -Inf, Inf) +
+      theme_void()
+  })
+  
+  combined_plot = ggpubr::ggarrange(plotlist = rf_png_plots, ncol = 4, nrow = 3)
+  
+}
+
 rf_cast_files = list.files(path = file.path(cfg$root_path, cfg$tidy_path), 
                            pattern = "rf_prediction.tif",
                            recursive = TRUE,

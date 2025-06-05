@@ -30,7 +30,7 @@ args = argparser::arg_parser("tidymodels/tidysdm casting for seal habitat suitab
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_cast/t12.00030.01.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_cast/t12.00020.08.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -149,7 +149,8 @@ if (exists("depth") && exists("dfs")) {
     dplyr::slice(band, as.integer(cfg$month))
 }
 
-preds = avg_covs(preds)
+preds = avg_covs(preds) |>
+  mutate(month = as.numeric(cfg$month))
 
 if (!is.null(cfg$mask_name)) {
   mask = stars::read_stars(file.path(cfg$root_path, cfg$data_path, cfg$mask_name)) |>
@@ -184,8 +185,7 @@ if(cfg$graphics$add_pres_pts == TRUE) {
   rf_pred_plot = rf_pred_plot +
     geom_sf(data = obs, 
             aes(shape = basisOfRecord), 
-            fill = "white",
-            alpha = 0.5,
+            color = "red",
             show.legend = "point")
 }
 if (cfg$graphics$plot_contour) {
@@ -216,8 +216,7 @@ if(cfg$graphics$add_pres_pts == TRUE) {
   bt_pred_plot = bt_pred_plot +
     geom_sf(data = obs, 
             aes(shape = basisOfRecord), 
-            fill = "white",
-            alpha = 0.5,
+            color = "red",
             show.legend = "point")
 }
 if (cfg$graphics$plot_contour) {
@@ -248,8 +247,7 @@ if(cfg$graphics$add_pres_pts == TRUE) {
   maxent_pred_plot = maxent_pred_plot +
     geom_sf(data = obs, 
             aes(shape = basisOfRecord), 
-            fill = "white",
-            alpha = 0.5,
+            color = "red",
             show.legend = "point")
 }
 if (cfg$graphics$plot_contour) {
@@ -280,8 +278,7 @@ if(cfg$graphics$add_pres_pts == TRUE) {
   gam_pred_plot = gam_pred_plot +
     geom_sf(data = obs, 
             aes(shape = basisOfRecord), 
-            fill = "white",
-            alpha = 0.5,
+            color = "red",
             show.legend = "point")
 }
 if (cfg$graphics$plot_contour) {
@@ -312,8 +309,7 @@ if(cfg$graphics$add_pres_pts == TRUE) {
   glm_pred_plot = glm_pred_plot +
     geom_sf(data = obs, 
             aes(shape = basisOfRecord), 
-            fill = "white",
-            alpha = 0.5,
+            color = "red",
             show.legend = "point")
 }
 if (cfg$graphics$plot_contour) {

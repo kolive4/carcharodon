@@ -372,3 +372,49 @@ reassign_coords = function(obs, mask_path, lut_path) {
   
   return(obs)
 }
+
+
+#' Function to match thinned observation data with the institution code from the raw data
+#' 
+#' @param raw raw data file with institutionCode included
+#' @param thinned thinned file or sf object with occurrenceID included
+#' @return the counts of observations associated with that institutionCode
+match_institution = function(raw, 
+                             thinned, 
+                             export_path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/data/obis") {
+  if (FALSE) {
+    raw = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/data/obis/phoca_vitulina-raw.csv.gz"
+    thinned = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_thin/versions/t03/t03.00000/thinned_obs_bg.gpkg"
+    export_path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/data/obis"
+  }
+  species_name = function(x = "halichoerus_grypus-raw.csv.gz"){
+    basename(x) |>
+      strsplit("-", fixed = TRUE) |>
+      sapply(function(s){
+        getElement(s, 1)
+      })
+  }
+  spp = species_name(raw)
+  r = readr::read_csv(raw)
+  if (is.character(thinned) && file.exists(thinned)) {
+    t = sf::read_sf(thinned)
+  } else if (inherits(thinned, "sf")) {
+    t = thinned
+  } else {
+    stop("Input must be a file path or an sf object.")
+  }
+  t = t |>
+    dplyr::filter(id == 1)
+  
+  l = unique(t$occurrenceID) |>
+    na.omit()
+  r_f = r |>
+    dplyr::filter(occurrenceID %in% l) 
+  
+  r_f_count = r_f |>
+    dplyr::count(datasetName, bibliographicCitation, sort = TRUE, ) |>
+    readr::write_csv(file.path(export_path, sprintf("%s_obis_obs_survey.csv", spp)))
+}
+
+
+

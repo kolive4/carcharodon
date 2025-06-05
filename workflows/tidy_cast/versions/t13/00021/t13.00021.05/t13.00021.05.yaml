@@ -30,7 +30,7 @@ fish_path: fish_data/MDAT_Fish_SummaryProducts_NEFSC/commondata/raster_data
 etopo_path: mapping/etopo
 wf_path: workflows/tidy_workflow/versions/t13/00020
 wf_version: t13.00020.00
-mask_name: mapping/gebco/gebco_mask.tif
+mask_name: mapping/etopo/etopo_warped_mask.tif
 contour_name: ~
 scenario: RCP45
 year: 2055

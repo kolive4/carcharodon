@@ -6,3 +6,5 @@ gather_data_path: workflows/get_data_workflow/versions/v03/v03.000
 data_path: data
 mask_name: mapping/gebco/gebco_mask.tif
 bor_to_thin: HumanObservation
+obis_path: obis
+raw_file: phoca_vitulina-raw.csv.gz
