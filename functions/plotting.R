@@ -520,6 +520,4 @@ plot_covars = function(cfg, bathy = NULL, log_bathy = NULL, fish = NULL, dfs = N
     
     
   }
-    
-    
 }

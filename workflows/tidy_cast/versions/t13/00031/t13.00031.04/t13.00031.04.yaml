@@ -33,7 +33,7 @@ obs_filter:
   basisOfRecord: HumanObservation
 data_path: data
 depth_path: brickman/bathy
-dfs_path: mapping/gebco
+dfs_path: mapping/etopo
 brick_path: brickman/gom_carcharodon
 fish_path: fish_data/MDAT_Fish_SummaryProducts_NEFSC/commondata/raster_data
 etopo_path: mapping/etopo
@@ -44,6 +44,6 @@ contour_name: ~
 scenario: RCP45
 year: 2055
 graphics:
-  ggtitle: April 2055 RCP 4.5 Habitat Suitability Harbor Seals
+  ggtitle: Habitat Suitability Index
   add_pres_pts: yes
   plot_contour: no

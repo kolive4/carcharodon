@@ -14,7 +14,7 @@ args = argparser::arg_parser("thinning observation and background data",
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_thin/v03.00000.yaml",
+                          default = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_thin/v02.00000.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 

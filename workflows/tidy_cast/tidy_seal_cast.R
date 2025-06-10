@@ -119,8 +119,8 @@ dynamic_preds = twinkle::bind_attrs(var_list) |>
 
 mon_no = seq(from = 1, to = 12)
 if ("dfs" %in% cfg$vars) {
-  dfs = stars::read_stars(file.path(cfg$data_path, cfg$dfs_path, "gebco_distance_to_shore_meters.tif")) |>
-    dplyr::rename(dfs = "gebco_distance_to_shore_meters.tif") 
+  dfs = stars::read_stars(file.path(cfg$data_path, cfg$dfs_path, "etopo_warped_distance_to_shore_meters.tif")) |>
+    dplyr::rename(dfs = "etopo_warped_distance_to_shore_meters.tif") 
   dfs2 = sapply(mon_no, function(mon) {dfs}, simplify = FALSE)
   dfs = do.call(c, append(dfs2, list(along = list(band = mon_no)))) |>
     stars::st_set_dimensions("band", offset = NA_real_, delta = NA_real_) |>
@@ -173,6 +173,7 @@ final_rf_workflow = readr::read_rds(file.path(cfg$root_path, cfg$wf_path, cfg$wf
 rf_pred = predict_stars(final_rf_workflow, preds, type = "prob") |>
   dplyr::select(.pred_presence) |>
   write_stars(file.path(vpath, "rf_prediction.tif"))
+
 rf_pred_plot = ggplot() +
   geom_stars(data = rf_pred) +
   scale_fill_binned(type = "viridis", 
@@ -186,13 +187,26 @@ if(cfg$graphics$add_pres_pts == TRUE) {
     geom_sf(data = obs, 
             aes(shape = basisOfRecord), 
             color = "red",
-            show.legend = "point")
+            show.legend = "point") +
+    scale_shape_manual(name = "Observation Type",
+                       values = c("HumanObservation" = 16),
+                       labels = c("Human Observation"))
 }
 if (cfg$graphics$plot_contour) {
   rf_pred_plot = rf_pred_plot +
     geom_sf(data = mask_contour, color = "white")
 }
-rf_pred_plot
+
+if (stringr::str_sub(vpars["minor"], start = -1) == 0) {
+  legend_grob = ggpubr::get_legend(rf_pred_plot)
+  legend_only = cowplot::ggdraw(legend_grob)
+  ggsave(filename = file.path(cfg$output_path, "graphics/legend_only.png"), 
+         legend_only, width = 3, height = 5, dpi = 300, create.dir = TRUE)
+}
+if(cfg$graphics$add_pres_pts == TRUE) {
+  rf_pred_plot = rf_pred_plot +
+    theme(legend.position = "none")
+}
 png(filename = file.path(vpath, sprintf("%s_rf_prediction.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 print(rf_pred_plot)
@@ -204,6 +218,7 @@ final_bt_workflow = readr::read_rds(file.path(cfg$root_path, cfg$wf_path, cfg$wf
 bt_pred = predict_stars(final_bt_workflow, preds, type = "prob") |>
   dplyr::select(.pred_presence) |>
   write_stars(file.path(vpath, "bt_prediction.tif"))
+
 bt_pred_plot = ggplot() +
   geom_stars(data = bt_pred) +
   scale_fill_binned(type = "viridis", 
@@ -217,13 +232,19 @@ if(cfg$graphics$add_pres_pts == TRUE) {
     geom_sf(data = obs, 
             aes(shape = basisOfRecord), 
             color = "red",
-            show.legend = "point")
+            show.legend = "point") +
+    scale_shape_manual(name = "Observation Type",
+                       values = c("HumanObservation" = 16),
+                       labels = c("Human Observation"))
 }
 if (cfg$graphics$plot_contour) {
   bt_pred_plot = bt_pred_plot +
     geom_sf(data = mask_contour, color = "white")
 }
-bt_pred_plot
+if(cfg$graphics$add_pres_pts == TRUE) {
+  bt_pred_plot = bt_pred_plot +
+    theme(legend.position = "none")
+}
 png(filename = file.path(vpath, sprintf("%s_bt_prediction.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 print(bt_pred_plot)
@@ -248,13 +269,19 @@ if(cfg$graphics$add_pres_pts == TRUE) {
     geom_sf(data = obs, 
             aes(shape = basisOfRecord), 
             color = "red",
-            show.legend = "point")
+            show.legend = "point") +
+    scale_shape_manual(name = "Observation Type",
+                       values = c("HumanObservation" = 16),
+                       labels = c("Human Observation"))
 }
 if (cfg$graphics$plot_contour) {
   maxent_pred_plot = maxent_pred_plot +
     geom_sf(data = mask_contour, color = "white")
 }
-maxent_pred_plot
+if(cfg$graphics$add_pres_pts == TRUE) {
+  maxent_pred_plot  = maxent_pred_plot +
+    theme(legend.position = "none")
+}
 png(filename = file.path(vpath, sprintf("%s_maxent_prediction.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 print(maxent_pred_plot)
@@ -279,13 +306,19 @@ if(cfg$graphics$add_pres_pts == TRUE) {
     geom_sf(data = obs, 
             aes(shape = basisOfRecord), 
             color = "red",
-            show.legend = "point")
+            show.legend = "point") +
+    scale_shape_manual(name = "Observation Type",
+                       values = c("HumanObservation" = 16),
+                       labels = c("Human Observation"))
 }
 if (cfg$graphics$plot_contour) {
   gam_pred_plot = gam_pred_plot +
     geom_sf(data = mask_contour, color = "white")
 }
-gam_pred_plot
+if(cfg$graphics$add_pres_pts == TRUE) {
+  gam_pred_plot = gam_pred_plot +
+    theme(legend.position = "none")
+}
 png(filename = file.path(vpath, sprintf("%s_gam_prediction.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 print(gam_pred_plot)
@@ -310,13 +343,19 @@ if(cfg$graphics$add_pres_pts == TRUE) {
     geom_sf(data = obs, 
             aes(shape = basisOfRecord), 
             color = "red",
-            show.legend = "point")
+            show.legend = "point") +
+    scale_shape_manual(name = "Observation Type",
+                       values = c("HumanObservation" = 16),
+                       labels = c("Human Observation"))
 }
 if (cfg$graphics$plot_contour) {
   glm_pred_plot = glm_pred_plot +
     geom_sf(data = mask_contour, color = "white")
 }
-glm_pred_plot
+if(cfg$graphics$add_pres_pts == TRUE) {
+  glm_pred_plot = glm_pred_plot +
+    theme(legend.position = "none")
+}
 png(filename = file.path(vpath, sprintf("%s_glm_prediction.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 print(glm_pred_plot)

@@ -4,37 +4,36 @@ source_path: functions
 output_path: workflows/tidy_cast
 gather_data_path: workflows/get_data_workflow/versions/v03/v03.000
 thinned_data_path: workflows/tidy_thin/versions/t03/t03.00000
-thinned: TRUE
-month: 03
+thinned: yes
+month: 3
 vars:
-  - eventDate
-  - Year
-  - month
-  - basisOfRecord
-  - geom
-  - log_depth
-  - brick_sst
-  - brick_tbtm
-  - brick_sss
-  - brick_sbtm
-  - brick_mld
-  - dfs
-  - vel_mag
-  - brick_xbtm
-dynamic_names: 
-  - brick_sst
-  - brick_tbtm
-  - brick_sss
-  - brick_sbtm
-  - brick_mld
-  - vel_mag
-  - brick_xbtm 
+- eventDate
+- Year
+- month
+- basisOfRecord
+- geom
+- log_depth
+- brick_sst
+- brick_tbtm
+- brick_sss
+- brick_sbtm
+- brick_mld
+- dfs
+- vel_mag
+- brick_xbtm
+dynamic_names:
+- brick_sst
+- brick_tbtm
+- brick_sss
+- brick_sbtm
+- brick_mld
+- vel_mag
+- brick_xbtm
 obs_filter:
-  basisOfRecord:
-  - HumanObservation
+  basisOfRecord: HumanObservation
 data_path: data
 depth_path: brickman/bathy
-dfs_path: mapping/gebco
+dfs_path: mapping/etopo
 brick_path: brickman/gom_carcharodon
 fish_path: fish_data/MDAT_Fish_SummaryProducts_NEFSC/commondata/raster_data
 etopo_path: mapping/etopo
@@ -45,6 +44,6 @@ contour_name: ~
 scenario: RCP45
 year: 2075
 graphics:
-  ggtitle: March 2075 RCP 4.5 Habitat Suitability Harbor Seals
+  ggtitle: Habitat Suitability Index
   add_pres_pts: yes
   plot_contour: no

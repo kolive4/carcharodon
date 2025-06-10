@@ -4,37 +4,36 @@ source_path: functions
 output_path: workflows/tidy_cast
 gather_data_path: workflows/get_data_workflow/versions/v02/v02.000
 thinned_data_path: workflows/tidy_thin/versions/t02/t02.00000
-thinned: TRUE
-month: 02
+thinned: yes
+month: 2
 vars:
-  - eventDate
-  - Year
-  - month
-  - basisOfRecord
-  - geom
-  - log_depth
-  - brick_sst
-  - brick_tbtm
-  - brick_sss
-  - brick_sbtm
-  - brick_mld
-  - dfs
-  - vel_mag
-  - brick_xbtm
-dynamic_names: 
-  - brick_sst
-  - brick_tbtm
-  - brick_sss
-  - brick_sbtm
-  - brick_mld
-  - vel_mag
-  - brick_xbtm 
+- eventDate
+- Year
+- month
+- basisOfRecord
+- geom
+- log_depth
+- brick_sst
+- brick_tbtm
+- brick_sss
+- brick_sbtm
+- brick_mld
+- dfs
+- vel_mag
+- brick_xbtm
+dynamic_names:
+- brick_sst
+- brick_tbtm
+- brick_sss
+- brick_sbtm
+- brick_mld
+- vel_mag
+- brick_xbtm
 obs_filter:
-  basisOfRecord:
-  - HumanObservation
+  basisOfRecord: HumanObservation
 data_path: data
 depth_path: brickman/bathy
-dfs_path: mapping/gebco
+dfs_path: mapping/etopo
 brick_path: brickman/gom_carcharodon
 fish_path: fish_data/MDAT_Fish_SummaryProducts_NEFSC/commondata/raster_data
 etopo_path: mapping/etopo
@@ -45,6 +44,6 @@ contour_name: ~
 scenario: PRESENT
 year: PRESENT
 graphics:
-  ggtitle: February Nowcast Habitat Suitability Gray Seals
+  ggtitle: Habitat Suitability Index
   add_pres_pts: yes
   plot_contour: no

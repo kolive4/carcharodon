@@ -52,4 +52,3 @@ append_config = function(files, extra, write = FALSE) {
   names(cfgs) = basename(files)
   return(cfgs)
 }
-

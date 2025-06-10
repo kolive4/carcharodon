@@ -14,3 +14,6 @@ graphics:
   vi_title: Variable Contribution
   x: Month
   vi_y: Contribution
+source_path: /mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/functions
+gather_data_path: workflows/get_data_workflow/versions/v02/v02.000
+thinned_data_path: workflows/tidy_thin/versions/t02/t02.00000

@@ -23,6 +23,9 @@ args = argparser::arg_parser("a tool to cast monthly predictions into one figure
   argparser::parse_args()
 
 cfg = charlier::read_config(args$config)
+for (f in list.files(cfg$source_path, pattern = "^.*\\.R$", full.names = TRUE)){
+  source(f)
+}
 
 vpars = charlier::parse_version(cfg$version)
 vpath = file.path(cfg$root_path, cfg$report_path, "versions", vpars[["major"]], vpars[["minor"]])
@@ -46,23 +49,19 @@ plot_coast = function() {
 pal = terra::map.pal("magma", 10)
 breaks = seq(from = 0, to = 1, length.out = length(pal) + 1)
 
-if (stringr::str_sub(vpars["minor"], start = -1) == 0) {
-  rf_png_files = list.files(path = file.path(cfg$root_path, cfg$tidy_path), 
-                             pattern = "rf_prediction.png",
-                             recursive = TRUE,
-                             full.names = TRUE) 
-  
-  rf_png_plots = lapply(rf_png_files, function(file){
-    img = readPNG(file)
-    raster = grid::rasterGrob(img, width = unit(1, "npc"), height = unit(1, "npc"))
-    ggplot() +
-      annotation_custom(raster, -Inf, Inf, -Inf, Inf) +
-      theme_void()
-  })
-  
-  combined_plot = ggpubr::ggarrange(plotlist = rf_png_plots, ncol = 4, nrow = 3)
-  
+if (stringr::str_sub(vpars["major"], start = 2, end = 2) == 1) {
+  obs_bg = file.path(cfg$root_path, cfg$thinned_data_path, "thinned_obs_bg.gpkg")
+} else {
+  obs_bg = file.path(cfg$root_path, cfg$gather_data_path, "brickman_covar_obs_bg.gpkg")
 }
+
+obs = read_brickman_points(file = obs_bg) |>
+  sf::st_as_sf() |>
+  dplyr::filter(id == 1) |>
+  dplyr::mutate(class = "presence") |>
+  dplyr::filter(month %in% as.numeric(seq(from = 1, to = 12))) 
+
+obs$month = factor(month.abb[obs$month], levels = month.abb)
 
 rf_cast_files = list.files(path = file.path(cfg$root_path, cfg$tidy_path), 
                            pattern = "rf_prediction.tif",
@@ -77,9 +76,31 @@ imonth = substring(z, len -1) |>
 rf_cast_plots = stars::read_stars(rf_cast_files, along = list(month = month.abb[imonth])) |>
   dplyr::rename("Habitat Suitability Index" = "rf_prediction.tif")
 
+rf = ggplot() +
+  geom_stars(data = rf_cast_plots) +
+  scale_fill_binned(type = "viridis", 
+                    name = "Habitat Suitability\nIndex", 
+                    limits = c(0, 1), 
+                    n.breaks = 11) +
+  geom_coastline(bb = cofbb::get_bb("nefsc_carcharodon", form = "bb"))
+if(stringr::str_sub(vpars["minor"], start = -1) == 0) {
+  rf = rf +
+    geom_sf(data = obs, 
+            aes(shape = basisOfRecord), 
+            color = "red",
+            size = 1,
+            show.legend = "point") +
+    scale_shape_manual(name = "Observation Type",
+                       values = c("HumanObservation" = 16),
+                       labels = c("Human Observation")) 
+}
+rf = rf +
+  facet_wrap(~month) +
+  theme_void()
+
 png(file.path(vpath, paste0(cfg$version, "rf_compiled_casts.png")), 
     bg = "white", width = 11, height = 8.5, units = "in", res = 300)
-plot(rf_cast_plots,
+plot(rf,
      col = pal,
      breaks = breaks,
      hook = plot_coast)
@@ -93,25 +114,69 @@ bt_cast_files = list.files(path = file.path(cfg$root_path, cfg$tidy_path),
 bt_cast_plots = stars::read_stars(bt_cast_files, along = list(month = month.abb[imonth])) |>
   dplyr::rename("Habitat Suitability Index" = "bt_prediction.tif")
 
+bt = ggplot() +
+  geom_stars(data = bt_cast_plots) +
+  scale_fill_binned(type = "viridis", 
+                    name = "Habitat Suitability\nIndex", 
+                    limits = c(0, 1), 
+                    n.breaks = 11) +
+  geom_coastline(bb = cofbb::get_bb("nefsc_carcharodon", form = "bb"))
+if(stringr::str_sub(vpars["minor"], start = -1) == 0) {
+  bt = bt +
+    geom_sf(data = obs, 
+            aes(shape = basisOfRecord), 
+            color = "red",
+            size = 1,
+            show.legend = "point") +
+    scale_shape_manual(name = "Observation Type",
+                       values = c("HumanObservation" = 16),
+                       labels = c("Human Observation")) 
+}
+bt = bt +
+  facet_wrap(~month) +
+  theme_void()
+
 png(file.path(vpath, paste0(cfg$version, "bt_compiled_casts.png")), 
     bg = "white", width = 11, height = 8.5, units = "in", res = 300)
-plot(bt_cast_plots,
+plot(bt,
      col = pal,
      breaks = breaks,
      hook = plot_coast)
 ok = dev.off()
 
 maxent_cast_files = list.files(path = file.path(cfg$root_path, cfg$tidy_path), 
-                           pattern = "maxent_prediction.tif",
-                           recursive = TRUE,
-                           full.names = TRUE) 
+                               pattern = "maxent_prediction.tif",
+                               recursive = TRUE,
+                               full.names = TRUE) 
 
 maxent_cast_plots = stars::read_stars(maxent_cast_files, along = list(month = month.abb[imonth])) |>
   dplyr::rename("Habitat Suitability Index" = "maxent_prediction.tif")
 
+maxent = ggplot() +
+  geom_stars(data = maxent_cast_plots) +
+  scale_fill_binned(type = "viridis", 
+                    name = "Habitat Suitability\nIndex", 
+                    limits = c(0, 1), 
+                    n.breaks = 11) +
+  geom_coastline(bb = cofbb::get_bb("nefsc_carcharodon", form = "bb"))
+if(stringr::str_sub(vpars["minor"], start = -1) == 0) {
+  maxent = maxent +
+    geom_sf(data = obs, 
+            aes(shape = basisOfRecord), 
+            color = "red",
+            size = 1,
+            show.legend = "point") +
+    scale_shape_manual(name = "Observation Type",
+                       values = c("HumanObservation" = 16),
+                       labels = c("Human Observation")) 
+}
+maxent = maxent +
+  facet_wrap(~month) +
+  theme_void()
+
 png(file.path(vpath, paste0(cfg$version, "maxent_compiled_casts.png")), 
     bg = "white", width = 11, height = 8.5, units = "in", res = 300)
-plot(maxent_cast_plots,
+plot(maxent,
      col = pal,
      breaks = breaks,
      hook = plot_coast)
@@ -125,9 +190,31 @@ gam_cast_files = list.files(path = file.path(cfg$root_path, cfg$tidy_path),
 gam_cast_plots = stars::read_stars(gam_cast_files, along = list(month = month.abb[imonth])) |>
   dplyr::rename("Habitat Suitability Index" = "gam_prediction.tif")
 
+gam = ggplot() +
+  geom_stars(data = gam_cast_plots) +
+  scale_fill_binned(type = "viridis", 
+                    name = "Habitat Suitability\nIndex", 
+                    limits = c(0, 1), 
+                    n.breaks = 11) +
+  geom_coastline(bb = cofbb::get_bb("nefsc_carcharodon", form = "bb"))
+if(stringr::str_sub(vpars["minor"], start = -1) == 0) {
+  gam = gam +
+    geom_sf(data = obs, 
+            aes(shape = basisOfRecord), 
+            color = "red",
+            size = 1,
+            show.legend = "point") +
+    scale_shape_manual(name = "Observation Type",
+                       values = c("HumanObservation" = 16),
+                       labels = c("Human Observation")) 
+}
+gam = gam +
+  facet_wrap(~month) +
+  theme_void()
+
 png(file.path(vpath, paste0(cfg$version, "gam_compiled_casts.png")), 
     bg = "white", width = 11, height = 8.5, units = "in", res = 300)
-plot(gam_cast_plots,
+plot(gam,
      col = pal,
      breaks = breaks,
      hook = plot_coast)
@@ -141,9 +228,31 @@ glm_cast_files = list.files(path = file.path(cfg$root_path, cfg$tidy_path),
 glm_cast_plots = stars::read_stars(glm_cast_files, along = list(month = month.abb[imonth])) |>
   dplyr::rename("Habitat Suitability Index" = "glm_prediction.tif")
 
+glm = ggplot() +
+  geom_stars(data = glm_cast_plots) +
+  scale_fill_binned(type = "viridis", 
+                    name = "Habitat Suitability\nIndex", 
+                    limits = c(0, 1), 
+                    n.breaks = 11) +
+  geom_coastline(bb = cofbb::get_bb("nefsc_carcharodon", form = "bb"))
+if(stringr::str_sub(vpars["minor"], start = -1) == 0) {
+  glm = glm +
+    geom_sf(data = obs, 
+            aes(shape = basisOfRecord), 
+            color = "red",
+            size = 1,
+            show.legend = "point") +
+    scale_shape_manual(name = "Observation Type",
+                       values = c("HumanObservation" = 16),
+                       labels = c("Human Observation")) 
+}
+glm = glm +
+  facet_wrap(~month) +
+  theme_void()
+
 png(file.path(vpath, paste0(cfg$version, "glm_compiled_casts.png")), 
     bg = "white", width = 11, height = 8.5, units = "in", res = 300)
-plot(glm_cast_plots,
+plot(glm,
      col = pal,
      breaks = breaks,
      hook = plot_coast)
