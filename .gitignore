@@ -1,5 +1,12 @@
 data/*
-
+*.png
+*.tif
+*.yaml
+*.csv
+*.rds
+*.Rds
+*.gpkg
+log
 
 # History files
 .Rhistory

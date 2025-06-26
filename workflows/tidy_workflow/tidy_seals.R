@@ -11,6 +11,7 @@ suppressPackageStartupMessages({
   library(argparser)
   library(dplyr)
   library(stars)
+  library(sf)
   library(brickman)
   library(twinkle)
   library(maxnet)
@@ -30,7 +31,7 @@ args = argparser::arg_parser("tidymodels/tidysdm modeling and forecasting for wh
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_workflow/t13.00030.00.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_workflow/t12.00020.20.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -66,9 +67,7 @@ obs = read_brickman_points(file = obs_bg) |>
   dplyr::filter(id == 1, basisOfRecord %in% cfg$obs_filter$basisOfRecord) |>
   dplyr::select(all_of(cfg$vars)) |>
   dplyr::filter(month %in% as.numeric(cfg$month)) |>
-  dplyr::mutate(class = "presence") |>
-  tidysdm::thin_by_cell(mask) |>
-  tidysdm::thin_by_dist(km2m(10))
+  dplyr::mutate(class = "presence") 
 
 bg = read_brickman_points(file = obs_bg) |>
   sf::st_as_sf() |>
@@ -164,7 +163,8 @@ ws_models <-
                                       spec = sdm_spec_gam(),
                                       formula = tidysdm::gam_formula(rec))
 
-ws_metrics = tidysdm::sdm_metric_set(accuracy, brier_class)
+m = rlang::syms(cfg$metrics)
+ws_metrics = eval(rlang::expr(yardstick::metric_set(!!!m)))
 
 ws_models <-
   ws_models |>
@@ -463,4 +463,3 @@ ok = dev.off()
 
 glm_vi = variable_importance(x = final_glm_workflow, y = training(split), type = "prob") |>
   write.csv(file.path(vpath, paste0(cfg$version, "_glm_vi.csv")))
-

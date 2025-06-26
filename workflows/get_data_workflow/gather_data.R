@@ -292,13 +292,23 @@ spring_fish_layer = read_stars(file.path(cfg$data_path, cfg$fish_path, cfg$sprin
 #seal layers
 if (cfg$seal_tidy == TRUE) {
   if(cfg$hseal == "harbor") {
-    hseal_layer = load_tidy_seal(species = cfg$hseal, model_type = cfg$seal_model_type, band_as_time = TRUE) |>
+    hseal_layer = load_tidy_seal(species = cfg$hseal, 
+                                 bg = cfg$bg_ratio, 
+                                 model_type = cfg$seal_model_type,
+                                 scenario = cfg$scenario,
+                                 year = cfg$year, 
+                                 band_as_time = TRUE) |>
       dplyr::rename(hseal = sprintf("%s_prediction.tif", cfg$seal_model_type)) |>
       stars::st_warp(dest = brickman_bathymetry) 
   } 
   
   if(cfg$gseal == "gray") {
-    gseal_layer = load_tidy_seal(species = cfg$gseal, model_type = cfg$seal_model_type, band_as_time = TRUE) |>
+    gseal_layer = load_tidy_seal(species = cfg$gseal, 
+                                 bg = cfg$bg_ratio, 
+                                 model_type = cfg$seal_model_type, 
+                                 scenario = cfg$scenario,
+                                 year = cfg$year,
+                                 band_as_time = TRUE) |>
       dplyr::rename(gseal = sprintf("%s_prediction.tif", cfg$seal_model_type)) |>
       stars::st_warp(dest = brickman_bathymetry)  
   }
@@ -447,9 +457,9 @@ bg_brick = dplyr::mutate(bg_brick, brick_depth = brick_bg_depth$Bathy_depth) |>
   dplyr::mutate(bg_brick, dfs = brick_bg_dfs$dfs) |>
   dplyr::mutate(bg_brick, log_depth = brick_bg_log_depth$Bathy_depth) |>
   dplyr::mutate(bg_brick, vel_mag = brick_bg_vel_mag$vel_mag) |>
-  dplyr::bind_cols(brick_bg_covars 
-                   #brick_bg_gseal, 
-                   #brick_bg_hseal
+  dplyr::bind_cols(brick_bg_covars,
+                   brick_bg_gseal, 
+                   brick_bg_hseal
                    ) |>
   write_sf(file.path(vpath, "brickman_covar_bg.gpkg"))
 

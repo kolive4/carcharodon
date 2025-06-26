@@ -23,6 +23,7 @@ for (package in cran_packages[!ix]) {
 github_packages = c("cofbb" = "BigelowLab", 
                     "topotools" = "BigelowLab",
                     "maxnet" = "BigelowLab",
+                    "charlier" = "BigelowLab",
                     "maxnetic" = "BigelowLab",
                     "brickman" = "BigelowLab",
                     "tidysdm" = "EvolEcolGroup")

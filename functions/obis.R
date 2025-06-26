@@ -412,8 +412,52 @@ match_institution = function(raw,
     dplyr::filter(occurrenceID %in% l) 
   
   r_f_count = r_f |>
-    dplyr::count(datasetName, bibliographicCitation, sort = TRUE, ) |>
+    dplyr::count(datasetName, bibliographicCitation, occurrenceRemarks, sort = TRUE) |>
     readr::write_csv(file.path(export_path, sprintf("%s_obis_obs_survey.csv", spp)))
+}
+
+#' Function to truncate raw string into JSON string for citation columns to be cleaned
+#' modified from ChatGPT
+#' 
+#' @param x raw string of citation
+#' @return just JSON portion of raw citation string
+truncate_json = function(x) {
+  match = str_locate(x, "\\}\\]")[1, 2]
+  if (is.na(match)) return(NA_character_)
+  substr(x, 1, match)
+}
+
+#' Function to parse and clean citations to a more readable format
+#' modified from ChatGPT
+#' 
+#' @param cite_raw raw citation strings
+#' @return cleaned and readable citation strings
+clean_and_format_citations <- function(cite_raw) {
+  json_string <- truncate_json(cite_raw)
+  if (is.na(json_string)) return(NA_character_)
+  
+  parsed <- tryCatch(fromJSON(json_string, simplifyDataFrame = FALSE), error = function(e) return(NULL))
+  if (is.null(parsed)) return(NA_character_)
+  
+  cleaned <- map(parsed, function(entry) {
+    info <- entry$crossref$citeinfo
+    authors <- info$origin %||% ""
+    year <- info$pubdate %||% ""
+    title <- info$title %||% ""
+    journal <- info$serinfo$sername %||% ""
+    issue <- info$serinfo$issue %||% ""
+    link <- info$onlink %||% ""
+    
+    paste0(
+      authors, " (", year, "). ",
+      title, ". ",
+      journal,
+      if (issue != "") paste0(", ", issue) else "",
+      if (link != "") paste0(". ", link) else ""
+    ) %>% str_squish()
+  })
+  
+  paste(cleaned, collapse = "; ")
 }
 
 

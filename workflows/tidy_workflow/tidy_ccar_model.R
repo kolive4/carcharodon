@@ -11,6 +11,7 @@ suppressPackageStartupMessages({
   library(argparser)
   library(dplyr)
   library(stars)
+  library(sf)
   library(brickman)
   library(twinkle)
   library(maxnet)
@@ -31,7 +32,7 @@ args = argparser::arg_parser("tidymodels/tidysdm modeling and forecasting for wh
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_workflow/t01.10010.07.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_workflow/t11.00050.00.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -53,15 +54,23 @@ charlier::write_config(cfg, filename = file.path(vpath, basename(args$config)))
 bb = cofbb::get_bb("nefsc_carcharodon", form = "sf")
 coast = rnaturalearth::ne_coastline(scale = "large", returnclass = "sf") |>
   sf::st_geometry()
+mask = stars::read_stars(file.path(cfg$data_path, cfg$mask_name)) |>
+  rlang::set_names("mask")
 
-obs = read_brickman_points(file = file.path(cfg$root_path, cfg$gather_data_path, "brickman_covar_obs_bg.gpkg")) |>
+if (cfg$thinned) {
+  obs_bg = file.path(cfg$root_path, cfg$thinned_data_path, "thinned_obs_bg.gpkg")
+} else {
+  obs_bg = file.path(cfg$root_path, cfg$gather_data_path, "brickman_covar_obs_bg.gpkg")
+}
+
+obs = read_brickman_points(file = obs_bg) |>
   sf::st_as_sf() |>
   dplyr::filter(id == 1, basisOfRecord %in% cfg$obs_filter$basisOfRecord) |>
   dplyr::select(all_of(cfg$vars)) |>
   dplyr::filter(month %in% as.numeric(cfg$month)) |>
   dplyr::mutate(class = "presence")
 
-bg = read_brickman_points(file = file.path(cfg$root_path, cfg$gather_data_path, "brickman_covar_obs_bg.gpkg")) |>
+bg = read_brickman_points(file = obs_bg) |>
   sf::st_as_sf() |>
   dplyr::filter(id == 0) |>
   dplyr::select(all_of(cfg$vars)) |>
@@ -69,7 +78,7 @@ bg = read_brickman_points(file = file.path(cfg$root_path, cfg$gather_data_path, 
   dplyr::mutate(class = "background")
 
 data = dplyr::bind_rows(obs, bg) |>
-  dplyr::select(-dplyr::all_of(c("eventDate", "Year", "month", "basisOfRecord"))) |>
+  dplyr::select(-dplyr::all_of(c("eventDate", "Year", "basisOfRecord"))) |>
   na.omit() |>
   dplyr::mutate(class = factor(class, levels = c("presence", "background")))
 
@@ -128,6 +137,13 @@ model_bt = parsnip::boost_tree(
   stop_iter = tune()
 )
 
+model_glm = parsnip::logistic_reg(
+  engine = "glm",
+  mode = "classification"
+)
+
+model_gam = tidysdm::sdm_spec_gam()
+
 ws_models <-
   workflow_set(
     preproc = list(
@@ -136,10 +152,18 @@ ws_models <-
     models = list(
       bt = model_bt, 
       rf = model_rf,
-      maxent = model_maxent
+      maxent = model_maxent,
+      glm = model_glm,
+      gam = model_gam
     ),
     cross = TRUE
-  )
+  ) |>
+  workflowsets::update_workflow_model("simple_gam",
+                                      spec = sdm_spec_gam(),
+                                      formula = tidysdm::gam_formula(rec))
+
+m = rlang::syms(cfg$metrics)
+ws_metrics = eval(rlang::expr(yardstick::metric_set(!!!m)))
 
 ws_models <-
   ws_models |>
@@ -149,7 +173,7 @@ ws_models <-
                resamples = ws_train_cv, 
                grid = cfg$n_grid,
                control = control_grid(save_pred = TRUE, save_workflow = TRUE),
-               metrics = tidysdm::sdm_metric_set(accuracy), verbose = TRUE
+               metrics = ws_metrics, verbose = TRUE
   )
 
 model_comp = autoplot(ws_models) +
@@ -327,3 +351,114 @@ ok = dev.off()
 maxent_vi = variable_importance(x = final_maxent_workflow, y = training(split), type = "prob") |>
   write.csv(file.path(vpath, paste0(cfg$version, "_maxent_vi.csv")))
 
+#gam-----
+gam_model_ranks = metric_table(ws_models, "simple_gam")
+gam_ws_workflow_final = ws_models |>
+  extract_workflow("simple_gam") |>
+  finalize_workflow(best_hyperparams(gam_model_ranks))
+
+gam_ws_fit_final = gam_ws_workflow_final |>
+  tune::last_fit(split, metrics = ws_metrics)
+
+gam_fit_final_metrics = gam_ws_fit_final |>
+  tune::collect_metrics(summarize = FALSE) |>
+  write.csv(file.path(vpath, paste0(cfg$version, "_gam_final_metrics.csv")))
+
+final_gam_workflow = extract_workflow(gam_ws_fit_final) |>
+  readr::write_rds(file.path(vpath, paste0(cfg$version, "_final_gam_wf.Rds")))
+
+final_gam_model = extract_fit_engine(gam_ws_fit_final)
+
+p_gam = predict(final_gam_workflow, rsample::testing(split), type = "prob") |>
+  dplyr::mutate(.pred_class = ifelse(.pred_presence >= 0.5, "presence", "background") |>
+                  factor(levels = c("presence", "background")),
+                class = testing(split)$class |>
+                  factor(levels = c("presence", "background"))) |>
+  readr::write_csv(file = file.path(vpath, paste0(cfg$version, "_gam_pred.csv")))
+
+cm_gam = yardstick::conf_mat(p_gam, truth = class, estimate = .pred_class) |>
+  write_RDS(file = file.path(vpath, paste0(cfg$version, "_maxnet_conf_mat.rds")))
+autoplot(cm_gam, type = "heatmap")
+
+roc_gam = yardstick::roc_curve(p_gam, .pred_presence, truth = class)
+auc_gam = yardstick::roc_auc(p_gam, .pred_presence, truth = class)
+
+gam_roc_plot = plot_roc(p_gam, truth = class, pred = .pred_presence, title = "gam ROC")
+png(filename = file.path(vpath, sprintf("%s_gam_pauc.png", cfg$version)), 
+    bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
+print(gam_roc_plot)
+ok = dev.off()
+
+gam_pd = partial_dependence(object = extract_fit_engine(gam_ws_fit_final), 
+                            v = extract_var_names(gam_ws_fit_final), 
+                            data = training(split) |>
+                              dplyr::select(-class) |>
+                              sf::st_drop_geometry(),
+                            which_pred = "presence",
+                            prob = TRUE,
+                            type = "response") |>
+  readr::write_rds(file.path(vpath, paste0(cfg$version, "_gam_pd.rds")))
+gam_pd_plot = plot(gam_pd, share_y = "all")
+png(filename = file.path(vpath, sprintf("%s_gam_pd.png", cfg$version)), 
+    bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
+print(gam_pd_plot)
+ok = dev.off()
+
+gam_vi = variable_importance(x = final_gam_workflow, y = training(split), type = "prob") |>
+  write.csv(file.path(vpath, paste0(cfg$version, "_gam_vi.csv")))
+
+#glm-----
+glm_model_ranks = metric_table(ws_models, "simple_glm")
+glm_ws_workflow_final = ws_models |>
+  extract_workflow("simple_glm") |>
+  finalize_workflow(best_hyperparams(glm_model_ranks))
+
+glm_ws_fit_final = glm_ws_workflow_final |>
+  tune::last_fit(split, metrics = ws_metrics)
+
+glm_fit_final_metrics = glm_ws_fit_final |>
+  tune::collect_metrics(summarize = FALSE) |>
+  write.csv(file.path(vpath, paste0(cfg$version, "_glm_final_metrics.csv")))
+
+final_glm_workflow = extract_workflow(glm_ws_fit_final) |>
+  readr::write_rds(file.path(vpath, paste0(cfg$version, "_final_glm_wf.Rds")))
+
+final_glm_model = extract_fit_engine(glm_ws_fit_final)
+
+p_glm = predict(final_glm_workflow, rsample::testing(split), type = "prob") |>
+  dplyr::mutate(.pred_class = ifelse(.pred_presence >= 0.5, "presence", "background") |>
+                  factor(levels = c("presence", "background")),
+                class = testing(split)$class |>
+                  factor(levels = c("presence", "background"))) |>
+  readr::write_csv(file = file.path(vpath, paste0(cfg$version, "_glm_pred.csv")))
+
+cm_glm = yardstick::conf_mat(p_glm, truth = class, estimate = .pred_class) |>
+  write_RDS(file = file.path(vpath, paste0(cfg$version, "_maxnet_conf_mat.rds")))
+autoplot(cm_glm, type = "heatmap")
+
+roc_glm = yardstick::roc_curve(p_glm, .pred_presence, truth = class)
+auc_glm = yardstick::roc_auc(p_glm, .pred_presence, truth = class)
+
+glm_roc_plot = plot_roc(p_glm, truth = class, pred = .pred_presence, title = "glm ROC")
+png(filename = file.path(vpath, sprintf("%s_glm_pauc.png", cfg$version)), 
+    bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
+print(glm_roc_plot)
+ok = dev.off()
+
+glm_pd = partial_dependence(object = extract_fit_engine(glm_ws_fit_final), 
+                            v = extract_var_names(glm_ws_fit_final), 
+                            data = training(split) |>
+                              dplyr::select(-class) |>
+                              sf::st_drop_geometry(),
+                            which_pred = "presence",
+                            prob = TRUE,
+                            type = "response") |>
+  readr::write_rds(file.path(vpath, paste0(cfg$version, "_glm_pd.rds")))
+glm_pd_plot = plot(glm_pd, share_y = "all")
+png(filename = file.path(vpath, sprintf("%s_glm_pd.png", cfg$version)), 
+    bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
+print(glm_pd_plot)
+ok = dev.off()
+
+glm_vi = variable_importance(x = final_glm_workflow, y = training(split), type = "prob") |>
+  write.csv(file.path(vpath, paste0(cfg$version, "_glm_vi.csv")))

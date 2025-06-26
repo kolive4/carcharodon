@@ -18,7 +18,7 @@ args = argparser::arg_parser("a tool to cast monthly predictions into one figure
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_reports/c12.00020.01_12.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_reports/c22.000200.01_12.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -49,7 +49,7 @@ plot_coast = function() {
 pal = terra::map.pal("magma", 10)
 breaks = seq(from = 0, to = 1, length.out = length(pal) + 1)
 
-if (stringr::str_sub(vpars["major"], start = 2, end = 2) == 1) {
+if (stringr::str_sub(vpars["major"], start = 2, end = 2) %in% c(1,2)) {
   obs_bg = file.path(cfg$root_path, cfg$thinned_data_path, "thinned_obs_bg.gpkg")
 } else {
   obs_bg = file.path(cfg$root_path, cfg$gather_data_path, "brickman_covar_obs_bg.gpkg")

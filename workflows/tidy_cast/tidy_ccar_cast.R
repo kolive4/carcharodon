@@ -53,7 +53,13 @@ bb = cofbb::get_bb("nefsc_carcharodon", form = "sf")
 coast = rnaturalearth::ne_coastline(scale = "large", returnclass = "sf") |>
   sf::st_geometry()
 
-obs = read_brickman_points(file = file.path(cfg$root_path, cfg$gather_data_path, "brickman_covar_obs_bg.gpkg")) |>
+if (cfg$thinned) {
+  obs_bg = file.path(cfg$root_path, cfg$thinned_data_path, "thinned_obs_bg.gpkg")
+} else {
+  obs_bg = file.path(cfg$root_path, cfg$gather_data_path, "brickman_covar_obs_bg.gpkg")
+}
+
+obs = read_brickman_points(file = obs_bg) |>
   sf::st_as_sf() |>
   dplyr::filter(id == 1, basisOfRecord %in% cfg$obs_filter$basisOfRecord) |>
   dplyr::select(all_of(cfg$vars)) |>
@@ -107,13 +113,13 @@ if ("brick_xbtm" %in% cfg$vars) {
   var_list[["xbtm"]] = xbtm
 }
 if ("gseal" %in% cfg$vars) {
-  gseal = load_seal(scenario = "PRESENT", species = "gray", band_as_time = FALSE) |>
+  gseal = load_tidy_seal(scenario = cfg$scenario, year = cfg$year, bg = "one_to_two", model_type = "bt", species = "gray", band_as_time = FALSE) |>
     dplyr::rename(gseal = "prediction.tif") # |>
   # stars::st_set_dimensions("band", values = NULL, refsys = NA_real_)
   var_list[["gseal"]] = gseal
 }
 if ("hseal" %in% cfg$vars) {
-  hseal = load_seal(scenario = "PRESENT", species = "harbor", band_as_time = FALSE) |>
+  hseal = load_tidy_seal(scenario = cfg$scenario, year = cfg$year, bg = "one_to_two", model_type = "bt", species = "harbor", band_as_time = FALSE) |>
     dplyr::rename(hseal = "prediction.tif") # |>
   # stars::st_set_dimensions("band", values = NULL, refsys = NA_real_)
   var_list[["hseal"]] = hseal
@@ -124,8 +130,8 @@ dynamic_preds = twinkle::bind_attrs(var_list) |>
 
 mon_no = seq(from = 1, to = 12)
 if ("dfs" %in% cfg$vars) {
-  dfs = stars::read_stars(file.path(cfg$data_path, cfg$dfs_path, "gebco_distance_to_shore_meters.tif")) |>
-    dplyr::rename(dfs = "gebco_distance_to_shore_meters.tif") 
+  dfs = stars::read_stars(file.path(cfg$data_path, cfg$dfs_path, "etopo_warped_distance_to_shore_meters.tif")) |>
+    dplyr::rename(dfs = "etopo_warped_distance_to_shore_meters.tif") 
   dfs2 = sapply(mon_no, function(mon) {dfs}, simplify = FALSE)
   dfs = do.call(c, append(dfs2, list(along = list(band = mon_no)))) |>
     stars::st_set_dimensions("band", offset = NA_real_, delta = NA_real_) |>
@@ -154,7 +160,8 @@ if (exists("depth") && exists("dfs")) {
     dplyr::slice(band, as.integer(cfg$month))
 }
 
-preds = avg_covs(preds)
+preds = avg_covs(preds) |>
+  mutate(month = as.numeric(cfg$month))
 
 if (!is.null(cfg$mask_name)) {
   mask = stars::read_stars(file.path(cfg$root_path, cfg$data_path, cfg$mask_name)) |>
@@ -175,7 +182,9 @@ if (!is.null(cfg$contour_name)) {
 final_rf_workflow = readr::read_rds(file.path(cfg$root_path, cfg$wf_path, cfg$wf_version, sprintf("%s_final_rf_wf.Rds", cfg$wf_version)))
 
 rf_pred = predict_stars(final_rf_workflow, preds, type = "prob") |>
+  dplyr::select(.pred_presence) |>
   write_stars(file.path(vpath, "rf_prediction.tif"))
+
 rf_pred_plot = ggplot() +
   geom_stars(data = rf_pred) +
   scale_fill_binned(type = "viridis", 
@@ -188,15 +197,22 @@ if(cfg$graphics$add_pres_pts == TRUE) {
   rf_pred_plot = rf_pred_plot +
     geom_sf(data = obs, 
             aes(shape = basisOfRecord), 
-            fill = "white",
-            alpha = 0.5,
-            show.legend = "point")
+            color = "red",
+            show.legend = "point") +
+    scale_shape_manual(name = "Observation Type",
+                       values = c("OBIS" = 16,
+                                  "curated" = 17,
+                                  "iNaturalist" = 0,
+                                  "PSAT" = 3,
+                                  "SPOT" = 12
+                                  ),
+                       labels = c("OBIS", "Curated", "iNaturalist", "PSAT", "SPOT"))
 }
 if (cfg$graphics$plot_contour) {
   rf_pred_plot = rf_pred_plot +
     geom_sf(data = mask_contour, color = "white")
 }
-rf_pred_plot
+
 png(filename = file.path(vpath, sprintf("%s_rf_prediction.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 print(rf_pred_plot)
@@ -206,7 +222,9 @@ dev.off()
 final_bt_workflow = readr::read_rds(file.path(cfg$root_path, cfg$wf_path, cfg$wf_version, sprintf("%s_final_bt_wf.Rds", cfg$wf_version)))
 
 bt_pred = predict_stars(final_bt_workflow, preds, type = "prob") |>
+  dplyr::select(.pred_presence) |>
   write_stars(file.path(vpath, "bt_prediction.tif"))
+
 bt_pred_plot = ggplot() +
   geom_stars(data = bt_pred) +
   scale_fill_binned(type = "viridis", 
@@ -216,18 +234,24 @@ bt_pred_plot = ggplot() +
   geom_coastline(bb = cofbb::get_bb("nefsc_carcharodon", form = "bb")) +
   theme_void() 
 if(cfg$graphics$add_pres_pts == TRUE) {
-  bt_pred_plot = bt_pred_plot +
+  rf_pred_plot = rf_pred_plot +
     geom_sf(data = obs, 
             aes(shape = basisOfRecord), 
-            fill = "white",
-            alpha = 0.5,
-            show.legend = "point")
+            color = "red",
+            show.legend = "point") +
+    scale_shape_manual(name = "Observation Type",
+                       values = c("OBIS" = 16,
+                                  "curated" = 17,
+                                  "iNaturalist" = 0,
+                                  "PSAT" = 3,
+                                  "SPOT" = 12
+                       ),
+                       labels = c("OBIS", "Curated", "iNaturalist", "PSAT", "SPOT"))
 }
 if (cfg$graphics$plot_contour) {
   bt_pred_plot = bt_pred_plot +
     geom_sf(data = mask_contour, color = "white")
 }
-bt_pred_plot
 png(filename = file.path(vpath, sprintf("%s_bt_prediction.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 print(bt_pred_plot)
@@ -237,7 +261,9 @@ dev.off()
 final_maxent_workflow = readr::read_rds(file.path(cfg$root_path, cfg$wf_path, cfg$wf_version, sprintf("%s_final_maxent_wf.Rds", cfg$wf_version)))
 
 maxent_pred = predict_stars(final_maxent_workflow, preds, type = "prob") |>
+  dplyr::select(.pred_presence) |>
   write_stars(file.path(vpath, "maxent_prediction.tif"))
+
 maxent_pred_plot = ggplot() +
   geom_stars(data = maxent_pred) +
   scale_fill_binned(type = "viridis", 
@@ -247,20 +273,103 @@ maxent_pred_plot = ggplot() +
   geom_coastline(bb = cofbb::get_bb("nefsc_carcharodon", form = "bb")) +
   theme_void() 
 if(cfg$graphics$add_pres_pts == TRUE) {
-  maxent_pred_plot = maxent_pred_plot +
+  rf_pred_plot = rf_pred_plot +
     geom_sf(data = obs, 
             aes(shape = basisOfRecord), 
-            fill = "white",
-            alpha = 0.5,
-            show.legend = "point")
+            color = "red",
+            show.legend = "point") +
+    scale_shape_manual(name = "Observation Type",
+                       values = c("OBIS" = 16,
+                                  "curated" = 17,
+                                  "iNaturalist" = 0,
+                                  "PSAT" = 3,
+                                  "SPOT" = 12
+                       ),
+                       labels = c("OBIS", "Curated", "iNaturalist", "PSAT", "SPOT"))
 }
 if (cfg$graphics$plot_contour) {
   maxent_pred_plot = maxent_pred_plot +
     geom_sf(data = mask_contour, color = "white")
 }
-maxent_pred_plot
 png(filename = file.path(vpath, sprintf("%s_maxent_prediction.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 print(maxent_pred_plot)
 dev.off()
 
+#glm pred----
+final_glm_workflow = readr::read_rds(file.path(cfg$root_path, cfg$wf_path, cfg$wf_version, sprintf("%s_final_glm_wf.Rds", cfg$wf_version)))
+
+glm_pred = predict_stars(final_glm_workflow, preds, type = "prob") |>
+  dplyr::select(.pred_presence) |>
+  write_stars(file.path(vpath, "glm_prediction.tif"))
+
+glm_pred_plot = ggplot() +
+  geom_stars(data = glm_pred) +
+  scale_fill_binned(type = "viridis", 
+                    name = cfg$graphics$ggtitle, 
+                    limits = c(0, 1), 
+                    n.breaks = 11) +
+  geom_coastline(bb = cofbb::get_bb("nefsc_carcharodon", form = "bb")) +
+  theme_void() 
+if(cfg$graphics$add_pres_pts == TRUE) {
+  rf_pred_plot = rf_pred_plot +
+    geom_sf(data = obs, 
+            aes(shape = basisOfRecord), 
+            color = "red",
+            show.legend = "point") +
+    scale_shape_manual(name = "Observation Type",
+                       values = c("OBIS" = 16,
+                                  "curated" = 17,
+                                  "iNaturalist" = 0,
+                                  "PSAT" = 3,
+                                  "SPOT" = 12
+                       ),
+                       labels = c("OBIS", "Curated", "iNaturalist", "PSAT", "SPOT"))
+}
+if (cfg$graphics$plot_contour) {
+  glm_pred_plot = glm_pred_plot +
+    geom_sf(data = mask_contour, color = "white")
+}
+png(filename = file.path(vpath, sprintf("%s_glm_prediction.png", cfg$version)), 
+    bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
+print(glm_pred_plot)
+dev.off()
+
+#gam pred----
+final_gam_workflow = readr::read_rds(file.path(cfg$root_path, cfg$wf_path, cfg$wf_version, sprintf("%s_final_gam_wf.Rds", cfg$wf_version)))
+
+gam_pred = predict_stars(final_gam_workflow, preds, type = "prob") |>
+  dplyr::select(.pred_presence) |>
+  write_stars(file.path(vpath, "gam_prediction.tif"))
+
+gam_pred_plot = ggplot() +
+  geom_stars(data = gam_pred) +
+  scale_fill_binned(type = "viridis", 
+                    name = cfg$graphics$ggtitle, 
+                    limits = c(0, 1), 
+                    n.breaks = 11) +
+  geom_coastline(bb = cofbb::get_bb("nefsc_carcharodon", form = "bb")) +
+  theme_void() 
+if(cfg$graphics$add_pres_pts == TRUE) {
+  rf_pred_plot = rf_pred_plot +
+    geom_sf(data = obs, 
+            aes(shape = basisOfRecord), 
+            color = "red",
+            show.legend = "point") +
+    scale_shape_manual(name = "Observation Type",
+                       values = c("OBIS" = 16,
+                                  "curated" = 17,
+                                  "iNaturalist" = 0,
+                                  "PSAT" = 3,
+                                  "SPOT" = 12
+                       ),
+                       labels = c("OBIS", "Curated", "iNaturalist", "PSAT", "SPOT"))
+}
+if (cfg$graphics$plot_contour) {
+  gam_pred_plot = gam_pred_plot +
+    geom_sf(data = mask_contour, color = "white")
+}
+png(filename = file.path(vpath, sprintf("%s_gam_prediction.png", cfg$version)), 
+    bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
+print(gam_pred_plot)
+dev.off()

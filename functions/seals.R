@@ -97,26 +97,78 @@ load_seal = function(scenario = c("RCP85", "RCP45", "PRESENT")[1],
 #' @param band_as_time logical, convert band to appropriate time/date stamp
 #' @return stars object
 load_tidy_seal = function(species = c("harbor", "gray")[1],
-                          scenario = "PRESENT",
-                          model_type = c("rf", "bt", "maxent")[3],
-                          path = here::here("workflows/tidy_workflow/versions"),
+                          bg = c("all", "one_to_two"),
+                          scenario = c("PRESENT", "RCP45", "RCP85"),
+                          year = c("PRESENT", "2055", "2075"),
+                          model_type = c("rf", "bt", "maxent", "gam", "glm")[3],
+                          path = here::here("workflows/tidy_cast/versions"),
                           band_as_time = FALSE){
   if(FALSE){
     species = "harbor"
     model_type = "maxent"
     band_as_time = TRUE
+    bg = "one_to_two"
   }
   
   if (species == "gray") {
-    s_path = file.path(path, "t02/00020")
+    if (bg == "all") {
+      if (scenario == "PRESENT") {
+        s_path = file.path(path, "t12/000200")
+      } else if (scenario == "RCP45" && year == "2055") {
+        s_path = file.path(path, "t12/000201")
+      } else if (scenario == "RCP45" && year == "2075") {
+        s_path = file.path(path, "t12/000202")
+      } else if (scenario == "RCP85" && year == "2055") {
+        s_path = file.path(path, "t12/000203")
+      } else if (scenario == "RCP85" && year == "2075") {
+        s_path = file.path(path, "t12/000204")
+      }
+    } else if (bg == "one_to_two") {
+      if (scenario == "PRESENT") {
+        s_path = file.path(path, "t22/000200")
+      } else if (scenario == "RCP45" && year == "2055") {
+        s_path = file.path(path, "t22/000201")
+      } else if (scenario == "RCP45" && year == "2075") {
+        s_path = file.path(path, "t22/000202")
+      } else if (scenario == "RCP85" && year == "2055") {
+        s_path = file.path(path, "t22/000203")
+      } else if (scenario == "RCP85" && year == "2075") {
+        s_path = file.path(path, "t22/000204")
+      }
+    }
   } else if (species == "harbor") {
-    s_path = file.path(path, "t03/00020")
+    if (bg == "all") {
+      if (scenario == "PRESENT") {
+        s_path = file.path(path, "t13/000200")
+      } else if (scenario == "RCP45" && year == "2055") {
+        s_path = file.path(path, "t13/000201")
+      } else if (scenario == "RCP45" && year == "2075") {
+        s_path = file.path(path, "t13/000202")
+      } else if (scenario == "RCP85" && year == "2055") {
+        s_path = file.path(path, "t13/000203")
+      } else if (scenario == "RCP85" && year == "2075") {
+        s_path = file.path(path, "t13/000204")
+      }
+    } else if (bg == "one_to_two") {
+      if (scenario == "PRESENT") {
+        s_path = file.path(path, "t23/000200")
+      } else if (scenario == "RCP45" && year == "2055") {
+        s_path = file.path(path, "t23/000201")
+      } else if (scenario == "RCP45" && year == "2075") {
+        s_path = file.path(path, "t23/000202")
+      } else if (scenario == "RCP85" && year == "2055") {
+        s_path = file.path(path, "t23/000203")
+      } else if (scenario == "RCP85" && year == "2075") {
+        s_path = file.path(path, "t23/000204")
+      }
+    }
   }
   
   t = list.dirs(s_path, recursive = FALSE, full.names = TRUE)
+  cast_vers = basename(t)
   
   tifs = lapply(t, function(filepath){
-    filename = file.path(filepath, sprintf("%s_prediction.tif", model_type))
+    filename = file.path(filepath, paste0(model_type, "_prediction.tif"))
     return(filename)
   })
   x = stars::read_stars(tifs, along = list(band = c(seq(1, 12)))) |>

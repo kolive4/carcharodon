@@ -14,11 +14,11 @@ suppressPackageStartupMessages({
 })
 
 args = argparser::arg_parser("a tool to cast monthly predictions into one figure",
-                             name = "compiled_report.R",
+                             name = "compiled_report_sharks.R",
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_reports/c01.02010.01_12.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_reports/c11.000300.01_12.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -48,77 +48,249 @@ plot_coast = function() {
 pal = terra::map.pal("magma", 10)
 breaks = seq(from = 0, to = 1, length.out = length(pal) + 1)
 
-rf_cast_files = list.files(path = file.path(cfg$root_path, cfg$tidy_cast_path), 
+if (stringr::str_sub(vpars["major"], start = 2, end = 2) %in% c(1,2)) {
+  obs_bg = file.path(cfg$root_path, cfg$thinned_data_path, "thinned_obs_bg.gpkg")
+} else {
+  obs_bg = file.path(cfg$root_path, cfg$gather_data_path, "brickman_covar_obs_bg.gpkg")
+}
+
+obs = read_brickman_points(file = obs_bg) |>
+  sf::st_as_sf() |>
+  dplyr::filter(id == 1) |>
+  dplyr::mutate(class = "presence") |>
+  dplyr::filter(month %in% as.numeric(seq(from = 1, to = 12))) 
+
+obs$month = factor(month.abb[obs$month], levels = month.abb)
+
+rf_cast_files = list.files(path = file.path(cfg$root_path, cfg$tidy_path), 
                            pattern = "rf_prediction.tif",
                            recursive = TRUE,
                            full.names = TRUE) 
 
-rf_z = basename(dirname(rf_cast_files))
-rf_len = nchar(rf_z) 
-rf_imonth = substring(rf_z, rf_len -1) |>
+z = basename(dirname(rf_cast_files))
+len = nchar(z) 
+imonth = substring(z, len -1) |>
   as.numeric()
 
-rf_cast_plots = stars::read_stars(rf_cast_files, along = list(month = month.abb[rf_imonth])) |>
+rf_cast_plots = stars::read_stars(rf_cast_files, along = list(month = month.abb[imonth])) |>
   dplyr::rename("Habitat Suitability Index" = "rf_prediction.tif")
 
-png(file.path(vpath, paste0(cfg$version, "rf_compiled_casts.png")), 
+rf = ggplot() +
+  geom_stars(data = rf_cast_plots) +
+  scale_fill_binned(type = "viridis", 
+                    name = "Habitat Suitability\nIndex", 
+                    limits = c(0, 1), 
+                    n.breaks = 11) +
+  geom_coastline(bb = cofbb::get_bb("nefsc_carcharodon", form = "bb"))
+if(stringr::str_sub(vpars["minor"], start = -1) == 0) {
+  rf = rf +
+    geom_sf(data = obs, 
+            aes(shape = basisOfRecord), 
+            color = "red",
+            size = 1,
+            show.legend = "point") +
+    scale_shape_manual(name = "Observation Type",
+                       values = c("OBIS" = 16,
+                                  "curated" = 17,
+                                  "iNaturalist" = 0,
+                                  "PSAT" = 3,
+                                  "SPOT" = 12
+                       ),
+                       labels = c("OBIS", "Curated", "iNaturalist", "PSAT", "SPOT")) 
+}
+rf = rf +
+  facet_wrap(~month) +
+  theme_void()
+
+png(file.path(vpath, paste0(cfg$version, "_rf_compiled_casts.png")), 
     bg = "white", width = 11, height = 8.5, units = "in", res = 300)
-plot(rf_cast_plots,
+plot(rf,
      col = pal,
      breaks = breaks,
      hook = plot_coast)
 ok = dev.off()
 
-bt_cast_files = list.files(path = file.path(cfg$root_path, cfg$tidy_cast_path), 
+bt_cast_files = list.files(path = file.path(cfg$root_path, cfg$tidy_path), 
                            pattern = "bt_prediction.tif",
                            recursive = TRUE,
                            full.names = TRUE) 
-bt_z = basename(dirname(bt_cast_files))
-bt_len = nchar(bt_z) 
-bt_imonth = substring(bt_z, bt_len -1) |>
-  as.numeric()
 
-bt_cast_plots = stars::read_stars(bt_cast_files, along = list(month = month.abb[bt_imonth])) |>
+bt_cast_plots = stars::read_stars(bt_cast_files, along = list(month = month.abb[imonth])) |>
   dplyr::rename("Habitat Suitability Index" = "bt_prediction.tif")
 
-png(file.path(vpath, paste0(cfg$version, "bt_compiled_casts.png")), 
+bt = ggplot() +
+  geom_stars(data = bt_cast_plots) +
+  scale_fill_binned(type = "viridis", 
+                    name = "Habitat Suitability\nIndex", 
+                    limits = c(0, 1), 
+                    n.breaks = 11) +
+  geom_coastline(bb = cofbb::get_bb("nefsc_carcharodon", form = "bb"))
+if(stringr::str_sub(vpars["minor"], start = -1) == 0) {
+  bt = bt +
+    geom_sf(data = obs, 
+            aes(shape = basisOfRecord), 
+            color = "red",
+            size = 1,
+            show.legend = "point") +
+    scale_shape_manual(name = "Observation Type",
+                       values = c("OBIS" = 16,
+                                  "curated" = 17,
+                                  "iNaturalist" = 0,
+                                  "PSAT" = 3,
+                                  "SPOT" = 12
+                       ),
+                       labels = c("OBIS", "Curated", "iNaturalist", "PSAT", "SPOT")) 
+}
+bt = bt +
+  facet_wrap(~month) +
+  theme_void()
+
+png(file.path(vpath, paste0(cfg$version, "_bt_compiled_casts.png")), 
     bg = "white", width = 11, height = 8.5, units = "in", res = 300)
-plot(bt_cast_plots,
+plot(bt,
      col = pal,
      breaks = breaks,
      hook = plot_coast)
 ok = dev.off()
 
-maxent_cast_files = list.files(path = file.path(cfg$root_path, cfg$tidy_cast_path), 
-                           pattern = "maxent_prediction.tif",
-                           recursive = TRUE,
-                           full.names = TRUE) 
+maxent_cast_files = list.files(path = file.path(cfg$root_path, cfg$tidy_path), 
+                               pattern = "maxent_prediction.tif",
+                               recursive = TRUE,
+                               full.names = TRUE) 
 
-maxent_z = basename(dirname(maxent_cast_files))
-maxent_len = nchar(maxent_z) 
-maxent_imonth = substring(maxent_z, maxent_len -1) |>
-  as.numeric()
-
-maxent_cast_plots = stars::read_stars(maxent_cast_files, along = list(month = month.abb[maxent_imonth])) |>
+maxent_cast_plots = stars::read_stars(maxent_cast_files, along = list(month = month.abb[imonth])) |>
   dplyr::rename("Habitat Suitability Index" = "maxent_prediction.tif")
 
-png(file.path(vpath, paste0(cfg$version, "maxent_compiled_casts.png")), 
+maxent = ggplot() +
+  geom_stars(data = maxent_cast_plots) +
+  scale_fill_binned(type = "viridis", 
+                    name = "Habitat Suitability\nIndex", 
+                    limits = c(0, 1), 
+                    n.breaks = 11) +
+  geom_coastline(bb = cofbb::get_bb("nefsc_carcharodon", form = "bb"))
+if(stringr::str_sub(vpars["minor"], start = -1) == 0) {
+  maxent = maxent +
+    geom_sf(data = obs, 
+            aes(shape = basisOfRecord), 
+            color = "red",
+            size = 1,
+            show.legend = "point") +
+    scale_shape_manual(name = "Observation Type",
+                       values = c("OBIS" = 16,
+                                  "curated" = 17,
+                                  "iNaturalist" = 0,
+                                  "PSAT" = 3,
+                                  "SPOT" = 12
+                       ),
+                       labels = c("OBIS", "Curated", "iNaturalist", "PSAT", "SPOT"))
+}
+maxent = maxent +
+  facet_wrap(~month) +
+  theme_void()
+
+png(file.path(vpath, paste0(cfg$version, "_maxent_compiled_casts.png")), 
     bg = "white", width = 11, height = 8.5, units = "in", res = 300)
-plot(maxent_cast_plots,
+plot(maxent,
      col = pal,
      breaks = breaks,
      hook = plot_coast)
 ok = dev.off()
 
-rf_metrics_files = list.files(path = file.path(cfg$root_path, cfg$tidy_wf_path), 
-                        pattern = "rf_final_metrics.csv",
-                        recursive = TRUE,
-                        full.names = TRUE) 
+gam_cast_files = list.files(path = file.path(cfg$root_path, cfg$tidy_path), 
+                            pattern = "gam_prediction.tif",
+                            recursive = TRUE,
+                            full.names = TRUE) 
+
+gam_cast_plots = stars::read_stars(gam_cast_files, along = list(month = month.abb[imonth])) |>
+  dplyr::rename("Habitat Suitability Index" = "gam_prediction.tif")
+
+gam = ggplot() +
+  geom_stars(data = gam_cast_plots) +
+  scale_fill_binned(type = "viridis", 
+                    name = "Habitat Suitability\nIndex", 
+                    limits = c(0, 1), 
+                    n.breaks = 11) +
+  geom_coastline(bb = cofbb::get_bb("nefsc_carcharodon", form = "bb"))
+if(stringr::str_sub(vpars["minor"], start = -1) == 0) {
+  gam = gam +
+    geom_sf(data = obs, 
+            aes(shape = basisOfRecord), 
+            color = "red",
+            size = 1,
+            show.legend = "point") +
+    scale_shape_manual(name = "Observation Type",
+                       values = c("OBIS" = 16,
+                                  "curated" = 17,
+                                  "iNaturalist" = 0,
+                                  "PSAT" = 3,
+                                  "SPOT" = 12
+                       ),
+                       labels = c("OBIS", "Curated", "iNaturalist", "PSAT", "SPOT"))
+}
+gam = gam +
+  facet_wrap(~month) +
+  theme_void()
+
+png(file.path(vpath, paste0(cfg$version, "_gam_compiled_casts.png")), 
+    bg = "white", width = 11, height = 8.5, units = "in", res = 300)
+plot(gam,
+     col = pal,
+     breaks = breaks,
+     hook = plot_coast)
+ok = dev.off()
+
+glm_cast_files = list.files(path = file.path(cfg$root_path, cfg$tidy_path), 
+                            pattern = "glm_prediction.tif",
+                            recursive = TRUE,
+                            full.names = TRUE) 
+
+glm_cast_plots = stars::read_stars(glm_cast_files, along = list(month = month.abb[imonth])) |>
+  dplyr::rename("Habitat Suitability Index" = "glm_prediction.tif")
+
+glm = ggplot() +
+  geom_stars(data = glm_cast_plots) +
+  scale_fill_binned(type = "viridis", 
+                    name = "Habitat Suitability\nIndex", 
+                    limits = c(0, 1), 
+                    n.breaks = 11) +
+  geom_coastline(bb = cofbb::get_bb("nefsc_carcharodon", form = "bb"))
+if(stringr::str_sub(vpars["minor"], start = -1) == 0) {
+  glm = glm +
+    geom_sf(data = obs, 
+            aes(shape = basisOfRecord), 
+            color = "red",
+            size = 1,
+            show.legend = "point") +
+    scale_shape_manual(name = "Observation Type",
+                       values = c("OBIS" = 16,
+                                  "curated" = 17,
+                                  "iNaturalist" = 0,
+                                  "PSAT" = 3,
+                                  "SPOT" = 12
+                       ),
+                       labels = c("OBIS", "Curated", "iNaturalist", "PSAT", "SPOT"))
+}
+glm = glm +
+  facet_wrap(~month) +
+  theme_void()
+
+png(file.path(vpath, paste0(cfg$version, "_glm_compiled_casts.png")), 
+    bg = "white", width = 11, height = 8.5, units = "in", res = 300)
+plot(glm,
+     col = pal,
+     breaks = breaks,
+     hook = plot_coast)
+ok = dev.off()
+
+rf_metrics_files = list.files(path = file.path(cfg$root_path, cfg$tidy_w_path, cfg$tidy_w_vers), 
+                              pattern = sprintf("%s_rf_final_metrics.csv", cfg$tidy_w_vers),
+                              recursive = TRUE,
+                              full.names = TRUE) 
 if (TRUE %in% file.exists(rf_metrics_files)) {
-    rf_metrics = lapply(rf_metrics_files, readr::read_csv) |>
-      dplyr::bind_rows(.id = "month") |>
-      dplyr::select(c("month", ".metric", ".estimate")) |>
-      dplyr::mutate(month = as.numeric(month))
+  rf_metrics = lapply(rf_metrics_files, readr::read_csv) |>
+    dplyr::bind_rows(.id = "month") |>
+    dplyr::select(c("month", ".metric", ".estimate")) |>
+    dplyr::mutate(month = as.numeric(month))
   
   rf_metric_plot = ggplot() +
     geom_line(data = rf_metrics, aes(x = month, y = .estimate, color = .metric)) +
@@ -134,8 +306,8 @@ if (TRUE %in% file.exists(rf_metrics_files)) {
          width = 11, height = 8.5, units = "in", dpi = 300)
 }
 
-bt_metrics_files = list.files(path = file.path(cfg$root_path, cfg$tidy_wf_path), 
-                              pattern = "bt_final_metrics.csv",
+bt_metrics_files = list.files(path = file.path(cfg$root_path, cfg$tidy_w_path, cfg$tidy_w_vers), 
+                              pattern = sprintf("%s_bt_final_metrics.csv", cfg$tidy_w_vers),
                               recursive = TRUE,
                               full.names = TRUE) 
 if (TRUE %in% file.exists(bt_metrics_files)) {
@@ -158,10 +330,10 @@ if (TRUE %in% file.exists(bt_metrics_files)) {
          width = 11, height = 8.5, units = "in", dpi = 300)
 }
 
-maxent_metrics_files = list.files(path = file.path(cfg$root_path, cfg$tidy_wf_path), 
-                              pattern = "maxent_final_metrics.csv",
-                              recursive = TRUE,
-                              full.names = TRUE) 
+maxent_metrics_files = list.files(path = file.path(cfg$root_path, cfg$tidy_w_path, cfg$tidy_w_vers), 
+                                  pattern = sprintf("%s_maxent_final_metrics.csv", cfg$tidy_w_vers),
+                                  recursive = TRUE,
+                                  full.names = TRUE) 
 if (TRUE %in% file.exists(maxent_metrics_files)) {
   maxent_metrics = lapply(maxent_metrics_files, readr::read_csv) |>
     dplyr::bind_rows(.id = "month") |>
@@ -182,15 +354,63 @@ if (TRUE %in% file.exists(maxent_metrics_files)) {
          width = 11, height = 8.5, units = "in", dpi = 300)
 }
 
-rf_vi_files = list.files(path = file.path(cfg$root_path, cfg$tidy_wf_path), 
-                        pattern = "rf_vi.csv",
-                        recursive = TRUE,
-                        full.names = TRUE) 
+gam_metrics_files = list.files(path = file.path(cfg$root_path, cfg$tidy_w_path, cfg$tidy_w_vers), 
+                               pattern = sprintf("%s_gam_final_metrics.csv", cfg$tidy_w_vers),
+                               recursive = TRUE,
+                               full.names = TRUE) 
+if (TRUE %in% file.exists(gam_metrics_files)) {
+  gam_metrics = lapply(gam_metrics_files, readr::read_csv) |>
+    dplyr::bind_rows(.id = "month") |>
+    dplyr::select(c("month", ".metric", ".estimate")) |>
+    dplyr::mutate(month = as.numeric(month))
+  
+  gam_metric_plot = ggplot() +
+    geom_line(data = gam_metrics, aes(x = month, y = .estimate, color = .metric)) +
+    scale_y_continuous(limits = c(0, 1)) +
+    scale_x_continuous(limits = c(1, 12), n.breaks = 12) +
+    theme_classic() +
+    ggtitle(cfg$graphics$gam_metrics_title) +
+    labs(x = cfg$graphics$x)
+  gam_metric_plot
+  ggsave(filename = sprintf("%s_gam_metrics.png", cfg$version),
+         plot = gam_metric_plot, 
+         path = vpath, 
+         width = 11, height = 8.5, units = "in", dpi = 300)
+}
+
+glm_metrics_files = list.files(path = file.path(cfg$root_path, cfg$tidy_w_path, cfg$tidy_w_vers), 
+                               pattern = sprintf("%s_glm_final_metrics.csv", cfg$tidy_w_vers),
+                               recursive = TRUE,
+                               full.names = TRUE) 
+if (TRUE %in% file.exists(glm_metrics_files)) {
+  glm_metrics = lapply(glm_metrics_files, readr::read_csv) |>
+    dplyr::bind_rows(.id = "month") |>
+    dplyr::select(c("month", ".metric", ".estimate")) |>
+    dplyr::mutate(month = as.numeric(month))
+  
+  glm_metric_plot = ggplot() +
+    geom_line(data = glm_metrics, aes(x = month, y = .estimate, color = .metric)) +
+    scale_y_continuous(limits = c(0, 1)) +
+    scale_x_continuous(limits = c(1, 12), n.breaks = 12) +
+    theme_classic() +
+    ggtitle(cfg$graphics$glm_metrics_title) +
+    labs(x = cfg$graphics$x)
+  glm_metric_plot
+  ggsave(filename = sprintf("%s_glm_metrics.png", cfg$version),
+         plot = glm_metric_plot, 
+         path = vpath, 
+         width = 11, height = 8.5, units = "in", dpi = 300)
+}
+
+rf_vi_files = list.files(path = file.path(cfg$root_path, cfg$tidy_w_path, cfg$tidy_w_vers), 
+                         pattern = sprintf("%s_rf_vi.csv", cfg$tidy_w_vers),
+                         recursive = TRUE,
+                         full.names = TRUE) 
 if (TRUE %in% file.exists(rf_vi_files)) {
-    rf_vi = lapply(rf_vi_files, readr::read_csv) |>
-      dplyr::bind_rows(.id = "month") |>
-      dplyr::select(c("month", "var", "importance")) |>
-      dplyr::mutate(month = as.numeric(month))
+  rf_vi = lapply(rf_vi_files, readr::read_csv) |>
+    dplyr::bind_rows(.id = "month") |>
+    dplyr::select(c("month", "var", "importance")) |>
+    dplyr::mutate(month = as.numeric(month))
   
   rf_vi_plot = ggplot() +
     geom_bar(data = rf_vi, aes(x = month, y = importance, fill = var),
@@ -209,8 +429,8 @@ if (TRUE %in% file.exists(rf_vi_files)) {
 }
 
 
-bt_vi_files = list.files(path = file.path(cfg$root_path, cfg$tidy_wf_path), 
-                         pattern = "bt_vi.csv",
+bt_vi_files = list.files(path = file.path(cfg$root_path, cfg$tidy_w_path, cfg$tidy_w_vers), 
+                         pattern = sprintf("%s_bt_vi.csv", cfg$tidy_w_vers),
                          recursive = TRUE,
                          full.names = TRUE) 
 if (TRUE %in% file.exists(bt_vi_files)) {
@@ -236,10 +456,10 @@ if (TRUE %in% file.exists(bt_vi_files)) {
 }
 
 
-maxent_vi_files = list.files(path = file.path(cfg$root_path, cfg$tidy_wf_path), 
-                         pattern = "maxent_vi.csv",
-                         recursive = TRUE,
-                         full.names = TRUE) 
+maxent_vi_files = list.files(path = file.path(cfg$root_path, cfg$tidy_w_path, cfg$tidy_w_vers), 
+                             pattern = sprintf("%s_maxent_vi.csv", cfg$tidy_w_vers),
+                             recursive = TRUE,
+                             full.names = TRUE) 
 if (TRUE %in% file.exists(maxent_vi_files)) {
   maxent_vi = lapply(maxent_vi_files, readr::read_csv) |>
     dplyr::bind_rows(.id = "month") |>
@@ -262,95 +482,55 @@ if (TRUE %in% file.exists(maxent_vi_files)) {
          width = 11, height = 8.5, units = "in", dpi = 300)
 }
 
-mon_colors =  c("01" = "#5978a3",
-                "02" = "#83b9e2",
-                "03" = "#003c00",
-                "04" = "#30662d",
-                "05" = "#5b9359",
-                "06" = "#be9200",
-                "07" = "#dbb142",
-                "08" = "#ffda7a",
-                "09" = "#9a0000",
-                "10" = "#a83f38",
-                "11" = "#ad7272",
-                "12" = "#292f56")
-
-rf_pd_files = list.files(path = file.path(cfg$root_path, cfg$tidy_wf_path), 
-                         pattern = "rf_pd.rds",
-                         recursive = TRUE,
-                         full.names = TRUE) 
-rf_pd_names = basename(rf_pd_files) |>
-  substring(11, 12)
-if (TRUE %in% file.exists(rf_pd_files)) {
-  rf_pd = lapply(rf_pd_files, readr::read_rds) |>
-    rlang::set_names(rf_pd_names)
-  rf_pd = pd_cov(rf_pd)
-  rf_pd_plot = ggplot() +
-    geom_line(data = rf_pd, aes(x = bin_mid,
-                                y = pd, 
-                                color = month)) +
-    scale_y_continuous(limits = c(0, 1)) +
-    scale_color_manual(values = mon_colors) +
+gam_vi_files = list.files(path = file.path(cfg$root_path, cfg$tidy_w_path, cfg$tidy_w_vers), 
+                          pattern = sprintf("%s_gam_vi.csv", cfg$tidy_w_vers),
+                          recursive = TRUE,
+                          full.names = TRUE) 
+if (TRUE %in% file.exists(gam_vi_files)) {
+  gam_vi = lapply(gam_vi_files, readr::read_csv) |>
+    dplyr::bind_rows(.id = "month") |>
+    dplyr::select(c("month", "var", "importance")) |>
+    dplyr::mutate(month = as.numeric(month))
+  
+  gam_vi_plot = ggplot() +
+    geom_bar(data = gam_vi, aes(x = month, y = importance, fill = var),
+             position = "fill", stat = "identity") +
+    scale_x_continuous(breaks = seq(from = 1, to = 12, by = 1)) +
     theme_classic() +
-    # ggtitle(cfg$graphics$rf_metrics_title) +
-    # labs(x = cfg$graphics$x)  +
-    facet_wrap(~ covar, scales = "free_x")
-  rf_pd_plot
-  ggsave(filename = sprintf("%s_rf_pd.png", cfg$version),
-         plot = rf_pd_plot, 
+    scale_fill_viridis(discrete = TRUE) +
+    ggtitle(cfg$graphics$vi_title) +
+    labs(x = cfg$graphics$x, 
+         y = cfg$graphics$vi_y)
+  gam_vi_plot
+  ggsave(filename = sprintf("%s_gam_varimp.png", cfg$version),
+         plot = gam_vi_plot, 
          path = vpath, 
          width = 11, height = 8.5, units = "in", dpi = 300)
 }
 
-bt_pd_files = list.files(path = file.path(cfg$root_path, cfg$tidy_wf_path), 
-                         pattern = "bt_pd.rds",
-                         recursive = TRUE,
-                         full.names = TRUE) 
-bt_pd_names = basename(bt_pd_files) |>
-  substring(11, 12)
-if (TRUE %in% file.exists(bt_pd_files)) {
-  bt_pd = lapply(bt_pd_files, readr::read_rds) |>
-    rlang::set_names(bt_pd_names)
-  bt_pd = pd_cov(bt_pd)
-  bt_pd_plot = ggplot() +
-    geom_line(data = bt_pd, aes(x = bin_mid,
-                                y = pd, 
-                                color = month)) +
-    scale_y_continuous(limits = c(0, 1)) +
-    scale_color_manual(values = mon_colors) +
+glm_vi_files = list.files(path = file.path(cfg$root_path, cfg$tidy_w_path, cfg$tidy_w_vers), 
+                          pattern = sprintf("%s_glm_vi.csv", cfg$tidy_w_vers),
+                          recursive = TRUE,
+                          full.names = TRUE) 
+if (TRUE %in% file.exists(glm_vi_files)) {
+  glm_vi = lapply(glm_vi_files, readr::read_csv) |>
+    dplyr::bind_rows(.id = "month") |>
+    dplyr::select(c("month", "var", "importance")) |>
+    dplyr::mutate(month = as.numeric(month))
+  
+  glm_vi_plot = ggplot() +
+    geom_bar(data = glm_vi, aes(x = month, y = importance, fill = var),
+             position = "fill", stat = "identity") +
+    scale_x_continuous(breaks = seq(from = 1, to = 12, by = 1)) +
     theme_classic() +
-    # ggtitle(cfg$graphics$rf_metrics_title) +
-    # labs(x = cfg$graphics$x)  +
-    facet_wrap(~ covar, scales = "free_x")
-  bt_pd_plot
-  ggsave(filename = sprintf("%s_bt_pd.png", cfg$version),
-         plot = bt_pd_plot, 
+    scale_fill_viridis(discrete = TRUE) +
+    ggtitle(cfg$graphics$vi_title) +
+    labs(x = cfg$graphics$x, 
+         y = cfg$graphics$vi_y)
+  glm_vi_plot
+  ggsave(filename = sprintf("%s_glm_varimp.png", cfg$version),
+         plot = glm_vi_plot, 
          path = vpath, 
          width = 11, height = 8.5, units = "in", dpi = 300)
 }
 
-maxent_pd_files = list.files(path = file.path(cfg$root_path, cfg$tidy_wf_path), 
-                         pattern = "maxent_pd.rds",
-                         recursive = TRUE,
-                         full.names = TRUE) 
-maxent_pd_names = basename(maxent_pd_files) |>
-  substring(11, 12)
-if (TRUE %in% file.exists(maxent_pd_files)) {
-  maxent_pd = lapply(maxent_pd_files, readr::read_rds) |>
-    rlang::set_names(maxent_pd_names)
-  maxent_pd = pd_cov(maxent_pd)
-  maxent_pd_plot = ggplot() +
-    geom_line(data = maxent_pd, aes(x = bin_mid,
-                                y = pd, 
-                                color = month)) +
-    scale_color_manual(values = mon_colors) +
-    theme_classic() +
-    # ggtitle(cfg$graphics$rf_metrics_title) +
-    # labs(x = cfg$graphics$x)  +
-    facet_wrap(~ covar, scales = "free")
-  maxent_pd_plot
-  ggsave(filename = sprintf("%s_maxent_pd.png", cfg$version),
-         plot = maxent_pd_plot, 
-         path = vpath, 
-         width = 11, height = 8.5, units = "in", dpi = 300)
-}

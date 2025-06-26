@@ -1,6 +1,0 @@
-name,uri
-sst_uri,https://oceandata.sci.gsfc.nasa.gov/opendap/MODISA/L3SMI/2002/0704/AQUA_MODIS.20020704_20230630.L3m.CU.SST.sst.9km.nc
-sst_summer_uri,https://oceandata.sci.gsfc.nasa.gov/opendap/MODISA/L3SMI/2002/0621/AQUA_MODIS.20020621_20220920.L3m.SCSU.SST.sst.9km.nc
-sst_autumn_uri,https://oceandata.sci.gsfc.nasa.gov/opendap/MODISA/L3SMI/2002/0921/AQUA_MODIS.20020921_20221220.L3m.SCAU.SST.sst.9km.nc
-sst_winter_uri,https://oceandata.sci.gsfc.nasa.gov/opendap/MODISA/L3SMI/2002/1221/AQUA_MODIS.20021221_20230320.L3m.SCWI.SST.sst.9km.nc
-sst_spring_uri,https://oceandata.sci.gsfc.nasa.gov/opendap/MODISA/L3SMI/2003/0321/AQUA_MODIS.20030321_20230620.L3m.SCSP.SST.sst.9km.nc
