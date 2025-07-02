@@ -2,8 +2,10 @@
 title: "`r cfg$message`"
 output: 
   - html_document:
-      keep_md: yes
-  - github_document: default
+      toc: true
+  - github_document:
+      toc: true
+      html_preview: false
 params: 
   cfg_file: "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_md/m22.00046.yaml" 
 ---
@@ -21,6 +23,8 @@ parsed_wf_v = charlier::parse_version(cfg$t_wf_version)
 parsed_fore_v = charlier::parse_version(cfg$t_rep_fore_version)
 parsed_now_v = charlier::parse_version(cfg$t_rep_now_version)
 ```
+
+## Nowcast and Forecast Maps
 
 Random Forest Nowcast and Forecast
 
@@ -75,7 +79,7 @@ glm_fore = file.path(cfg$root_path, "tidy_reports/versions", parsed_fore_v["majo
 knitr::include_graphics(c(glm_now, glm_fore))
 ```
 
-Metrics
+## Metrics
 
 ```{r metrics, echo=FALSE, message=FALSE}
 rf_metrics = readr::read_csv(file.path(cfg$root_path, "tidy_workflow/versions", parsed_wf_v["major"], parsed_wf_v["minor"], cfg$t_wf_version, paste0(cfg$t_wf_version, "_rf_final_metrics.csv")), show_col_types = FALSE) |> 
@@ -108,7 +112,7 @@ all_metrics = dplyr::bind_rows(list(rf = rf_metrics, bt = bt_metrics, maxnet = m
 knitr::kable(all_metrics, caption = "Metrics by model type")
 ```
 
-Variable Importance
+## Variable Importance
 
 ```{r variable importance, echo=FALSE, message=FALSE}
 rf_vi = readr::read_csv(file.path(cfg$root_path, "tidy_workflow/versions", parsed_wf_v["major"], parsed_wf_v["minor"], cfg$t_wf_version, paste0(cfg$t_wf_version, "_rf_vi.csv")), show_col_types = FALSE) |>

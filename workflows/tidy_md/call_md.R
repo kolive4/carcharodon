@@ -12,9 +12,16 @@ output_filename = paste0(cfg$version, "_tidy_compiled")
 
 Sys.setenv(RSTUDIO_PANDOC="/usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64")
 
-rmarkdown::render("/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_md/tidy_md.Rmd", 
+rmarkdown::render(input = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_md/tidy_md.Rmd", 
                   params = list(cfg_file = cfg_file),
-                  output_format = "all",
-                  output_file = output_filename,
-                  output_dir = file.path(md_path, "versions", vpars["major"], vpars["minor"])) 
+                  output_format = "html_document",
+                  output_file = paste0(output_filename, ".html"),
+                  output_dir = file.path(md_path, "versions", vpars["major"], vpars["minor"]),
+                  envir = new.env()) 
 
+rmarkdown::render(input = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_md/tidy_md.Rmd", 
+                  params = list(cfg_file = cfg_file),
+                  output_format = "github_document",
+                  output_file = paste0(output_filename, ".md"),
+                  output_dir = file.path(md_path, "versions", vpars["major"], vpars["minor"]),
+                  envir = new.env()) 
