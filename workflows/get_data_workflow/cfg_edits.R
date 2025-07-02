@@ -1,10 +1,7 @@
-files = list.files(path = "workflows/get_data_workflow", pattern = glob2rx("v01.*.yaml"), full.names = TRUE)
-extra = list(inat_file = "inaturalist/observations-507834.csv")
+files = list.files(path = "workflows/tidy_cast", pattern = "^t11\\.[0-1]005[0-5][0-4].\\d+\\.yaml$", full.names = TRUE)
+extra = list(seal_bg_ratio = "one_to_two",
+             seal_model_type = "bt")
 cfgs = append_config(files, extra, write = TRUE)
-
-files = list.files(path = "workflows/tidy_cast", pattern = "^t11\\.\\d{6}\\.\\d+\\.yaml$", full.names = TRUE)
-cfg = verify_version(files, write = TRUE)
-cfg
 
 
 files = list.files(path = "workflows/tidy_workflow", pattern = "^t11\\.\\d{5}\\.\\d+\\.yaml$", full.names = TRUE)

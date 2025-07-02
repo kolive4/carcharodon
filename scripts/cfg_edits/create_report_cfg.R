@@ -1,4 +1,8 @@
-files = list.files(path = "workflows/tidy_cast", pattern = "^t11\\.[0-1]003[0-5][0-4].01.yaml$", full.names = TRUE)
+suppressPackageStartupMessages({
+  library(charlier)
+})
+
+files = list.files(path = "workflows/tidy_cast", pattern = "^t[1-2][2-3]\\.00046[0-4].01.yaml$", full.names = TRUE)
 
 create_report_cfg = function(cast_file,
                            template_file = "workflows/tidy_reports/c12.000300.01_12.yaml") {

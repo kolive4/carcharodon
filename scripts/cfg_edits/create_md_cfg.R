@@ -2,7 +2,7 @@ suppressPackageStartupMessages({
   library(charlier)
 })
 
-files = list.files(path = "workflows/tidy_reports", pattern = "^c11\\.\\d{6}\\.01_12.yaml$", full.names = TRUE)
+files = list.files(path = "workflows/tidy_reports", pattern = "^c[1-2][2-3]\\.00046[0-4].01_12.yaml$", full.names = TRUE)
 
 create_md_cfg = function(report_file,
                          template_file = "workflows/tidy_md/m00.000000.yaml") {
@@ -28,13 +28,16 @@ create_md_cfg = function(report_file,
   thin_vpars = parse_version(thin_version)
   thin_minor = unname(thin_vpars["minor"])
   
-  thin_map = list(
+  thin_map_sharks = list(
     "0" = "No thinning",
     "1" = "Thinned satellite data (PSAT and SPOT)",
     "2" = "Thinned all data"
   )
   thin_code = substr(thin_minor, 4, 4)
-  
+  thin_map_seals = list(
+    "0" = "Thinned observations"
+  )
+
   ratio_map = list(
   	"0" = "All pseudo-absence/background points",
   	"1" = "1:2 observation:pseudo-absence ratio"
@@ -59,7 +62,7 @@ create_md_cfg = function(report_file,
     "01" = "shark specific (tbtm, sss, sbtm, mld, log_depth, gseal, hseal)",
     "02" = "seal specific (sst, dfs, velocity magnitude, xbtm)",
     "03" = "all covariates (u and v become vel_mag)",
-    "04" = "seal specific v2 (sst, dfs, vel_mag)",
+    "04" = "seal specific v2 (sss, dfs, month, mld)",
     "05" = "all covariates (u and v become vel_mag) and seals" 
   )
   covariates_code = substr(md_minor, 3, 4)
@@ -70,14 +73,20 @@ create_md_cfg = function(report_file,
     "2" = "evaluated using true skill statistic (tss)",
     "3" = "evaluated using continuous boyce index",
     "4" = "evaluated using Brier score",
-    "5" = "evaluated using accuracy"
+    "5" = "evaluated using accuracy",
+    "6" = "evaluated using true skill staistic (tss) and area under the receiver operator curve (roc_auc)"
   )
   metrics_code = substr(md_minor, 5, 5)
   
   cfg = charlier::read_config(template_file)
   cfg$version = md_version
+  if (species_code != 1) {
+    thin_message = paste0(thin_map_seals[[as.character(thin_code)]], ",")
+  } else {
+    thin_message = paste0(thin_map_sharks[[as.character(thin_code)]], ", ")
+  }
   cfg$message = paste0(species_map[[as.character(species_code)]], ", ", 
-  					   thin_map[[as.character(thin_code)]], ", ",
+  					   thin_message,
   					   ratio_map[[as.character(ratio_code)]], ", ",
 					   extent_map[[as.character(extent_code)]], ", ",
 					   covariates_map[[as.character(covariates_code)]], ", ",

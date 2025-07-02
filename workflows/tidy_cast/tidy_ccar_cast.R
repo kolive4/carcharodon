@@ -30,7 +30,7 @@ args = argparser::arg_parser("tidymodels/tidysdm casting for white shark habitat
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_cast/t01.02010.01.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_cast/t11.000500.01.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -113,14 +113,14 @@ if ("brick_xbtm" %in% cfg$vars) {
   var_list[["xbtm"]] = xbtm
 }
 if ("gseal" %in% cfg$vars) {
-  gseal = load_tidy_seal(scenario = cfg$scenario, year = cfg$year, bg = "one_to_two", model_type = "bt", species = "gray", band_as_time = FALSE) |>
-    dplyr::rename(gseal = "prediction.tif") # |>
+  gseal = load_tidy_seal(scenario = cfg$scenario, year = cfg$year, bg = cfg$seal_bg_ratio, model_type = cfg$seal_model_type, species = "gray", band_as_time = FALSE) |>
+    dplyr::rename(gseal = paste0(cfg$seal_model_type, "_prediction.tif")) # |>
   # stars::st_set_dimensions("band", values = NULL, refsys = NA_real_)
   var_list[["gseal"]] = gseal
 }
 if ("hseal" %in% cfg$vars) {
-  hseal = load_tidy_seal(scenario = cfg$scenario, year = cfg$year, bg = "one_to_two", model_type = "bt", species = "harbor", band_as_time = FALSE) |>
-    dplyr::rename(hseal = "prediction.tif") # |>
+  hseal = load_tidy_seal(scenario = cfg$scenario, year = cfg$year, bg = cfg$seal_bg_ratio, model_type = cfg$seal_model_type, species = "harbor", band_as_time = FALSE) |>
+    dplyr::rename(hseal = paste0(cfg$seal_model_type, "_prediction.tif")) # |>
   # stars::st_set_dimensions("band", values = NULL, refsys = NA_real_)
   var_list[["hseal"]] = hseal
 }

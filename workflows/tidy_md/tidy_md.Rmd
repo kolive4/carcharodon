@@ -1,0 +1,139 @@
+---
+title: "`r cfg$message`"
+output: 
+  - html_document:
+      keep_md: yes
+  - github_document: default
+params: 
+  cfg_file: "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_md/m22.00046.yaml" 
+---
+
+```{r, echo=FALSE, message=FALSE}
+source("/mnt/ecocast/projects/koliveira/subprojects/carcharodon/setup.R")
+
+cfg = charlier::read_config(params$cfg_file)
+
+if (FALSE) {
+  cfg = charlier::read_config("/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_md/m11.00030.yaml")
+}
+
+parsed_wf_v = charlier::parse_version(cfg$t_wf_version)
+parsed_fore_v = charlier::parse_version(cfg$t_rep_fore_version)
+parsed_now_v = charlier::parse_version(cfg$t_rep_now_version)
+```
+
+Random Forest Nowcast and Forecast
+
+```{r rfplots, fig.show="hold", out.width="45%", echo=FALSE}
+rf_now = file.path(cfg$root_path, "tidy_reports/versions", 
+                   parsed_now_v["major"], parsed_now_v["minor"],
+                   paste0(cfg$t_rep_now_version, "_rf_compiled_casts.png"))
+rf_fore = file.path(cfg$root_path, "tidy_reports/versions", parsed_fore_v["major"], 
+                    parsed_fore_v["minor"],
+                    paste0(cfg$t_rep_fore_version, "_rf_compiled_casts.png"))
+
+knitr::include_graphics(c(rf_now, rf_fore))
+```
+
+
+Boosted Trees Nowcast and Forecast
+
+```{r btplots, fig.show="hold", out.width="45%", echo=FALSE}
+bt_now = file.path(cfg$root_path, "tidy_reports/versions", parsed_now_v["major"], parsed_now_v["minor"], paste0(cfg$t_rep_now_version, "_bt_compiled_casts.png"))
+bt_fore = file.path(cfg$root_path, "tidy_reports/versions", parsed_fore_v["major"], parsed_fore_v["minor"], paste0(cfg$t_rep_fore_version, "_bt_compiled_casts.png"))
+
+knitr::include_graphics(c(bt_now, bt_fore))
+```
+
+
+Maxnet Trees Nowcast and Forecast
+
+```{r maxentplots, fig.show="hold", out.width="45%", echo=FALSE}
+maxent_now = file.path(cfg$root_path, "tidy_reports/versions", parsed_now_v["major"], parsed_now_v["minor"], paste0(cfg$t_rep_now_version, "_maxent_compiled_casts.png"))
+maxent_fore = file.path(cfg$root_path, "tidy_reports/versions", parsed_fore_v["major"], parsed_fore_v["minor"], paste0(cfg$t_rep_fore_version, "_maxent_compiled_casts.png"))
+
+knitr::include_graphics(c(maxent_now, maxent_fore))
+```
+
+
+GAM Nowcast and Forecast
+
+```{r gamplots, fig.show="hold", out.width="45%", echo=FALSE}
+gam_now = file.path(cfg$root_path, "tidy_reports/versions", parsed_now_v["major"], parsed_now_v["minor"], paste0(cfg$t_rep_now_version, "_gam_compiled_casts.png"))
+gam_fore = file.path(cfg$root_path, "tidy_reports/versions", parsed_fore_v["major"], parsed_fore_v["minor"], paste0(cfg$t_rep_fore_version, "_gam_compiled_casts.png"))
+
+knitr::include_graphics(c(gam_now, gam_fore))
+```
+
+
+GLM Nowcast and Forecast
+
+```{r glmplots, fig.show="hold", out.width="45%", echo=FALSE}
+glm_now = file.path(cfg$root_path, "tidy_reports/versions", parsed_now_v["major"], parsed_now_v["minor"], paste0(cfg$t_rep_now_version, "_glm_compiled_casts.png"))
+glm_fore = file.path(cfg$root_path, "tidy_reports/versions", parsed_fore_v["major"], parsed_fore_v["minor"], paste0(cfg$t_rep_fore_version, "_glm_compiled_casts.png"))
+
+knitr::include_graphics(c(glm_now, glm_fore))
+```
+
+Metrics
+
+```{r metrics, echo=FALSE, message=FALSE}
+rf_metrics = readr::read_csv(file.path(cfg$root_path, "tidy_workflow/versions", parsed_wf_v["major"], parsed_wf_v["minor"], cfg$t_wf_version, paste0(cfg$t_wf_version, "_rf_final_metrics.csv")), show_col_types = FALSE) |> 
+  dplyr::select(c(".metric", ".estimate")) |>
+  tidyr::pivot_wider(names_from = .metric,
+                     values_from = .estimate)
+
+bt_metrics = readr::read_csv(file.path(cfg$root_path, "tidy_workflow/versions", parsed_wf_v["major"], parsed_wf_v["minor"], cfg$t_wf_version, paste0(cfg$t_wf_version, "_bt_final_metrics.csv")), show_col_types = FALSE) |> 
+  dplyr::select(c(".metric", ".estimate")) |>
+  tidyr::pivot_wider(names_from = .metric,
+                     values_from = .estimate)
+
+maxnet_metrics = readr::read_csv(file.path(cfg$root_path, "tidy_workflow/versions", parsed_wf_v["major"], parsed_wf_v["minor"], cfg$t_wf_version, paste0(cfg$t_wf_version, "_maxent_final_metrics.csv")), show_col_types = FALSE) |> 
+  dplyr::select(c(".metric", ".estimate")) |>
+  tidyr::pivot_wider(names_from = .metric,
+                     values_from = .estimate)
+
+gam_metrics = readr::read_csv(file.path(cfg$root_path, "tidy_workflow/versions", parsed_wf_v["major"], parsed_wf_v["minor"], cfg$t_wf_version, paste0(cfg$t_wf_version, "_gam_final_metrics.csv")), show_col_types = FALSE) |> 
+  dplyr::select(c(".metric", ".estimate")) |>
+  tidyr::pivot_wider(names_from = .metric,
+                     values_from = .estimate)
+
+glm_metrics = readr::read_csv(file.path(cfg$root_path, "tidy_workflow/versions", parsed_wf_v["major"], parsed_wf_v["minor"], cfg$t_wf_version, paste0(cfg$t_wf_version, "_glm_final_metrics.csv")), show_col_types = FALSE) |> 
+  dplyr::select(c(".metric", ".estimate")) |>
+  tidyr::pivot_wider(names_from = .metric,
+                     values_from = .estimate)
+
+all_metrics = dplyr::bind_rows(list(rf = rf_metrics, bt = bt_metrics, maxnet = maxnet_metrics, gam = gam_metrics, glm = glm_metrics),
+                               .id = "model_type")
+knitr::kable(all_metrics, caption = "Metrics by model type")
+```
+
+Variable Importance
+
+```{r variable importance, echo=FALSE, message=FALSE}
+rf_vi = readr::read_csv(file.path(cfg$root_path, "tidy_workflow/versions", parsed_wf_v["major"], parsed_wf_v["minor"], cfg$t_wf_version, paste0(cfg$t_wf_version, "_rf_vi.csv")), show_col_types = FALSE) |>
+  dplyr::select(c("var", "importance")) 
+
+bt_vi = readr::read_csv(file.path(cfg$root_path, "tidy_workflow/versions", parsed_wf_v["major"], parsed_wf_v["minor"], cfg$t_wf_version, paste0(cfg$t_wf_version, "_bt_vi.csv")), show_col_types = FALSE) |>
+  dplyr::select(c("var", "importance")) 
+
+maxnet_vi = readr::read_csv(file.path(cfg$root_path, "tidy_workflow/versions", parsed_wf_v["major"], parsed_wf_v["minor"], cfg$t_wf_version, paste0(cfg$t_wf_version, "_maxent_vi.csv")), show_col_types = FALSE) |>
+  dplyr::select(c("var", "importance")) 
+
+gam_vi = readr::read_csv(file.path(cfg$root_path, "tidy_workflow/versions", parsed_wf_v["major"], parsed_wf_v["minor"], cfg$t_wf_version, paste0(cfg$t_wf_version, "_gam_vi.csv")), show_col_types = FALSE) |>
+  dplyr::select(c("var", "importance")) 
+
+glm_vi = readr::read_csv(file.path(cfg$root_path, "tidy_workflow/versions", parsed_wf_v["major"], parsed_wf_v["minor"], cfg$t_wf_version, paste0(cfg$t_wf_version, "_glm_vi.csv")), show_col_types = FALSE) |>
+  dplyr::select(c("var", "importance")) 
+
+all_vi = dplyr::bind_rows(list(rf = rf_vi, bt = bt_vi, maxent = maxnet_vi, gam = gam_vi, glm = glm_vi), .id = "model_type")
+
+ggplot() +
+    geom_bar(data = all_vi, aes(x = model_type, y = importance, fill = var),
+             position = "fill", stat = "identity") +
+    theme_classic() +
+  scale_fill_viridis_d() +
+    ggtitle(cfg$graphics$vi_title) +
+    labs(x = cfg$graphics$x, 
+         y = cfg$graphics$vi_y)
+```

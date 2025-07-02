@@ -98,7 +98,7 @@ rf = rf +
   facet_wrap(~month) +
   theme_void()
 
-png(file.path(vpath, paste0(cfg$version, "rf_compiled_casts.png")), 
+png(file.path(vpath, paste0(cfg$version, "_rf_compiled_casts.png")), 
     bg = "white", width = 11, height = 8.5, units = "in", res = 300)
 plot(rf,
      col = pal,
@@ -136,7 +136,7 @@ bt = bt +
   facet_wrap(~month) +
   theme_void()
 
-png(file.path(vpath, paste0(cfg$version, "bt_compiled_casts.png")), 
+png(file.path(vpath, paste0(cfg$version, "_bt_compiled_casts.png")), 
     bg = "white", width = 11, height = 8.5, units = "in", res = 300)
 plot(bt,
      col = pal,
@@ -174,7 +174,7 @@ maxent = maxent +
   facet_wrap(~month) +
   theme_void()
 
-png(file.path(vpath, paste0(cfg$version, "maxent_compiled_casts.png")), 
+png(file.path(vpath, paste0(cfg$version, "_maxent_compiled_casts.png")), 
     bg = "white", width = 11, height = 8.5, units = "in", res = 300)
 plot(maxent,
      col = pal,
@@ -212,7 +212,7 @@ gam = gam +
   facet_wrap(~month) +
   theme_void()
 
-png(file.path(vpath, paste0(cfg$version, "gam_compiled_casts.png")), 
+png(file.path(vpath, paste0(cfg$version, "_gam_compiled_casts.png")), 
     bg = "white", width = 11, height = 8.5, units = "in", res = 300)
 plot(gam,
      col = pal,
@@ -250,7 +250,7 @@ glm = glm +
   facet_wrap(~month) +
   theme_void()
 
-png(file.path(vpath, paste0(cfg$version, "glm_compiled_casts.png")), 
+png(file.path(vpath, paste0(cfg$version, "_glm_compiled_casts.png")), 
     bg = "white", width = 11, height = 8.5, units = "in", res = 300)
 plot(glm,
      col = pal,

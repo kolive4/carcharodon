@@ -1,9 +1,9 @@
-files = list.files(path = "workflows/tidy_workflow", pattern = "^t11\\.[0-1]005[0-5].\\d+\\.yaml$", full.names = TRUE)
+files = list.files(path = "workflows/tidy_workflow", pattern = "^t1[2-3]\\.00046.\\d+\\.yaml$", full.names = TRUE)
 
 create_cast_cfg = function(file,
-                           template_file = "workflows/tidy_cast/t11.000500.01.yaml") {
+                           template_file = "workflows/tidy_cast/t12.000300.01.yaml") {
   if (FALSE) {
-    file = files[1]
+    file = files[2]
   }
   scenarios = 0:4
   months = sprintf("%02d", 1:12)
@@ -34,6 +34,10 @@ create_cast_cfg = function(file,
   
   for (scenario in scenarios) {
     for (month in months) {
+      if (FALSE) {
+        scenario = 1
+        month = "01"
+      }
       cast_name <- sprintf("%s%d.%s", base, scenario, month)
       cast_vpars = charlier::parse_version(cast_name)
       file_path <- file.path(output_dir, paste0(cast_name, ".yaml"))
@@ -57,12 +61,14 @@ create_cast_cfg = function(file,
         cfg$mask_name = "mapping/etopo/etopo_warped_750_mask.tif"
         cfg$graphics$plot_contour = TRUE
       }
+      cfg$vars = wf_cfg$vars
+      cfg$dynamic_names = wf_cfg$dynamic_names
       
       charlier::write_config(cfg, file_path)
     }
   }
 }
-lapply(files, create_cast_cfg, template_file = "workflows/tidy_cast/t10.000300.01.yaml")
+lapply(files, create_cast_cfg, template_file = "workflows/tidy_cast/t12.000300.01.yaml")
 
 
 

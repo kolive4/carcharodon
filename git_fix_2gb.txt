@@ -1,0 +1,7 @@
+https://docs.github.com/en/get-started/using-git/troubleshooting-the-2-gb-push-limit
+
+git log --oneline --reverse refs/heads/main | awk 'NR % 1000 == 0'
+git log --reverse main > git-log.txt
+git rm --cached workflows/*/versions/*/*/log
+ *.tif *.gpkg *.csv *.rds *.Rds
+git push REMOTE-NAME +<YOUR_COMMIT_SHA_NUMBER>:refs/heads/BRANCH-NAME
