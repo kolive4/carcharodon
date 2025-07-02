@@ -132,7 +132,7 @@ glm_vi = readr::read_csv(file.path(cfg$root_path, "tidy_workflow/versions", pars
 
 all_vi = dplyr::bind_rows(list(rf = rf_vi, bt = bt_vi, maxent = maxnet_vi, gam = gam_vi, glm = glm_vi), .id = "model_type")
 
-ggplot() +
+vi_plot = ggplot() +
     geom_bar(data = all_vi, aes(x = model_type, y = importance, fill = var),
              position = "fill", stat = "identity") +
     theme_classic() +
@@ -140,4 +140,6 @@ ggplot() +
     ggtitle(cfg$graphics$vi_title) +
     labs(x = cfg$graphics$x, 
          y = cfg$graphics$vi_y)
+
+print(vi_plot)
 ```

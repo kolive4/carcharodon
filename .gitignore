@@ -1,5 +1,6 @@
 data/*
 *.png
+!tidy_reports/versions/*/*/*_compiled_casts.png
 *.tif
 *.yaml
 *.csv

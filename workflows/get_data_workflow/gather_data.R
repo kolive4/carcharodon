@@ -294,22 +294,22 @@ if (cfg$seal_tidy == TRUE) {
   if(cfg$hseal == "harbor") {
     hseal_layer = load_tidy_seal(species = cfg$hseal, 
                                  bg = cfg$bg_ratio, 
-                                 model_type = cfg$seal_model_type,
+                                 model_type = cfg$hseal_model_type,
                                  scenario = cfg$scenario,
                                  year = cfg$year, 
                                  band_as_time = TRUE) |>
-      dplyr::rename(hseal = sprintf("%s_prediction.tif", cfg$seal_model_type)) |>
+      dplyr::rename(hseal = sprintf("%s_prediction.tif", cfg$hseal_model_type)) |>
       stars::st_warp(dest = brickman_bathymetry) 
   } 
   
   if(cfg$gseal == "gray") {
     gseal_layer = load_tidy_seal(species = cfg$gseal, 
                                  bg = cfg$bg_ratio, 
-                                 model_type = cfg$seal_model_type, 
+                                 model_type = cfg$gseal_model_type, 
                                  scenario = cfg$scenario,
                                  year = cfg$year,
                                  band_as_time = TRUE) |>
-      dplyr::rename(gseal = sprintf("%s_prediction.tif", cfg$seal_model_type)) |>
+      dplyr::rename(gseal = sprintf("%s_prediction.tif", cfg$gseal_model_type)) |>
       stars::st_warp(dest = brickman_bathymetry)  
   }
 } else if(cfg$seal_tidy == FALSE) {
