@@ -1,7 +1,7 @@
-files = list.files(path = "workflows/tidy_workflow", pattern = "^t1[2-3]\\.00046.\\d+\\.yaml$", full.names = TRUE)
+files = list.files(path = "workflows/tidy_workflow", pattern = "^t11\\.[0-1]00[3,5][0-6].\\d+\\.yaml$", full.names = TRUE)
 
 create_cast_cfg = function(file,
-                           template_file = "workflows/tidy_cast/t12.000300.01.yaml") {
+                           template_file = "workflows/tidy_cast/t11.000500.01.yaml") {
   if (FALSE) {
     file = files[2]
   }
@@ -63,12 +63,21 @@ create_cast_cfg = function(file,
       }
       cfg$vars = wf_cfg$vars
       cfg$dynamic_names = wf_cfg$dynamic_names
+      cfg$static_names = wf_cfg$static_names
+      cfg$obs_filter = wf_cfg$obs_filter
+      if (substr(cast_vpars["major"], 2, 2) == 1) {
+        if (substr(cast_vpars["minor"], 4, 4) %in% c(5, 6)) {
+          cfg$seal_bg_ratio = "one_to_two"
+          cfg$hseal_model_type = "bt"
+          cfg$gseal_model_type = "rf"
+        }
+      }
       
       charlier::write_config(cfg, file_path)
     }
   }
 }
-lapply(files, create_cast_cfg, template_file = "workflows/tidy_cast/t12.000300.01.yaml")
+lapply(files, create_cast_cfg, template_file = "workflows/tidy_cast/t11.000500.01.yaml")
 
 
 

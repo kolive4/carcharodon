@@ -32,7 +32,7 @@ args = argparser::arg_parser("tidymodels/tidysdm modeling and forecasting for wh
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_workflow/t11.00050.00.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_workflow/t11.00070.00.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -78,7 +78,7 @@ bg = read_brickman_points(file = obs_bg) |>
   dplyr::mutate(class = "background")
 
 data = dplyr::bind_rows(obs, bg) |>
-  dplyr::select(-dplyr::all_of(c("eventDate", "Year", "basisOfRecord"))) |>
+  dplyr::select(dplyr::all_of(c("geom", "class", cfg$static_names, cfg$dynamic_names))) |>
   na.omit() |>
   dplyr::mutate(class = factor(class, levels = c("presence", "background")))
 
@@ -190,7 +190,7 @@ rf_ws_workflow_final = ws_models |>
   finalize_workflow(best_hyperparams(rf_model_ranks))
 
 rf_ws_fit_final = rf_ws_workflow_final |>
-  tune::last_fit(split, metrics = tidysdm::sdm_metric_set(accuracy)) 
+  tune::last_fit(split, metrics = ws_metrics) 
 
 rf_fit_final_metrics = rf_ws_fit_final |>
   tune::collect_metrics(summarize = FALSE) |>
@@ -245,7 +245,7 @@ bt_ws_workflow_final = ws_models |>
   finalize_workflow(best_hyperparams(bt_model_ranks))
 
 bt_ws_fit_final = bt_ws_workflow_final |>
-  tune::last_fit(split, metrics = tidysdm::sdm_metric_set(accuracy))
+  tune::last_fit(split, metrics = ws_metrics)
 
 bt_fit_final_metrics = bt_ws_fit_final |>
   tune::collect_metrics(summarize = FALSE) |>
@@ -302,7 +302,7 @@ maxent_ws_workflow_final = ws_models |>
   finalize_workflow(best_hyperparams(maxent_model_ranks))
 
 maxent_ws_fit_final = maxent_ws_workflow_final |>
-  tune::last_fit(split, metrics = tidysdm::sdm_metric_set(accuracy))
+  tune::last_fit(split, metrics = ws_metrics)
 
 maxent_fit_final_metrics = maxent_ws_fit_final |>
   tune::collect_metrics(summarize = FALSE) |>

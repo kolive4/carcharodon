@@ -16,7 +16,7 @@ source("/mnt/ecocast/projects/koliveira/subprojects/carcharodon/setup.R")
 cfg = charlier::read_config(params$cfg_file)
 
 if (FALSE) {
-  cfg = charlier::read_config("/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_md/m11.00030.yaml")
+  cfg = charlier::read_config("/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_md/m11.10076.yaml")
 }
 
 parsed_wf_v = charlier::parse_version(cfg$t_wf_version)
@@ -29,54 +29,65 @@ parsed_now_v = charlier::parse_version(cfg$t_rep_now_version)
 Random Forest Nowcast and Forecast
 
 ```{r rfplots, fig.show="hold", out.width="45%", echo=FALSE}
-rf_now = file.path(cfg$root_path, "tidy_reports/versions", 
-                   parsed_now_v["major"], parsed_now_v["minor"],
-                   paste0(cfg$t_rep_now_version, "_rf_compiled_casts.png"))
-rf_fore = file.path(cfg$root_path, "tidy_reports/versions", parsed_fore_v["major"], 
-                    parsed_fore_v["minor"],
-                    paste0(cfg$t_rep_fore_version, "_rf_compiled_casts.png"))
-
-knitr::include_graphics(c(rf_now, rf_fore))
+rf_now = fig_path(root = cfg$root_path, 
+                  version = cfg$t_rep_now_version, 
+                  model_type = "rf")
+rf_fore = fig_path(root = cfg$root_path,
+                   version = cfg$t_rep_fore_version,
+                   model_type = "rf")
+embed_fig(list(rf_now, rf_fore))
 ```
 
 
 Boosted Trees Nowcast and Forecast
 
 ```{r btplots, fig.show="hold", out.width="45%", echo=FALSE}
-bt_now = file.path(cfg$root_path, "tidy_reports/versions", parsed_now_v["major"], parsed_now_v["minor"], paste0(cfg$t_rep_now_version, "_bt_compiled_casts.png"))
-bt_fore = file.path(cfg$root_path, "tidy_reports/versions", parsed_fore_v["major"], parsed_fore_v["minor"], paste0(cfg$t_rep_fore_version, "_bt_compiled_casts.png"))
-
-knitr::include_graphics(c(bt_now, bt_fore))
+bt_now = fig_path(root = cfg$root_path, 
+                  version = cfg$t_rep_now_version, 
+                  model_type = "bt")
+bt_fore = fig_path(root = cfg$root_path,
+                   version = cfg$t_rep_fore_version,
+                   model_type = "bt")
+embed_fig(list(bt_now, bt_fore))
 ```
 
 
 Maxnet Trees Nowcast and Forecast
 
 ```{r maxentplots, fig.show="hold", out.width="45%", echo=FALSE}
-maxent_now = file.path(cfg$root_path, "tidy_reports/versions", parsed_now_v["major"], parsed_now_v["minor"], paste0(cfg$t_rep_now_version, "_maxent_compiled_casts.png"))
-maxent_fore = file.path(cfg$root_path, "tidy_reports/versions", parsed_fore_v["major"], parsed_fore_v["minor"], paste0(cfg$t_rep_fore_version, "_maxent_compiled_casts.png"))
-
-knitr::include_graphics(c(maxent_now, maxent_fore))
+maxent_now = fig_path(root = cfg$root_path, 
+                  version = cfg$t_rep_now_version, 
+                  model_type = "maxent")
+maxent_fore = fig_path(root = cfg$root_path,
+                   version = cfg$t_rep_fore_version,
+                   model_type = "maxent")
+embed_fig(list(maxent_now, maxent_fore))
 ```
 
 
 GAM Nowcast and Forecast
 
 ```{r gamplots, fig.show="hold", out.width="45%", echo=FALSE}
-gam_now = file.path(cfg$root_path, "tidy_reports/versions", parsed_now_v["major"], parsed_now_v["minor"], paste0(cfg$t_rep_now_version, "_gam_compiled_casts.png"))
-gam_fore = file.path(cfg$root_path, "tidy_reports/versions", parsed_fore_v["major"], parsed_fore_v["minor"], paste0(cfg$t_rep_fore_version, "_gam_compiled_casts.png"))
-
-knitr::include_graphics(c(gam_now, gam_fore))
+gam_now = fig_path(root = cfg$root_path, 
+                  version = cfg$t_rep_now_version, 
+                  model_type = "gam")
+gam_fore = fig_path(root = cfg$root_path,
+                   version = cfg$t_rep_fore_version,
+                   model_type = "gam")
+embed_fig(list(gam_now, gam_fore))
 ```
 
 
 GLM Nowcast and Forecast
 
 ```{r glmplots, fig.show="hold", out.width="45%", echo=FALSE}
-glm_now = file.path(cfg$root_path, "tidy_reports/versions", parsed_now_v["major"], parsed_now_v["minor"], paste0(cfg$t_rep_now_version, "_glm_compiled_casts.png"))
-glm_fore = file.path(cfg$root_path, "tidy_reports/versions", parsed_fore_v["major"], parsed_fore_v["minor"], paste0(cfg$t_rep_fore_version, "_glm_compiled_casts.png"))
-
-knitr::include_graphics(c(glm_now, glm_fore))
+glm_now = fig_path(root = cfg$root_path, 
+                  version = cfg$t_rep_now_version, 
+                  model_type = "glm")
+glm_fore = fig_path(root = cfg$root_path,
+                   version = cfg$t_rep_fore_version,
+                   model_type = "glm")
+embed_fig(list(glm_now, glm_fore))
 ```
 
 ## Metrics

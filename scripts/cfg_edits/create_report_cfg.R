@@ -2,7 +2,9 @@ suppressPackageStartupMessages({
   library(charlier)
 })
 
-files = list.files(path = "workflows/tidy_cast", pattern = "^t[1-2][2-3]\\.00046[0-4].01.yaml$", full.names = TRUE)
+files = list.files(path = "workflows/tidy_cast", 
+                   pattern = "^t[1-2]1\\.[0-1]00[3,5,6,7][0,1,2,6][0-4].01.yaml$",
+                   full.names = TRUE)
 
 create_report_cfg = function(cast_file,
                            template_file = "workflows/tidy_reports/c12.000300.01_12.yaml") {
@@ -50,7 +52,7 @@ create_report_cfg = function(cast_file,
   charlier::write_config(cfg, output_file_path)
 }
 
-lapply(files, create_report_cfg, template_file = "workflows/tidy_reports/c12.000300.01_12.yaml")
+lapply(files, create_report_cfg, template_file = "workflows/tidy_reports/c11.000500.01_12.yaml")
 
 
 

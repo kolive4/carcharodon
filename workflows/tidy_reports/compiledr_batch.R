@@ -1,6 +1,5 @@
 yamls = list.files(path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_reports", 
-                   pattern = "^c[1-2]1\\.[0-1]005[0-5][0-4].01_12\\.yaml$",
-                   #pattern = glob2rx("c[1-2]*.0002*.01_12.yaml"),
+                   pattern = "^c[1-2]1\\.[0-1]00[3,5,6,7][0,1,2,6][0-4].01_12\\.yaml$",
                    full.names = TRUE)
 
 # Rscript workflows/modeling_workflow/maxent_modeling.R --config workflows/modeling_workflow/v01.2012.yaml

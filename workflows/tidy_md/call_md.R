@@ -21,7 +21,7 @@ rmarkdown::render(input = "/mnt/ecocast/projects/koliveira/subprojects/carcharod
 
 rmarkdown::render(input = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_md/tidy_md.Rmd", 
                   params = list(cfg_file = cfg_file),
-                  output_format = "github_document",
+                  output_format = rmarkdown::github_document(html_preview = FALSE),
                   output_file = paste0(output_filename, ".md"),
                   output_dir = file.path(md_path, "versions", vpars["major"], vpars["minor"]),
                   envir = new.env()) 

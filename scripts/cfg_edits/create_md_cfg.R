@@ -2,7 +2,7 @@ suppressPackageStartupMessages({
   library(charlier)
 })
 
-files = list.files(path = "workflows/tidy_reports", pattern = "^c[1-2][2-3]\\.00046[0-4].01_12.yaml$", full.names = TRUE)
+files = list.files(path = "workflows/tidy_reports", pattern = "^c[1-2]1\\.[0-1]00[3,5,6,7][0,1,2,6][0-4].01_12.yaml$", full.names = TRUE)
 
 create_md_cfg = function(report_file,
                          template_file = "workflows/tidy_md/m00.000000.yaml") {

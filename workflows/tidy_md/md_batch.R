@@ -1,6 +1,5 @@
 yamls = list.files(path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_md", 
-                   pattern = "m22.00046.yaml",
-                     #"^m[1-2][1-3]\\.\\d{5}\\.yaml$",
+                   pattern = "^m[1-2]1\\.[0-1]00[3,5,6,7][0,1,2,6].yaml$",
                    full.names = TRUE)
 
 script = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_md/call_md.R"

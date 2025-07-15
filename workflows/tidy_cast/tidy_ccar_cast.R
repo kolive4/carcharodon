@@ -30,7 +30,7 @@ args = argparser::arg_parser("tidymodels/tidysdm casting for white shark habitat
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_cast/t11.000500.01.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_cast/t11.000300.01.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -68,59 +68,59 @@ obs = read_brickman_points(file = obs_bg) |>
 
 var_list = list()
 
-if ("brick_tbtm" %in% cfg$vars) {
+if ("brick_tbtm" %in% c(cfg$dynamic_names, cfg$static_names)) {
   tbtm = stars::read_stars(file.path(cfg$data_path, cfg$brick_path, sprintf("%s_%s_Tbtm_mon.tif", cfg$scenario, cfg$year))) |>
     dplyr::rename(tbtm = sprintf("%s_%s_Tbtm_mon.tif", cfg$scenario, cfg$year))
   var_list[["tbtm"]] = tbtm
 }
-if ("brick_mld" %in% cfg$vars) {
+if ("brick_mld" %in% c(cfg$dynamic_names, cfg$static_names)) {
   mld = stars::read_stars(file.path(cfg$data_path, cfg$brick_path, sprintf("%s_%s_MLD_mon.tif", cfg$scenario, cfg$year))) |>
     dplyr::rename(mld = sprintf("%s_%s_MLD_mon.tif", cfg$scenario, cfg$year))
   var_list[["mld"]] = mld
 }
-if ("brick_sss" %in% cfg$vars) {
+if ("brick_sss" %in% c(cfg$dynamic_names, cfg$static_names)) {
   sss = stars::read_stars(file.path(cfg$data_path, cfg$brick_path, sprintf("%s_%s_SSS_mon.tif", cfg$scenario, cfg$year))) |>
     dplyr::rename(sss = sprintf("%s_%s_SSS_mon.tif", cfg$scenario, cfg$year))
   var_list[["sss"]] = sss
 }
-if ("brick_sbtm" %in% cfg$vars) {
+if ("brick_sbtm" %in% c(cfg$dynamic_names, cfg$static_names)) {
   sbtm = stars::read_stars(file.path(cfg$data_path, cfg$brick_path, sprintf("%s_%s_Sbtm_mon.tif", cfg$scenario, cfg$year))) |>
     dplyr::rename(sbtm = sprintf("%s_%s_Sbtm_mon.tif", cfg$scenario, cfg$year))
   var_list[["sbtm"]] = sbtm
 }
-if ("brick_sst" %in% cfg$vars) {
+if ("brick_sst" %in% c(cfg$dynamic_names, cfg$static_names)) {
   sst = stars::read_stars(file.path(cfg$data_path, cfg$brick_path, sprintf("%s_%s_SST_mon.tif", cfg$scenario, cfg$year))) |>
     dplyr::rename(sst = sprintf("%s_%s_SST_mon.tif", cfg$scenario, cfg$year))
   var_list[["sst"]] = sst
 }
-if ("brick_u" %in% cfg$vars) {
+if ("brick_u" %in% c(cfg$dynamic_names, cfg$static_names)) {
   u = stars::read_stars(file.path(cfg$data_path, cfg$brick_path, sprintf("%s_%s_U_mon.tif", cfg$scenario, cfg$year))) |>
     dplyr::rename(u = sprintf("%s_%s_U_mon.tif", cfg$scenario, cfg$year))
   var_list[["u"]] = u
 }
-if ("brick_v" %in% cfg$vars) {
+if ("brick_v" %in% c(cfg$dynamic_names, cfg$static_names)) {
   v = stars::read_stars(file.path(cfg$data_path, cfg$brick_path, sprintf("%s_%s_V_mon.tif", cfg$scenario, cfg$year))) |>
     dplyr::rename(v = sprintf("%s_%s_V_mon.tif", cfg$scenario, cfg$year)) 
   var_list[["v"]] = v
 }
-if ("vel_mag" %in% cfg$vars) {
+if ("vel_mag" %in% c(cfg$dynamic_names, cfg$static_names)) {
   vel_mag = read_vel_mag(scenario = cfg$scenario, year = cfg$year, band_as_time = FALSE) 
   var_list[["vel_mag"]] = vel_mag
 }
-if ("brick_xbtm" %in% cfg$vars) {
+if ("brick_xbtm" %in% c(cfg$dynamic_names, cfg$static_names)) {
   xbtm = stars::read_stars(file.path(cfg$data_path, cfg$brick_path, sprintf("%s_%s_Xbtm_mon.tif", cfg$scenario, cfg$year))) |>
     dplyr::rename(xbtm = sprintf("%s_%s_Xbtm_mon.tif", cfg$scenario, cfg$year))
   var_list[["xbtm"]] = xbtm
 }
-if ("gseal" %in% cfg$vars) {
-  gseal = load_tidy_seal(scenario = cfg$scenario, year = cfg$year, bg = cfg$seal_bg_ratio, model_type = cfg$seal_model_type, species = "gray", band_as_time = FALSE) |>
-    dplyr::rename(gseal = paste0(cfg$seal_model_type, "_prediction.tif")) # |>
+if ("gseal" %in% c(cfg$dynamic_names, cfg$static_names)) {
+  gseal = load_tidy_seal(scenario = cfg$scenario, year = cfg$year, bg = cfg$seal_bg_ratio, model_type = cfg$gseal_model_type, species = "gray", band_as_time = FALSE) |>
+    dplyr::rename(gseal = paste0(cfg$gseal_model_type, "_prediction.tif")) # |>
   # stars::st_set_dimensions("band", values = NULL, refsys = NA_real_)
   var_list[["gseal"]] = gseal
 }
-if ("hseal" %in% cfg$vars) {
-  hseal = load_tidy_seal(scenario = cfg$scenario, year = cfg$year, bg = cfg$seal_bg_ratio, model_type = cfg$seal_model_type, species = "harbor", band_as_time = FALSE) |>
-    dplyr::rename(hseal = paste0(cfg$seal_model_type, "_prediction.tif")) # |>
+if ("hseal" %in% c(cfg$dynamic_names, cfg$static_names)) {
+  hseal = load_tidy_seal(scenario = cfg$scenario, year = cfg$year, bg = cfg$seal_bg_ratio, model_type = cfg$hseal_model_type, species = "harbor", band_as_time = FALSE) |>
+    dplyr::rename(hseal = paste0(cfg$hseal_model_type, "_prediction.tif")) # |>
   # stars::st_set_dimensions("band", values = NULL, refsys = NA_real_)
   var_list[["hseal"]] = hseal
 }
@@ -129,7 +129,7 @@ dynamic_preds = twinkle::bind_attrs(var_list) |>
   set_names(cfg$dynamic_names)
 
 mon_no = seq(from = 1, to = 12)
-if ("dfs" %in% cfg$vars) {
+if ("dfs" %in% c(cfg$dynamic_names, cfg$static_names)) {
   dfs = stars::read_stars(file.path(cfg$data_path, cfg$dfs_path, "etopo_warped_distance_to_shore_meters.tif")) |>
     dplyr::rename(dfs = "etopo_warped_distance_to_shore_meters.tif") 
   dfs2 = sapply(mon_no, function(mon) {dfs}, simplify = FALSE)
@@ -137,7 +137,7 @@ if ("dfs" %in% cfg$vars) {
     stars::st_set_dimensions("band", offset = NA_real_, delta = NA_real_) |>
     stars::st_warp(dest = dynamic_preds)
 }
-if ("log_depth" %in% cfg$vars) {
+if ("log_depth" %in% c(cfg$dynamic_names, cfg$static_names)) {
   depth = stars::read_stars(file.path(cfg$data_path, cfg$depth_path, "PRESENT_PRESENT_Bathy_depth_mon.tif")) |>
     dplyr::rename(log_depth = "PRESENT_PRESENT_Bathy_depth_mon.tif") |>
     dplyr::mutate(log_depth = log(log_depth))
@@ -205,8 +205,7 @@ if(cfg$graphics$add_pres_pts == TRUE) {
                                   "iNaturalist" = 0,
                                   "PSAT" = 3,
                                   "SPOT" = 12
-                                  ),
-                       labels = c("OBIS", "Curated", "iNaturalist", "PSAT", "SPOT"))
+                                  ))
 }
 if (cfg$graphics$plot_contour) {
   rf_pred_plot = rf_pred_plot +
@@ -216,7 +215,7 @@ if (cfg$graphics$plot_contour) {
 png(filename = file.path(vpath, sprintf("%s_rf_prediction.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 print(rf_pred_plot)
-dev.off()
+ok = dev.off()
 
 # bt pred----
 final_bt_workflow = readr::read_rds(file.path(cfg$root_path, cfg$wf_path, cfg$wf_version, sprintf("%s_final_bt_wf.Rds", cfg$wf_version)))
@@ -245,8 +244,7 @@ if(cfg$graphics$add_pres_pts == TRUE) {
                                   "iNaturalist" = 0,
                                   "PSAT" = 3,
                                   "SPOT" = 12
-                       ),
-                       labels = c("OBIS", "Curated", "iNaturalist", "PSAT", "SPOT"))
+                       ))
 }
 if (cfg$graphics$plot_contour) {
   bt_pred_plot = bt_pred_plot +
@@ -255,7 +253,7 @@ if (cfg$graphics$plot_contour) {
 png(filename = file.path(vpath, sprintf("%s_bt_prediction.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 print(bt_pred_plot)
-dev.off()
+ok = dev.off()
 
 #maxent pred----
 final_maxent_workflow = readr::read_rds(file.path(cfg$root_path, cfg$wf_path, cfg$wf_version, sprintf("%s_final_maxent_wf.Rds", cfg$wf_version)))
@@ -284,8 +282,7 @@ if(cfg$graphics$add_pres_pts == TRUE) {
                                   "iNaturalist" = 0,
                                   "PSAT" = 3,
                                   "SPOT" = 12
-                       ),
-                       labels = c("OBIS", "Curated", "iNaturalist", "PSAT", "SPOT"))
+                       ))
 }
 if (cfg$graphics$plot_contour) {
   maxent_pred_plot = maxent_pred_plot +
@@ -294,7 +291,7 @@ if (cfg$graphics$plot_contour) {
 png(filename = file.path(vpath, sprintf("%s_maxent_prediction.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 print(maxent_pred_plot)
-dev.off()
+ok = dev.off()
 
 #glm pred----
 final_glm_workflow = readr::read_rds(file.path(cfg$root_path, cfg$wf_path, cfg$wf_version, sprintf("%s_final_glm_wf.Rds", cfg$wf_version)))
@@ -323,8 +320,7 @@ if(cfg$graphics$add_pres_pts == TRUE) {
                                   "iNaturalist" = 0,
                                   "PSAT" = 3,
                                   "SPOT" = 12
-                       ),
-                       labels = c("OBIS", "Curated", "iNaturalist", "PSAT", "SPOT"))
+                       ))
 }
 if (cfg$graphics$plot_contour) {
   glm_pred_plot = glm_pred_plot +
@@ -333,7 +329,7 @@ if (cfg$graphics$plot_contour) {
 png(filename = file.path(vpath, sprintf("%s_glm_prediction.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 print(glm_pred_plot)
-dev.off()
+ok = dev.off()
 
 #gam pred----
 final_gam_workflow = readr::read_rds(file.path(cfg$root_path, cfg$wf_path, cfg$wf_version, sprintf("%s_final_gam_wf.Rds", cfg$wf_version)))
@@ -362,8 +358,7 @@ if(cfg$graphics$add_pres_pts == TRUE) {
                                   "iNaturalist" = 0,
                                   "PSAT" = 3,
                                   "SPOT" = 12
-                       ),
-                       labels = c("OBIS", "Curated", "iNaturalist", "PSAT", "SPOT"))
+                       ))
 }
 if (cfg$graphics$plot_contour) {
   gam_pred_plot = gam_pred_plot +
@@ -372,4 +367,4 @@ if (cfg$graphics$plot_contour) {
 png(filename = file.path(vpath, sprintf("%s_gam_prediction.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 print(gam_pred_plot)
-dev.off()
+ok = dev.off()

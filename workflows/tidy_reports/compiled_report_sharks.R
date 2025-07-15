@@ -18,7 +18,7 @@ args = argparser::arg_parser("a tool to cast monthly predictions into one figure
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_reports/c21.000500.01_12.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_reports/c21.000760.01_12.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
