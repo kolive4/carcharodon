@@ -7,7 +7,7 @@ output:
       toc: true
       html_preview: false
 params: 
-  cfg_file: "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_md/m22.00046.yaml" 
+  cfg_file: NULL 
 ---
 
 ```{r, echo=FALSE, message=FALSE}

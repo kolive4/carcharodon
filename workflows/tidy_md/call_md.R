@@ -4,6 +4,7 @@ suppressPackageStartupMessages({
 })
 
 cfg_file = commandArgs(trailingOnly = TRUE)[1]
+cfg_file = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_md/m21.10076.yaml"
 cfg = read_config(cfg_file)
 vpars = parse_version(cfg$version)
 md_path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_md"
@@ -15,6 +16,7 @@ Sys.setenv(RSTUDIO_PANDOC="/usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64")
 rmarkdown::render(input = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_md/tidy_md.Rmd", 
                   params = list(cfg_file = cfg_file),
                   output_format = "html_document",
+                  knit_root_dir = file.path(md_path, "versions", vpars["major"], vpars["minor"]),
                   output_file = paste0(output_filename, ".html"),
                   output_dir = file.path(md_path, "versions", vpars["major"], vpars["minor"]),
                   envir = new.env()) 
@@ -22,6 +24,7 @@ rmarkdown::render(input = "/mnt/ecocast/projects/koliveira/subprojects/carcharod
 rmarkdown::render(input = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_md/tidy_md.Rmd", 
                   params = list(cfg_file = cfg_file),
                   output_format = rmarkdown::github_document(html_preview = FALSE),
+                  knit_root_dir = file.path(md_path, "versions", vpars["major"], vpars["minor"]),
                   output_file = paste0(output_filename, ".md"),
                   output_dir = file.path(md_path, "versions", vpars["major"], vpars["minor"]),
                   envir = new.env()) 
