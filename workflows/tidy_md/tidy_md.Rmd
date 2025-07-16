@@ -16,7 +16,7 @@ source("/mnt/ecocast/projects/koliveira/subprojects/carcharodon/setup.R")
 cfg = charlier::read_config(params$cfg_file)
 
 if (FALSE) {
-  cfg = charlier::read_config("/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_md/m11.10076.yaml")
+  cfg = charlier::read_config("/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_md/m21.10076.yaml")
 }
 
 parsed_wf_v = charlier::parse_version(cfg$t_wf_version)
