@@ -63,7 +63,9 @@ create_md_cfg = function(report_file,
     "02" = "seal specific (sst, dfs, velocity magnitude, xbtm)",
     "03" = "all covariates (u and v become vel_mag)",
     "04" = "seal specific v2 (sss, dfs, month, mld)",
-    "05" = "all covariates (u and v become vel_mag) and seals" 
+    "05" = "all covariates (u and v become vel_mag) and seals",
+    "06" = "non-seal (sst, tbtm, log depth, sbtm, seals, vel_mag, xbtm",
+    "07" = "shark specific v2 (sst, tbtm, sbtm, log depth, and seals"
   )
   covariates_code = substr(md_minor, 3, 4)
   
