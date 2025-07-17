@@ -140,6 +140,7 @@ knitr::kable(all_metrics, caption = "Metrics by model type")
 ## Variable Importance
 
 ```{r variable_importance, echo=FALSE, message=FALSE}
+withr::with_dir("/mnt/ecocast/projects/koliveira/subprojects/carcharodon", {
 rf_vi = readr::read_csv(file.path(cfg$root_path, "tidy_workflow/versions", parsed_wf_v["major"], parsed_wf_v["minor"], cfg$t_wf_version, paste0(cfg$t_wf_version, "_rf_vi.csv")), show_col_types = FALSE) |>
   dplyr::select(c("var", "importance")) 
 
@@ -166,4 +167,5 @@ vi_plot = ggplot() +
     labs(x = cfg$graphics$x, 
          y = cfg$graphics$vi_y)
 vi_plot
+})
 ```

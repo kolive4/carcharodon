@@ -18,7 +18,7 @@ args = argparser::arg_parser("a tool to cast monthly predictions into one figure
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_reports/c21.000760.01_12.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_reports/c21.100760.01_12.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -402,16 +402,16 @@ if (TRUE %in% file.exists(glm_metrics_files)) {
          width = 11, height = 8.5, units = "in", dpi = 300)
 }
 
-rf_vi_files = list.files(path = file.path(cfg$root_path, cfg$tidy_w_path, cfg$tidy_w_vers), 
+rf_vi_files = list.files(path = file.path(cfg$root_path, cfg$tidy_w_path, cfg$tidy_w_vers),
                          pattern = sprintf("%s_rf_vi.csv", cfg$tidy_w_vers),
                          recursive = TRUE,
-                         full.names = TRUE) 
+                         full.names = TRUE)
 if (TRUE %in% file.exists(rf_vi_files)) {
   rf_vi = lapply(rf_vi_files, readr::read_csv) |>
     dplyr::bind_rows(.id = "month") |>
     dplyr::select(c("month", "var", "importance")) |>
     dplyr::mutate(month = as.numeric(month))
-  
+
   rf_vi_plot = ggplot() +
     geom_bar(data = rf_vi, aes(x = month, y = importance, fill = var),
              position = "fill", stat = "identity") +
@@ -419,26 +419,26 @@ if (TRUE %in% file.exists(rf_vi_files)) {
     theme_classic() +
     scale_fill_viridis(discrete = TRUE) +
     ggtitle(cfg$graphics$vi_title) +
-    labs(x = cfg$graphics$x, 
+    labs(x = cfg$graphics$x,
          y = cfg$graphics$vi_y)
   rf_vi_plot
   ggsave(filename = sprintf("%s_rf_varimp.png", cfg$version),
-         plot = rf_vi_plot, 
-         path = vpath, 
+         plot = rf_vi_plot,
+         path = vpath,
          width = 11, height = 8.5, units = "in", dpi = 300)
 }
 
 
-bt_vi_files = list.files(path = file.path(cfg$root_path, cfg$tidy_w_path, cfg$tidy_w_vers), 
+bt_vi_files = list.files(path = file.path(cfg$root_path, cfg$tidy_w_path, cfg$tidy_w_vers),
                          pattern = sprintf("%s_bt_vi.csv", cfg$tidy_w_vers),
                          recursive = TRUE,
-                         full.names = TRUE) 
+                         full.names = TRUE)
 if (TRUE %in% file.exists(bt_vi_files)) {
   bt_vi = lapply(bt_vi_files, readr::read_csv) |>
     dplyr::bind_rows(.id = "month") |>
     dplyr::select(c("month", "var", "importance")) |>
     dplyr::mutate(month = as.numeric(month))
-  
+
   bt_vi_plot = ggplot() +
     geom_bar(data = bt_vi, aes(x = month, y = importance, fill = var),
              position = "fill", stat = "identity") +
@@ -446,26 +446,26 @@ if (TRUE %in% file.exists(bt_vi_files)) {
     theme_classic() +
     scale_fill_viridis(discrete = TRUE) +
     ggtitle(cfg$graphics$vi_title) +
-    labs(x = cfg$graphics$x, 
+    labs(x = cfg$graphics$x,
          y = cfg$graphics$vi_y)
   bt_vi_plot
   ggsave(filename = sprintf("%s_bt_varimp.png", cfg$version),
-         plot = bt_vi_plot, 
-         path = vpath, 
+         plot = bt_vi_plot,
+         path = vpath,
          width = 11, height = 8.5, units = "in", dpi = 300)
 }
 
 
-maxent_vi_files = list.files(path = file.path(cfg$root_path, cfg$tidy_w_path, cfg$tidy_w_vers), 
+maxent_vi_files = list.files(path = file.path(cfg$root_path, cfg$tidy_w_path, cfg$tidy_w_vers),
                              pattern = sprintf("%s_maxent_vi.csv", cfg$tidy_w_vers),
                              recursive = TRUE,
-                             full.names = TRUE) 
+                             full.names = TRUE)
 if (TRUE %in% file.exists(maxent_vi_files)) {
   maxent_vi = lapply(maxent_vi_files, readr::read_csv) |>
     dplyr::bind_rows(.id = "month") |>
     dplyr::select(c("month", "var", "importance")) |>
     dplyr::mutate(month = as.numeric(month))
-  
+
   maxent_vi_plot = ggplot() +
     geom_bar(data = maxent_vi, aes(x = month, y = importance, fill = var),
              position = "fill", stat = "identity") +
@@ -473,25 +473,25 @@ if (TRUE %in% file.exists(maxent_vi_files)) {
     theme_classic() +
     scale_fill_viridis(discrete = TRUE) +
     ggtitle(cfg$graphics$vi_title) +
-    labs(x = cfg$graphics$x, 
+    labs(x = cfg$graphics$x,
          y = cfg$graphics$vi_y)
   maxent_vi_plot
   ggsave(filename = sprintf("%s_maxent_varimp.png", cfg$version),
-         plot = maxent_vi_plot, 
-         path = vpath, 
+         plot = maxent_vi_plot,
+         path = vpath,
          width = 11, height = 8.5, units = "in", dpi = 300)
 }
 
-gam_vi_files = list.files(path = file.path(cfg$root_path, cfg$tidy_w_path, cfg$tidy_w_vers), 
+gam_vi_files = list.files(path = file.path(cfg$root_path, cfg$tidy_w_path, cfg$tidy_w_vers),
                           pattern = sprintf("%s_gam_vi.csv", cfg$tidy_w_vers),
                           recursive = TRUE,
-                          full.names = TRUE) 
+                          full.names = TRUE)
 if (TRUE %in% file.exists(gam_vi_files)) {
   gam_vi = lapply(gam_vi_files, readr::read_csv) |>
     dplyr::bind_rows(.id = "month") |>
     dplyr::select(c("month", "var", "importance")) |>
     dplyr::mutate(month = as.numeric(month))
-  
+
   gam_vi_plot = ggplot() +
     geom_bar(data = gam_vi, aes(x = month, y = importance, fill = var),
              position = "fill", stat = "identity") +
@@ -499,25 +499,25 @@ if (TRUE %in% file.exists(gam_vi_files)) {
     theme_classic() +
     scale_fill_viridis(discrete = TRUE) +
     ggtitle(cfg$graphics$vi_title) +
-    labs(x = cfg$graphics$x, 
+    labs(x = cfg$graphics$x,
          y = cfg$graphics$vi_y)
   gam_vi_plot
   ggsave(filename = sprintf("%s_gam_varimp.png", cfg$version),
-         plot = gam_vi_plot, 
-         path = vpath, 
+         plot = gam_vi_plot,
+         path = vpath,
          width = 11, height = 8.5, units = "in", dpi = 300)
 }
 
-glm_vi_files = list.files(path = file.path(cfg$root_path, cfg$tidy_w_path, cfg$tidy_w_vers), 
+glm_vi_files = list.files(path = file.path(cfg$root_path, cfg$tidy_w_path, cfg$tidy_w_vers),
                           pattern = sprintf("%s_glm_vi.csv", cfg$tidy_w_vers),
                           recursive = TRUE,
-                          full.names = TRUE) 
+                          full.names = TRUE)
 if (TRUE %in% file.exists(glm_vi_files)) {
   glm_vi = lapply(glm_vi_files, readr::read_csv) |>
     dplyr::bind_rows(.id = "month") |>
     dplyr::select(c("month", "var", "importance")) |>
     dplyr::mutate(month = as.numeric(month))
-  
+
   glm_vi_plot = ggplot() +
     geom_bar(data = glm_vi, aes(x = month, y = importance, fill = var),
              position = "fill", stat = "identity") +
@@ -525,12 +525,11 @@ if (TRUE %in% file.exists(glm_vi_files)) {
     theme_classic() +
     scale_fill_viridis(discrete = TRUE) +
     ggtitle(cfg$graphics$vi_title) +
-    labs(x = cfg$graphics$x, 
+    labs(x = cfg$graphics$x,
          y = cfg$graphics$vi_y)
   glm_vi_plot
   ggsave(filename = sprintf("%s_glm_varimp.png", cfg$version),
-         plot = glm_vi_plot, 
-         path = vpath, 
+         plot = glm_vi_plot,
+         path = vpath,
          width = 11, height = 8.5, units = "in", dpi = 300)
 }
-

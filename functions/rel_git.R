@@ -45,7 +45,7 @@ fig_path = function(root, version, filename = "_compiled_casts.png", model_type)
 }
 
 
-embed_fig = function(path_objs, labels = NULL, width = NULL) {
+embed_fig = function(path_objs, labels = NULL, width = "45%") {
   # Determine output format
   fmt = knitr::opts_knit$get("rmarkdown.pandoc.to")
   is_gfm = !is.null(fmt) && grepl("gfm", fmt, ignore.case = TRUE)
@@ -71,10 +71,7 @@ embed_fig = function(path_objs, labels = NULL, width = NULL) {
   } else {
     # HTML output: use include_graphics with widths if specified
     abs_paths = vapply(path_objs, function(x) x$abs, character(1))
-    if (!is.null(width)) {
-      return(knitr::include_graphics(abs_paths, options = list(out.width = width)))
-    } else {
-      return(knitr::include_graphics(abs_paths))
-    }
+    knitr::opts_current$set(out.width = width)
+    return(knitr::include_graphics(abs_paths))
   }
 }
