@@ -37,23 +37,11 @@ rf_now = fig_path(root = cfg$root_path,
 rf_fore = fig_path(root = cfg$root_path,
                    version = cfg$t_rep_fore_version,
                    model_type = "rf")
-# path_objs = list(rf_now, rf_fore)
-# if (knitr::is_html_output()) {
-#     # Use absolute paths for rendering to HTML
-#     abs_paths <- vapply(path_objs, function(x) x$abs, character(1))
-#     r = knitr::include_graphics(abs_paths)
-#   } else {
-#     # For GitHub: emit markdown syntax using relative paths
-#     rel_paths <- vapply(path_objs, function(x) x$rel, character(1))
-#     md_links <- paste0("![](", rel_paths, ")")
-#     r = knitr::asis_output(paste(md_links, collapse = "\n"))
-#   }
-# r
 ```
-`r cat("Absolute path: ", rf_now$abs, "\n")`
-`r cat("Relative path: ", rf_now$rel, "\n")`
-`r embed_fig(list(rf_now, rf_fore))`
 
+```{r embed_rf_figures, echo=FALSE, results='asis'}
+embed_fig(list(rf_now, rf_fore), labels = c("Nowcast", "Forecast"), width = "45%")
+```
 
 Boosted Trees Nowcast and Forecast
 
@@ -65,7 +53,10 @@ bt_fore = fig_path(root = cfg$root_path,
                    version = cfg$t_rep_fore_version,
                    model_type = "bt")
 ```
-`r embed_fig(list(bt_now, bt_fore))`
+
+```{r embed_bt_figures, echo=FALSE, results='asis'}
+embed_fig(list(bt_now, bt_fore), labels = c("Nowcast", "Forecast"), width = "45%")
+```
 
 
 Maxnet Trees Nowcast and Forecast
@@ -78,7 +69,10 @@ maxent_fore = fig_path(root = cfg$root_path,
                    version = cfg$t_rep_fore_version,
                    model_type = "maxent")
 ```
-`r embed_fig(list(maxent_now, maxent_fore))`
+
+```{r embed_maxent_figures, echo=FALSE, results='asis'}
+embed_fig(list(maxent_now, maxent_fore), labels = c("Nowcast", "Forecast"), width = "45%")
+```
 
 GAM Nowcast and Forecast
 
@@ -90,7 +84,10 @@ gam_fore = fig_path(root = cfg$root_path,
                    version = cfg$t_rep_fore_version,
                    model_type = "gam")
 ```
-`r embed_fig(list(gam_now, gam_fore))`
+
+```{r embed_gam_figures, echo=FALSE, results='asis'}
+embed_fig(list(gam_now, gam_fore), labels = c("Nowcast", "Forecast"), width = "45%")
+```
 
 GLM Nowcast and Forecast
 
@@ -102,7 +99,10 @@ glm_fore = fig_path(root = cfg$root_path,
                    version = cfg$t_rep_fore_version,
                    model_type = "glm")
 ```
-`r embed_fig(list(glm_now, glm_fore))`
+
+```{r embed_glm_figures, echo=FALSE, results='asis'}
+embed_fig(list(glm_now, glm_fore), labels = c("Nowcast", "Forecast"), width = "45%")
+```
 
 ## Metrics
 

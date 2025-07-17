@@ -44,7 +44,8 @@ fig_path = function(root, version, filename = "_compiled_casts.png", model_type)
   list(abs = abs_path, rel = rel_path)
 }
 
-embed_fig <- function(path_objs) {
+
+embed_fig <- function(path_objs, labels = NULL, width = "45%") {
   if (!is.list(path_objs[[1]])) {
     path_objs <- list(path_objs)
   }
@@ -53,12 +54,31 @@ embed_fig <- function(path_objs) {
   is_gfm <- !is.null(fmt) && grepl("gfm", fmt, ignore.case = TRUE)
   
   if (is_gfm) {
-    # GitHub Markdown
     rel_paths <- vapply(path_objs, function(x) x$rel, character(1))
-    return(paste0("![](", rel_paths, ")", collapse = "\n"))
+    
+    if (is.null(labels)) {
+      labels = rep("", length(rel_paths))
+    }
+    
+    header = paste0("| ", paste(labels, collapse = " | "), " | ")
+    divider = paste(rep("|---------", length(rel_paths)), collapse = "") |>
+      paste0("|")
+    row = paste0("| ", paste0("![](", rel_paths, ")", collapse = " | "), " | ")
+    
+    return(paste(header, divider, row, sep = "\n"))
   } else {
-    # HTML or other
     abs_paths <- vapply(path_objs, function(x) x$abs, character(1))
-    return(knitr::include_graphics(abs_paths))
+    out <- paste0('<img src="', abs_paths, '" width="', width, '"/>', collapse = "\n")
+    knitr::asis_output(out)
   }
 }
+
+
+
+
+
+
+
+
+
+
