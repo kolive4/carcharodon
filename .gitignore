@@ -1,6 +1,7 @@
 data/*
 *.png
 !workflows/tidy_reports/versions/**/*_compiled_casts.png
+!workflows/tidy_md/versions/**/*.png
 *.tif
 *.yaml
 *.csv

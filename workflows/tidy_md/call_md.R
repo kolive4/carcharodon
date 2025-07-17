@@ -4,6 +4,7 @@ suppressPackageStartupMessages({
 })
 
 cfg_file = commandArgs(trailingOnly = TRUE)[1]
+cfg_file = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_md/m21.10076.yaml"
 cfg = read_config(cfg_file)
 vpars = parse_version(cfg$version)
 md_path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_md"
