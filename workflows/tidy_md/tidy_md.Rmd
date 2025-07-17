@@ -35,7 +35,20 @@ rf_now = fig_path(root = cfg$root_path,
 rf_fore = fig_path(root = cfg$root_path,
                    version = cfg$t_rep_fore_version,
                    model_type = "rf")
-embed_fig(list(rf_now, rf_fore))
+path_objs = list(rf_now, rf_fore)
+if (knitr::is_html_output()) {
+    # Use absolute paths for rendering to HTML
+    abs_paths <- vapply(path_objs, function(x) x$abs, character(1))
+    r = knitr::include_graphics(abs_paths)
+  } else {
+    # For GitHub: emit markdown syntax using relative paths
+    rel_paths <- vapply(path_objs, function(x) x$rel, character(1))
+    md_links <- paste0("![](", rel_paths, ")")
+    r = knitr::asis_output(paste(md_links, collapse = "\n"))
+  }
+
+# embed_fig(list(rf_now, rf_fore)) |>
+#   print()
 ```
 
 
@@ -125,7 +138,7 @@ knitr::kable(all_metrics, caption = "Metrics by model type")
 
 ## Variable Importance
 
-```{r variable importance, echo=FALSE, message=FALSE}
+```{r variable_importance, echo=FALSE, message=FALSE}
 rf_vi = readr::read_csv(file.path(cfg$root_path, "tidy_workflow/versions", parsed_wf_v["major"], parsed_wf_v["minor"], cfg$t_wf_version, paste0(cfg$t_wf_version, "_rf_vi.csv")), show_col_types = FALSE) |>
   dplyr::select(c("var", "importance")) 
 

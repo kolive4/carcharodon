@@ -47,11 +47,12 @@ embed_fig <- function(path_objs) {
   if (knitr::is_html_output()) {
     # Use absolute paths for rendering to HTML
     abs_paths <- vapply(path_objs, function(x) x$abs, character(1))
-    knitr::include_graphics(abs_paths)
+    r = knitr::include_graphics(abs_paths)
   } else {
     # For GitHub: emit markdown syntax using relative paths
     rel_paths <- vapply(path_objs, function(x) x$rel, character(1))
     md_links <- paste0("![](", rel_paths, ")")
-    knitr::asis_output(paste(md_links, collapse = "\n"))
+    r = knitr::asis_output(paste(md_links, collapse = "\n"))
   }
+  return(r)
 }
