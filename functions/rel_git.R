@@ -45,25 +45,20 @@ fig_path = function(root, version, filename = "_compiled_casts.png", model_type)
 }
 
 embed_fig <- function(path_objs) {
-  if (!is.list(path_objs[[1]])) path_objs <- list(path_objs)
-  rel_paths <- vapply(path_objs, function(x) x$rel, character(1))
-  paste0("![](", rel_paths, ")", collapse = "\n")
+  if (!is.list(path_objs[[1]])) {
+    path_objs <- list(path_objs)
+  }
+  
+  fmt <- knitr::opts_knit$get("rmarkdown.pandoc.to")
+  is_gfm <- !is.null(fmt) && grepl("gfm", fmt, ignore.case = TRUE)
+  
+  if (is_gfm) {
+    # GitHub Markdown
+    rel_paths <- vapply(path_objs, function(x) x$rel, character(1))
+    return(paste0("![](", rel_paths, ")", collapse = "\n"))
+  } else {
+    # HTML or other
+    abs_paths <- vapply(path_objs, function(x) x$abs, character(1))
+    return(knitr::include_graphics(abs_paths))
+  }
 }
-# embed_fig <- function(path_objs) {
-#   print(paste("HTML output?", knitr::is_html_output()))
-#   if (!is.list(path_objs[[1]])) {
-#     # Single path object
-#     path_objs <- list(path_objs)
-#   }
-#   
-#   if (knitr::is_html_output()) {
-#     # Use absolute paths for rendering to HTML
-#     abs_paths <- vapply(path_objs, function(x) x$abs, character(1))
-#     r = knitr::include_graphics(abs_paths)
-#   } else {
-#     # For GitHub: emit markdown syntax using relative paths
-#     rel_paths <- vapply(path_objs, function(x) x$rel, character(1))
-#     return(paste0("![](", rel_paths, ")", collapse = "\n"))
-#   }
-#   return(r)
-# }

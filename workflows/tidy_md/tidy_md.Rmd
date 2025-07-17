@@ -62,8 +62,8 @@ bt_now = fig_path(root = cfg$root_path,
 bt_fore = fig_path(root = cfg$root_path,
                    version = cfg$t_rep_fore_version,
                    model_type = "bt")
-embed_fig(list(bt_now, bt_fore))
 ```
+`r embed_fig(list(bt_now, bt_fore))`
 
 
 Maxnet Trees Nowcast and Forecast
@@ -75,9 +75,8 @@ maxent_now = fig_path(root = cfg$root_path,
 maxent_fore = fig_path(root = cfg$root_path,
                    version = cfg$t_rep_fore_version,
                    model_type = "maxent")
-embed_fig(list(maxent_now, maxent_fore))
 ```
-
+`r embed_fig(list(maxent_now, maxent_fore))`
 
 GAM Nowcast and Forecast
 
@@ -88,9 +87,8 @@ gam_now = fig_path(root = cfg$root_path,
 gam_fore = fig_path(root = cfg$root_path,
                    version = cfg$t_rep_fore_version,
                    model_type = "gam")
-embed_fig(list(gam_now, gam_fore))
 ```
-
+`r embed_fig(list(gam_now, gam_fore))`
 
 GLM Nowcast and Forecast
 
@@ -101,8 +99,8 @@ glm_now = fig_path(root = cfg$root_path,
 glm_fore = fig_path(root = cfg$root_path,
                    version = cfg$t_rep_fore_version,
                    model_type = "glm")
-embed_fig(list(glm_now, glm_fore))
 ```
+`r embed_fig(list(glm_now, glm_fore))`
 
 ## Metrics
 
