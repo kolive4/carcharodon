@@ -45,40 +45,36 @@ fig_path = function(root, version, filename = "_compiled_casts.png", model_type)
 }
 
 
-embed_fig <- function(path_objs, labels = NULL, width = "45%") {
-  if (!is.list(path_objs[[1]])) {
-    path_objs <- list(path_objs)
-  }
+embed_fig = function(path_objs, labels = NULL, width = NULL) {
+  # Determine output format
+  fmt = knitr::opts_knit$get("rmarkdown.pandoc.to")
+  is_gfm = !is.null(fmt) && grepl("gfm", fmt, ignore.case = TRUE)
   
-  fmt <- knitr::opts_knit$get("rmarkdown.pandoc.to")
-  is_gfm <- !is.null(fmt) && grepl("gfm", fmt, ignore.case = TRUE)
+  # Extract relative image paths for GitHub
+  rel_paths = vapply(path_objs, function(x) x$rel, character(1))
   
   if (is_gfm) {
-    rel_paths <- vapply(path_objs, function(x) x$rel, character(1))
-    
-    if (is.null(labels)) {
-      labels = rep("", length(rel_paths))
+    # If labels provided, build a markdown table header
+    if (!is.null(labels)) {
+      stopifnot(length(labels) == length(rel_paths))
+      header = paste0("| ", paste(labels, collapse = " | "), " |")
+      sep = paste0("|", paste(rep(":--:", length(labels)), collapse = "|"), "|")
+      imgs = paste0("![](", rel_paths, ")")
+      body = paste0("| ", paste(imgs, collapse = " | "), " |")
+      md_table = paste(header, sep, body, sep = "\n")
+      return(knitr::asis_output(md_table))
+    } else {
+      # No labels, just output images stacked
+      imgs = paste0("![](", rel_paths, ")")
+      return(knitr::asis_output(paste(imgs, collapse = "\n")))
     }
-    
-    header = paste0("| ", paste(labels, collapse = " | "), " | ")
-    divider = paste(rep("|---------", length(rel_paths)), collapse = "") |>
-      paste0("|")
-    row = paste0("| ", paste0("![](", rel_paths, ")", collapse = " | "), " | ")
-    
-    return(paste(header, divider, row, sep = "\n"))
   } else {
-    abs_paths <- vapply(path_objs, function(x) x$abs, character(1))
-    out <- paste0('<img src="', abs_paths, '" width="', width, '"/>', collapse = "\n")
-    knitr::asis_output(out)
+    # HTML output: use include_graphics with widths if specified
+    abs_paths = vapply(path_objs, function(x) x$abs, character(1))
+    if (!is.null(width)) {
+      return(knitr::include_graphics(abs_paths, options = list(out.width = width)))
+    } else {
+      return(knitr::include_graphics(abs_paths))
+    }
   }
 }
-
-
-
-
-
-
-
-
-
-
