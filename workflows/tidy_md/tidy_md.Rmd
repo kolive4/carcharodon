@@ -1,24 +1,26 @@
 ---
 title: "`r cfg$message`"
 output: 
-  - html_document:
-      toc: true
   - github_document:
       toc: true
       html_preview: false
+  - html_document:
+      toc: true
 params: 
   cfg_file: NULL 
 ---
 
-```{r, echo=FALSE, message=FALSE}
+```{r pre_setup, echo=FALSE, message=FALSE}
 source("/mnt/ecocast/projects/koliveira/subprojects/carcharodon/setup.R")
-
 cfg = charlier::read_config(params$cfg_file)
-
 if (FALSE) {
   cfg = charlier::read_config("/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_md/m21.10076.yaml")
 }
 
+```
+
+```{r setup, echo=FALSE, message=FALSE}
+#knitr::opts_knit$set(root.dir = dirname(cfg$root_path))
 parsed_wf_v = charlier::parse_version(cfg$t_wf_version)
 parsed_fore_v = charlier::parse_version(cfg$t_rep_fore_version)
 parsed_now_v = charlier::parse_version(cfg$t_rep_now_version)
@@ -29,27 +31,26 @@ parsed_now_v = charlier::parse_version(cfg$t_rep_now_version)
 Random Forest Nowcast and Forecast
 
 ```{r rfplots, fig.show="hold", out.width="45%", echo=FALSE}
-rf_now = fig_path(root = cfg$root_path, 
-                  version = cfg$t_rep_now_version, 
+rf_now = fig_path(root = cfg$root_path,
+                  version = cfg$t_rep_now_version,
                   model_type = "rf")
 rf_fore = fig_path(root = cfg$root_path,
                    version = cfg$t_rep_fore_version,
                    model_type = "rf")
-path_objs = list(rf_now, rf_fore)
-if (knitr::is_html_output()) {
-    # Use absolute paths for rendering to HTML
-    abs_paths <- vapply(path_objs, function(x) x$abs, character(1))
-    r = knitr::include_graphics(abs_paths)
-  } else {
-    # For GitHub: emit markdown syntax using relative paths
-    rel_paths <- vapply(path_objs, function(x) x$rel, character(1))
-    md_links <- paste0("![](", rel_paths, ")")
-    r = knitr::asis_output(paste(md_links, collapse = "\n"))
-  }
-
-# embed_fig(list(rf_now, rf_fore)) |>
-#   print()
+# path_objs = list(rf_now, rf_fore)
+# if (knitr::is_html_output()) {
+#     # Use absolute paths for rendering to HTML
+#     abs_paths <- vapply(path_objs, function(x) x$abs, character(1))
+#     r = knitr::include_graphics(abs_paths)
+#   } else {
+#     # For GitHub: emit markdown syntax using relative paths
+#     rel_paths <- vapply(path_objs, function(x) x$rel, character(1))
+#     md_links <- paste0("![](", rel_paths, ")")
+#     r = knitr::asis_output(paste(md_links, collapse = "\n"))
+#   }
+# r
 ```
+`r embed_fig(list(rf_now, rf_fore))`
 
 
 Boosted Trees Nowcast and Forecast
@@ -164,6 +165,5 @@ vi_plot = ggplot() +
     ggtitle(cfg$graphics$vi_title) +
     labs(x = cfg$graphics$x, 
          y = cfg$graphics$vi_y)
-
-print(vi_plot)
+vi_plot
 ```

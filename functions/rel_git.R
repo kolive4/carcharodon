@@ -8,7 +8,7 @@
 rel_cast_path = function(version = "c21.100671.01_12", 
                     model_type = "rf", 
                     filename = "_compiled_cast.png", 
-                    base_dir = "workflows/tidy_reports/versions") {
+                    base_dir = "tidy_reports/versions") {
   if (FALSE) {
     version = "c21.100671.01_12"
     model_type = "rf"
@@ -16,7 +16,7 @@ rel_cast_path = function(version = "c21.100671.01_12",
     base_dir = "tidy_reports/versions"
   }
   parsed = charlier::parse_version(version)
-  file.path(base_dir, parsed["major"], parsed["minor"], paste0(version, "_", model_type, filename))
+  file.path("../../..", base_dir, parsed["major"], parsed["minor"], paste0(version, "_", model_type, filename))
 }
 
 
@@ -27,6 +27,12 @@ rel_cast_path = function(version = "c21.100671.01_12",
 #' @param filename cast figure filename
 #' @param model_type which model
 fig_path = function(root, version, filename = "_compiled_casts.png", model_type) {
+  if (FALSE) {
+    root = cfg$root_path
+    version = cfg$t_rep_now_version
+    model_type = "rf"
+  }
+  
   parsed = charlier::parse_version(version)
   
   # Where the file actually is, for reading it during render
@@ -39,20 +45,25 @@ fig_path = function(root, version, filename = "_compiled_casts.png", model_type)
 }
 
 embed_fig <- function(path_objs) {
-  if (!is.list(path_objs[[1]])) {
-    # Single path object
-    path_objs <- list(path_objs)
-  }
-  
-  if (knitr::is_html_output()) {
-    # Use absolute paths for rendering to HTML
-    abs_paths <- vapply(path_objs, function(x) x$abs, character(1))
-    r = knitr::include_graphics(abs_paths)
-  } else {
-    # For GitHub: emit markdown syntax using relative paths
-    rel_paths <- vapply(path_objs, function(x) x$rel, character(1))
-    md_links <- paste0("![](", rel_paths, ")")
-    r = knitr::asis_output(paste(md_links, collapse = "\n"))
-  }
-  return(r)
+  if (!is.list(path_objs[[1]])) path_objs <- list(path_objs)
+  rel_paths <- vapply(path_objs, function(x) x$rel, character(1))
+  paste0("![](", rel_paths, ")", collapse = "\n")
 }
+# embed_fig <- function(path_objs) {
+#   print(paste("HTML output?", knitr::is_html_output()))
+#   if (!is.list(path_objs[[1]])) {
+#     # Single path object
+#     path_objs <- list(path_objs)
+#   }
+#   
+#   if (knitr::is_html_output()) {
+#     # Use absolute paths for rendering to HTML
+#     abs_paths <- vapply(path_objs, function(x) x$abs, character(1))
+#     r = knitr::include_graphics(abs_paths)
+#   } else {
+#     # For GitHub: emit markdown syntax using relative paths
+#     rel_paths <- vapply(path_objs, function(x) x$rel, character(1))
+#     return(paste0("![](", rel_paths, ")", collapse = "\n"))
+#   }
+#   return(r)
+# }
