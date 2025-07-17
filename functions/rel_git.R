@@ -69,9 +69,47 @@ embed_fig = function(path_objs, labels = NULL, width = "45%") {
       return(knitr::asis_output(paste(imgs, collapse = "\n")))
     }
   } else {
-    # HTML output: use include_graphics with widths if specified
-    abs_paths = vapply(path_objs, function(x) x$abs, character(1))
-    knitr::opts_current$set(out.width = width)
-    return(knitr::include_graphics(abs_paths))
+    imgs_html = paste0(
+      "<img src='", abs_paths, "' style='width:", width, "; margin:5px;'>"
+    )
+    return(knitr::asis_output(paste(imgs_html, collapse = "\n")))
+  }
+}
+
+
+#' Function to determine which path to figures to use based on what type of doc rendered
+#' 
+#' @param root root directory from cfg
+#' @param version workflow version to pull casts from
+#' @param filename cast figure filename
+vi_path = function(root, version, filename = "variable_importance-1.png") {
+  if (FALSE) {
+    root = cfg$root_path
+    version = cfg$t_rep_now_version
+  }
+  
+  parsed = charlier::parse_version(version)
+  
+  # Where the file actually is, for reading it during render
+  abs_path = file.path(root, "tidy_md/versions", parsed["major"], parsed["minor"], paste0(version, "_tidy_compiled_files/figure-gfm"), filename)
+  
+  # Where the file *should appear* in the final .md for GitHub
+  rel_path = paste0(version, "_tidy_compiled_files/figure-gfm/variable_importance-1.png")
+  
+  list(abs = abs_path, rel = rel_path)
+}
+
+embed_vi <- function(path_obj) {
+  path_obj = vi_paths
+  fmt <- knitr::opts_knit$get("rmarkdown.pandoc.to")
+  
+  rel_path = path_obj$rel
+  abs_path = path_obj$abs
+  
+  
+  if (!is.null(fmt) && grepl("gfm", fmt, ignore.case = TRUE)) {
+    knitr::asis_output(paste0("![](", rel_path, ")"))
+  } else {
+    knitr::include_graphics(abs_path)
   }
 }
