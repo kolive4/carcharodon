@@ -50,6 +50,8 @@ rf_fore = fig_path(root = cfg$root_path,
 #   }
 # r
 ```
+`r cat("Absolute path: ", rf_now$abs, "\n")`
+`r cat("Relative path: ", rf_now$rel, "\n")`
 `r embed_fig(list(rf_now, rf_fore))`
 
 

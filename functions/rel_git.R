@@ -7,12 +7,12 @@
 #' @return relative path to casts suited for github_document rendering
 rel_cast_path = function(version = "c21.100671.01_12", 
                     model_type = "rf", 
-                    filename = "_compiled_cast.png", 
+                    filename = "_compiled_casts.png", 
                     base_dir = "tidy_reports/versions") {
   if (FALSE) {
     version = "c21.100671.01_12"
     model_type = "rf"
-    filename = "_compiled_cast.png"
+    filename = "_compiled_casts.png"
     base_dir = "tidy_reports/versions"
   }
   parsed = charlier::parse_version(version)
