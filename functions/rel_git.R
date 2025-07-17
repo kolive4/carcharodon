@@ -16,7 +16,7 @@ rel_cast_path = function(version = "c21.100671.01_12",
     base_dir = "tidy_reports/versions"
   }
   parsed = charlier::parse_version(version)
-  file.path("../../..", base_dir, parsed["major"], parsed["minor"], paste0(version, "_", model_type, filename))
+  file.path("../../../..", base_dir, parsed["major"], parsed["minor"], paste0(version, "_", model_type, filename))
 }
 
 
