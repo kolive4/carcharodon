@@ -44,7 +44,12 @@ fig_path = function(root, version, filename = "_compiled_casts.png", model_type)
   list(abs = abs_path, rel = rel_path)
 }
 
-
+#' Function to determine embedding methods for printing figures
+#' 
+#' @param path_objs path objects
+#' @param labels label for table in github
+#' @param width width of html figures
+#' @return markdown ready figure output
 embed_fig = function(path_objs, labels = NULL, width = "45%") {
   # Determine output format
   fmt = knitr::opts_knit$get("rmarkdown.pandoc.to")
@@ -52,6 +57,7 @@ embed_fig = function(path_objs, labels = NULL, width = "45%") {
   
   # Extract relative image paths for GitHub
   rel_paths = vapply(path_objs, function(x) x$rel, character(1))
+  abs_paths = vapply(path_objs, function(x) x$abs, character(1))
   
   if (is_gfm) {
     # If labels provided, build a markdown table header
@@ -69,9 +75,7 @@ embed_fig = function(path_objs, labels = NULL, width = "45%") {
       return(knitr::asis_output(paste(imgs, collapse = "\n")))
     }
   } else {
-    imgs_html = paste0(
-      "<img src='", abs_paths, "' style='width:", width, "; margin:5px;'>"
-    )
+    imgs_html = paste0("<img src='", abs_paths, "' style='width:", width, "; margin:5px;'>")
     return(knitr::asis_output(paste(imgs_html, collapse = "\n")))
   }
 }
@@ -99,8 +103,11 @@ vi_path = function(root, version, filename = "variable_importance-1.png") {
   list(abs = abs_path, rel = rel_path)
 }
 
+#' Function to determine embedding methods for printing variable importance
+#' 
+#' @param path_obj path objects
+#' @return markdown ready figure output
 embed_vi <- function(path_obj) {
-  path_obj = vi_paths
   fmt <- knitr::opts_knit$get("rmarkdown.pandoc.to")
   
   rel_path = path_obj$rel
