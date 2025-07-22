@@ -521,3 +521,44 @@ plot_covars = function(cfg, bathy = NULL, log_bathy = NULL, fish = NULL, dfs = N
     
   }
 }
+
+
+#' Function to rename covariates from abbreviations to full names
+#' 
+#' @param abbr list of covariate abbreviations being used
+#' @return list of covariate full names
+covar_relabel = function(abbr) {
+  covariate_names = c(
+    log_depth = "Log Depth",
+    brick_sst = "Sea Surface Temp (°C)",
+    brick_tbtm = "Bottom Temp (°C)",
+    brick_sss = "Sea Surface Salinity (g/L)",
+    brick_sbtm = "Bottom Salinity (g/L)",
+    brick_mld = "Mixed Layer Depth (m)",
+    brick_xbtm = "Bottom Stress",
+    vel_mag = "Velocity Magnitude",
+    dfs = "Distance from Shore (m)",
+    gseal = "Gray Seal HSI",
+    hseal = "Harbor Seal HSI",
+    month = "Month"
+  )
+  full = covariate_names[abbr]
+  full[is.na(full)] = abbr[is.na(full)]
+  names(full) = abbr
+  full
+}
+
+#' Function to rename models from abbreviations to full names
+#' 
+#' @param abbr list of model abbreviations being used
+#' @return list of model names
+model_relabel = function(abbr) {
+  model_names = c(
+    bt = "Boosted Tree",
+    rf = "Random Forest",
+    maxent = "Maxent",
+    gam = "GAM",
+    glm = "GLM"
+  )
+  model_names[abbr]
+}

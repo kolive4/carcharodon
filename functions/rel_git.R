@@ -120,3 +120,44 @@ embed_vi <- function(path_obj) {
     knitr::include_graphics(abs_path)
   }
 }
+
+
+#' Function to determine which path to figures to use based on what type of doc rendered
+#' 
+#' @param root root directory from cfg
+#' @param version workflow version to pull casts from
+#' @param filename cast figure filename
+pd_path = function(root, version, filename = "partial_dependence-1.png") {
+  if (FALSE) {
+    root = cfg$root_path
+    version = cfg$t_rep_now_version
+  }
+  
+  parsed = charlier::parse_version(version)
+  
+  # Where the file actually is, for reading it during render
+  abs_path = file.path(root, "tidy_md/versions", parsed["major"], parsed["minor"], paste0(version, "_tidy_compiled_files/figure-gfm"), filename)
+  
+  # Where the file *should appear* in the final .md for GitHub
+  rel_path = paste0(version, "_tidy_compiled_files/figure-gfm/partial_dependence-1.png")
+  
+  list(abs = abs_path, rel = rel_path)
+}
+
+#' Function to determine embedding methods for printing partial_dependence
+#' 
+#' @param path_obj path objects
+#' @return markdown ready figure output
+embed_pd <- function(path_obj) {
+  fmt <- knitr::opts_knit$get("rmarkdown.pandoc.to")
+  
+  rel_path = path_obj$rel
+  abs_path = path_obj$abs
+  
+  
+  if (!is.null(fmt) && grepl("gfm", fmt, ignore.case = TRUE)) {
+    knitr::asis_output(paste0("![](", rel_path, ")"))
+  } else {
+    knitr::include_graphics(abs_path)
+  }
+}

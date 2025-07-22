@@ -1,5 +1,5 @@
 ---
-title: "`r cfg$message`"
+title: "Habitat Suitability Report"
 output: 
   - github_document:
       toc: true
@@ -27,6 +27,18 @@ parsed_fore_v = charlier::parse_version(cfg$t_rep_fore_version)
 parsed_now_v = charlier::parse_version(cfg$t_rep_now_version)
 ```
 
+## Inputs
+```{r report_inputs, echo=FALSE, results='asis'}
+cat(paste0(
+  "- Species: ", cfg$message$species, "\n",
+  "- Thinning: ", cfg$message$thin_message, "\n",
+  "- Ratio: ", cfg$message$obs_bg_ratio, "\n",
+  "- Spatial extent: ", cfg$message$spat_extent, "\n",
+  "- Covariates used: ", cfg$message$covs, "\n",
+  "- Metrics: ", cfg$message$metrics, "\n"
+))
+```
+
 ## Nowcast and Forecast Maps
 
 Random Forest Nowcast and Forecast
@@ -41,7 +53,7 @@ rf_fore = fig_path(root = cfg$root_path,
 ```
 
 ```{r embed_rf_figures, echo=FALSE, results='asis'}
-embed_fig(list(rf_now, rf_fore), labels = c("Nowcast", "Forecast"), width = "45%")
+embed_fig(list(rf_now, rf_fore), labels = c("Nowcast", "Forecast: RCP 8.5 2075"), width = "45%")
 ```
 
 Boosted Trees Nowcast and Forecast
@@ -56,7 +68,7 @@ bt_fore = fig_path(root = cfg$root_path,
 ```
 
 ```{r embed_bt_figures, echo=FALSE, results='asis'}
-embed_fig(list(bt_now, bt_fore), labels = c("Nowcast", "Forecast"), width = "45%")
+embed_fig(list(bt_now, bt_fore), labels = c("Nowcast", "Forecast: RCP 8.5 2075"), width = "45%")
 ```
 
 
@@ -72,7 +84,7 @@ maxent_fore = fig_path(root = cfg$root_path,
 ```
 
 ```{r embed_maxent_figures, echo=FALSE, results='asis'}
-embed_fig(list(maxent_now, maxent_fore), labels = c("Nowcast", "Forecast"), width = "45%")
+embed_fig(list(maxent_now, maxent_fore), labels = c("Nowcast", "Forecast: RCP 8.5 2075"), width = "45%")
 ```
 
 GAM Nowcast and Forecast
@@ -87,7 +99,7 @@ gam_fore = fig_path(root = cfg$root_path,
 ```
 
 ```{r embed_gam_figures, echo=FALSE, results='asis'}
-embed_fig(list(gam_now, gam_fore), labels = c("Nowcast", "Forecast"), width = "45%")
+embed_fig(list(gam_now, gam_fore), labels = c("Nowcast", "Forecast: RCP 8.5 2075"), width = "45%")
 ```
 
 GLM Nowcast and Forecast
@@ -102,7 +114,7 @@ glm_fore = fig_path(root = cfg$root_path,
 ```
 
 ```{r embed_glm_figures, echo=FALSE, results='asis'}
-embed_fig(list(glm_now, glm_fore), labels = c("Nowcast", "Forecast"), width = "45%")
+embed_fig(list(glm_now, glm_fore), labels = c("Nowcast", "Forecast: RCP 8.5 2075"), width = "45%")
 ```
 
 ## Metrics
@@ -186,4 +198,50 @@ vi_paths = vi_path(root = cfg$root_path, version = cfg$version)
 embed_vi(path_obj = vi_paths)
 ```
 
+## Partial Dependence
+```{r partial_dependence, echo=FALSE, message=FALSE}
+withr::with_dir("/mnt/ecocast/projects/koliveira/subprojects/carcharodon", {
+rf_pd = readr::read_rds(file.path(cfg$root_path, "tidy_workflow/versions", parsed_wf_v["major"], parsed_wf_v["minor"], cfg$t_wf_version, paste0(cfg$t_wf_version, "_rf_pd.rds")))
 
+bt_pd = readr::read_rds(file.path(cfg$root_path, "tidy_workflow/versions", parsed_wf_v["major"], parsed_wf_v["minor"], cfg$t_wf_version, paste0(cfg$t_wf_version, "_bt_pd.rds")))
+
+maxnet_pd = readr::read_rds(file.path(cfg$root_path, "tidy_workflow/versions", parsed_wf_v["major"], parsed_wf_v["minor"], cfg$t_wf_version, paste0(cfg$t_wf_version, "_maxent_pd.rds")))
+
+gam_pd = readr::read_rds(file.path(cfg$root_path, "tidy_workflow/versions", parsed_wf_v["major"], parsed_wf_v["minor"], cfg$t_wf_version, paste0(cfg$t_wf_version, "_gam_pd.rds")))
+
+glm_pd = readr::read_rds(file.path(cfg$root_path, "tidy_workflow/versions", parsed_wf_v["major"], parsed_wf_v["minor"], cfg$t_wf_version, paste0(cfg$t_wf_version, "_glm_pd.rds")))
+
+all_pd = list(rf = rf_pd, bt = bt_pd, maxent = maxnet_pd, gam = gam_pd, glm = glm_pd)
+tidy_pd = purrr::imap_dfr(all_pd, function(model_list, model_name) {
+  imap_dfr(model_list, function(df, variable_name) {
+    df |>
+      mutate(model = model_name,
+             variable = variable_name)
+  })
+})
+
+pd_plot = ggplot() +
+  geom_line(data = tidy_pd, aes(x = bin_mean, y = pd, color = model), linewidth = 1) +
+  facet_wrap(~ variable, scales = "free_x", labeller = as_labeller(covar_relabel)) +
+  labs(y = "Partial dependence") +
+  scale_color_viridis_d(name = "Model",
+                        labels = model_relabel) +
+  theme_classic()
+
+pd_fig_path = file.path(cfg$root_path,
+                          "tidy_md/versions",
+                          vpars["major"],
+                          vpars["minor"],
+                          paste0(cfg$version, "_tidy_compiled_files"),
+                          "figure-gfm",
+                          "partial_dependence-1.png")
+
+  ggplot2::ggsave(pd_fig_path, plot = pd_plot, width = 8, height = 6, dpi = 300)
+})
+```
+
+```{r embed_pd, echo=FALSE, results='asis'}
+pd_paths = pd_path(root = cfg$root_path, version = cfg$version)
+
+embed_pd(path_obj = pd_paths)
+```

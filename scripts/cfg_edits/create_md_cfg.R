@@ -64,8 +64,8 @@ create_md_cfg = function(report_file,
     "03" = "all covariates (u and v become vel_mag)",
     "04" = "seal specific v2 (sss, dfs, month, mld)",
     "05" = "all covariates (u and v become vel_mag) and seals",
-    "06" = "non-seal (sst, tbtm, log depth, sbtm, seals, vel_mag, xbtm",
-    "07" = "shark specific v2 (sst, tbtm, sbtm, log depth, and seals"
+    "06" = "non-seal (sst, tbtm, log depth, sbtm, seals, vel_mag, xbtm)",
+    "07" = "shark specific v2 (sst, tbtm, sbtm, log depth, and seals)"
   )
   covariates_code = substr(md_minor, 3, 4)
   
@@ -83,16 +83,16 @@ create_md_cfg = function(report_file,
   cfg = charlier::read_config(template_file)
   cfg$version = md_version
   if (species_code != 1) {
-    thin_message = paste0(thin_map_seals[[as.character(thin_code)]], ",")
+    thin_message = thin_map_seals[[as.character(thin_code)]]
   } else {
-    thin_message = paste0(thin_map_sharks[[as.character(thin_code)]], ", ")
+    thin_message = thin_map_sharks[[as.character(thin_code)]]
   }
-  cfg$message = paste0(species_map[[as.character(species_code)]], ", ", 
-  					   thin_message,
-  					   ratio_map[[as.character(ratio_code)]], ", ",
-					   extent_map[[as.character(extent_code)]], ", ",
-					   covariates_map[[as.character(covariates_code)]], ", ",
-					   metrics_map[[as.character(metrics_code)]])
+  cfg$message = list(species = species_map[[as.character(species_code)]], 
+  					   thin_message = thin_message,
+  					   obs_bg_ratio = ratio_map[[as.character(ratio_code)]],
+					   spat_extent = extent_map[[as.character(extent_code)]], 
+					   covs = covariates_map[[as.character(covariates_code)]], 
+					   metrics = metrics_map[[as.character(metrics_code)]])
   cfg$t_wf_version = report_cfg$tidy_w_vers
   cfg$t_rep_now_version = paste0(report_major, ".", substr(report_minor, 1, nchar(report_minor)-1), "0.01_12")
   cfg$t_rep_fore_version = paste0(report_major, ".", substr(report_minor, 1, nchar(report_minor)-1), "4.01_12")
