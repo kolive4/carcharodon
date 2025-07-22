@@ -462,3 +462,4 @@ ok = dev.off()
 
 glm_vi = variable_importance(x = final_glm_workflow, y = training(split), type = "prob") |>
   write.csv(file.path(vpath, paste0(cfg$version, "_glm_vi.csv")))
+

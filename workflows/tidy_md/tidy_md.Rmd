@@ -218,7 +218,8 @@ tidy_pd = purrr::imap_dfr(all_pd, function(model_list, model_name) {
       mutate(model = model_name,
              variable = variable_name)
   })
-})
+}) |>
+  mutate(pd = dplyr::if_else(.data$model %in% c("gam", "glm"), 1-pd, pd))
 
 pd_plot = ggplot() +
   geom_line(data = tidy_pd, aes(x = bin_mean, y = pd, color = model), linewidth = 1) +
