@@ -1,0 +1,39 @@
+Hi! Welcome to the markdown report output folder of the carcharodon project.
+
+Within this folder you will find folders broken down by versions leading you to a markdown report for a given white shark model. For each version, the markdown report will include nowcast and forecast maps for a given species, model evaluation metrics used to tune the model, a variable importance histogram outlining how each variable contributes to the model, and partial dependence curves for each model.
+
+The breakdown of version naming is as follows:
+An example version: mAB.CDEFG.yaml
+In this case each letter will have a definition and corresponding values.
+A: observation to background/pseudo-absence ratio 
+ - 0 = all observations and all background points
+ - 1 = thinned observations (distance and cell) and all background points
+ - 2 = 1:2 observation to pseudo-absence ratio
+B: species
+ - 1 = White shark, Carcharodon carcharias
+ - 2 = Gray seal, Halichoerus grypus
+ - 3 = Harbor seal, Phoca vitulina
+C: spatial extent
+ - 0 = full spatial extent
+ - 1 = 750m isobath extent
+D: observation source
+ - 0 = all observations
+ - 1 = satellite observations
+ - 2 = human observations
+EF: covariates used
+ - 00 = all covariates (sst, tbtm, sss, sbtm, mld, u, v, xbtm, log_depth, dfs)
+ - 01 = shark specific v1 (tbtm, sss, sbtm, mld, log_depth, gseal, hseal)
+ - 02 = seal specific v1 (sst, dfs, velocity magnitude, xbtm)
+ - 03 = all covariates (u and v become vel_mag)
+ - 04 = seal specific v2 (sss, dfs, month, mld)
+ - 05 = all covariates (u and v become vel_mag) and seals
+ - 06 = non-seal (sst, tbtm, log_depth, sbtm, gseal, hseal, vel_mag, xbtm)
+ - 07 = shark specific v2 (sst, tbtm, sbtm, log_depth, gseal, hseal)
+G: metrics used
+ - 0 = all (roc_auc, tss_max, boyce, brier, accuracy)
+ - 1 = roc_auc
+ - 2 = tss_max
+ - 3 = boyce
+ - 4 = brier
+ - 5 = accuracy
+ - 6 = auc & tss
