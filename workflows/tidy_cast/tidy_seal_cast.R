@@ -30,7 +30,7 @@ args = argparser::arg_parser("tidymodels/tidysdm casting for seal habitat suitab
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_cast/t12.000460.08.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_cast/t12.000464.08.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -69,37 +69,37 @@ obs = read_brickman_points(file = obs_bg) |>
 
 var_list = list()
 
-if ("brick_tbtm" %in% cfg$vars) {
+if ("brick_tbtm" %in% c(cfg$dynamic_names, cfg$static_names)) {
   tbtm = stars::read_stars(file.path(cfg$data_path, cfg$brick_path, sprintf("%s_%s_Tbtm_mon.tif", cfg$scenario, cfg$year))) |>
     dplyr::rename(tbtm = sprintf("%s_%s_Tbtm_mon.tif", cfg$scenario, cfg$year))
   var_list[["tbtm"]] = tbtm
 }
-if ("brick_mld" %in% cfg$vars) {
+if ("brick_mld" %in% c(cfg$dynamic_names, cfg$static_names)) {
   mld = stars::read_stars(file.path(cfg$data_path, cfg$brick_path, sprintf("%s_%s_MLD_mon.tif", cfg$scenario, cfg$year))) |>
     dplyr::rename(mld = sprintf("%s_%s_MLD_mon.tif", cfg$scenario, cfg$year))
   var_list[["mld"]] = mld
 }
-if ("brick_sss" %in% cfg$vars) {
+if ("brick_sss" %in% c(cfg$dynamic_names, cfg$static_names)) {
   sss = stars::read_stars(file.path(cfg$data_path, cfg$brick_path, sprintf("%s_%s_SSS_mon.tif", cfg$scenario, cfg$year))) |>
     dplyr::rename(sss = sprintf("%s_%s_SSS_mon.tif", cfg$scenario, cfg$year))
   var_list[["sss"]] = sss
 }
-if ("brick_sbtm" %in% cfg$vars) {
+if ("brick_sbtm" %in% c(cfg$dynamic_names, cfg$static_names)) {
   sbtm = stars::read_stars(file.path(cfg$data_path, cfg$brick_path, sprintf("%s_%s_Sbtm_mon.tif", cfg$scenario, cfg$year))) |>
     dplyr::rename(sbtm = sprintf("%s_%s_Sbtm_mon.tif", cfg$scenario, cfg$year))
   var_list[["sbtm"]] = sbtm
 }
-if ("brick_sst" %in% cfg$vars) {
+if ("brick_sst" %in% c(cfg$dynamic_names, cfg$static_names)) {
   sst = stars::read_stars(file.path(cfg$data_path, cfg$brick_path, sprintf("%s_%s_SST_mon.tif", cfg$scenario, cfg$year))) |>
     dplyr::rename(sst = sprintf("%s_%s_SST_mon.tif", cfg$scenario, cfg$year))
   var_list[["sst"]] = sst
 }
-if ("brick_u" %in% cfg$vars) {
+if ("brick_u" %in% c(cfg$dynamic_names, cfg$static_names)) {
   u = stars::read_stars(file.path(cfg$data_path, cfg$brick_path, sprintf("%s_%s_U_mon.tif", cfg$scenario, cfg$year))) |>
     dplyr::rename(u = sprintf("%s_%s_U_mon.tif", cfg$scenario, cfg$year))
   var_list[["u"]] = u
 }
-if ("brick_v" %in% cfg$vars) {
+if ("brick_v" %in% c(cfg$dynamic_names, cfg$static_names)) {
   v = stars::read_stars(file.path(cfg$data_path, cfg$brick_path, sprintf("%s_%s_V_mon.tif", cfg$scenario, cfg$year))) |>
     dplyr::rename(v = sprintf("%s_%s_V_mon.tif", cfg$scenario, cfg$year)) 
   var_list[["v"]] = v
@@ -108,7 +108,7 @@ if ("vel_mag" %in% cfg$vars) {
   vel_mag = read_vel_mag(scenario = cfg$scenario, year = cfg$year, band_as_time = FALSE)
   var_list[["vel_mag"]] = vel_mag
 }
-if ("brick_xbtm" %in% cfg$vars) {
+if ("brick_xbtm" %in% c(cfg$dynamic_names, cfg$static_names)) {
   xbtm = stars::read_stars(file.path(cfg$data_path, cfg$brick_path, sprintf("%s_%s_Xbtm_mon.tif", cfg$scenario, cfg$year))) |>
     dplyr::rename(xbtm = sprintf("%s_%s_Xbtm_mon.tif", cfg$scenario, cfg$year))
   var_list[["xbtm"]] = xbtm

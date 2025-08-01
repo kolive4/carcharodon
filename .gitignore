@@ -9,6 +9,7 @@ data/*
 *.Rds
 *.gpkg
 log
+workflows/tidy_ben/*
 
 # History files
 .Rhistory

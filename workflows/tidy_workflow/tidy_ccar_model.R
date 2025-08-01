@@ -148,6 +148,8 @@ ws_models <-
   workflow_set(
     preproc = list(
       simple = rec
+      # pa = pa_rec
+      # ap = ap_rec
     ),
     models = list(
       bt = model_bt, 
@@ -158,6 +160,9 @@ ws_models <-
     ),
     cross = TRUE
   ) |>
+  # anti_join(tibble(wflow_id = c("pa_gam", "pa_glm", "ap_bt", "ap_maxent", "ap_rf")),
+  # by = "wflow_id"
+  # )
   workflowsets::update_workflow_model("simple_gam",
                                       spec = sdm_spec_gam(),
                                       formula = tidysdm::gam_formula(rec))
