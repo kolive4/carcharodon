@@ -188,7 +188,7 @@ vi_fig_path = file.path(cfg$root_path,
                           "figure-gfm",
                           "variable_importance-1.png")
 
-  ggplot2::ggsave(vi_fig_path, plot = vi_plot, width = 8, height = 6, dpi = 300)
+  ggplot2::ggsave(vi_fig_path, plot = vi_plot, width = 8, height = 6, dpi = 300, create.dir = TRUE)
 })
 ```
 

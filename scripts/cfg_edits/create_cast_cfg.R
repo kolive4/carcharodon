@@ -1,4 +1,4 @@
-files = list.files(path = "workflows/tidy_workflow", pattern = "^t11\\.[0-1]00[3,5][0-6].\\d+\\.yaml$", full.names = TRUE)
+files = list.files(path = "workflows/tidy_workflow", pattern = "^t1[2,3]\\.000[2,3,4]6.\\d+\\.yaml$", full.names = TRUE)
 
 create_cast_cfg = function(file,
                            template_file = "workflows/tidy_cast/t11.000500.01.yaml") {
@@ -18,7 +18,7 @@ create_cast_cfg = function(file,
   
   filename = basename(file)
   wf_version <- sub("\\.yaml$", "", filename)
-  vpars = parse_version(wf_version)
+  vpars = charlier::parse_version(wf_version)
   wf_cfg = charlier::read_config(file)
   
   if (vpars["release"] == 20) {
@@ -44,6 +44,7 @@ create_cast_cfg = function(file,
       
       cfg = charlier::read_config(template_file)
       map_entry = scenario_map[[as.character(scenario)]]
+      cfg$version = cast_name
       cfg$gather_data_path = wf_cfg$gather_data_path
       cfg$thinned_data_path = wf_cfg$thinned_data_path
       cfg$scenario = map_entry$name
@@ -77,7 +78,7 @@ create_cast_cfg = function(file,
     }
   }
 }
-lapply(files, create_cast_cfg, template_file = "workflows/tidy_cast/t11.000500.01.yaml")
+lapply(files, create_cast_cfg, template_file = "workflows/tidy_cast/t12.000300.01.yaml")
 
 
 
