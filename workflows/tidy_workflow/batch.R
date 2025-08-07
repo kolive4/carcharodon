@@ -11,3 +11,5 @@ for (yaml in yamls) {
   ok = system(cmd)
   cat("Script returned: ", ok, "\n")
 }
+
+charlier::sendmail("koliveira@bigelow.org", message = "Models complete.")

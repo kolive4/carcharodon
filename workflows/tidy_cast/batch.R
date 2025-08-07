@@ -1,5 +1,5 @@
 yamls = list.files(path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_cast", 
-           pattern = "^t[1-2]1\\.[0-1]00[3,5,6,7][0,1,2,6][0-4]\\.\\d+\\.yaml$",
+           pattern = "^t[1-2]1\\.[0-1]0036[0-4]\\.\\d+\\.yaml$",
            #pattern = glob2rx("t[1-2][2-3].0003[0-5][0-4].*.yaml"),
            full.names = TRUE)
   
@@ -12,3 +12,5 @@ for (yaml in yamls) {
   ok = system(cmd)
   cat("Script returned: ", ok, "\n")
 }
+
+charlier::sendmail("koliveira@bigelow.org", message = "Casts complete.")

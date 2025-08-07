@@ -1,13 +1,12 @@
-# yamls = list.files(path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_reports", 
-#                    pattern = "^c[1-2]1\\.[0-1]00[3,5,6,7][0,1,2,6][0-4].01_12\\.yaml$",
-#                    full.names = TRUE)
-
-yamls = list.files(path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_reports", 
-                   pattern = "^c[1-2][2-3]\\.000[2,3,4]6[0-4].01_12.yaml$",
+yamls = list.files(path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_reports",
+                   pattern = "^c[1-2]1\\.[0-1]0036[0-4].01_12\\.yaml$",
                    full.names = TRUE)
 
-# Rscript workflows/modeling_workflow/maxent_modeling.R --config workflows/modeling_workflow/v01.2012.yaml
-script = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_reports/compiled_report_seals.R"
+# yamls = list.files(path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_reports", 
+#                    pattern = "^c[1-2][2-3]\\.000[2,3,4]6[0-4].01_12.yaml$",
+#                    full.names = TRUE)
+
+script = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_reports/compiled_report_sharks.R"
 
 for (yaml in yamls) {
   cmd = sprintf("Rscript %s --config %s", script, yaml)
@@ -16,4 +15,4 @@ for (yaml in yamls) {
   cat("Script returned: ", ok, "\n")
 }
 
-charlier::sendmail("koliveira@bigelow.org")
+charlier::sendmail("koliveira@bigelow.org", message = "Reports complete.")
