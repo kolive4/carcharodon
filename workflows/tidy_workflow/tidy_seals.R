@@ -77,7 +77,7 @@ bg = read_brickman_points(file = obs_bg) |>
   dplyr::mutate(class = "background")
 
 data = dplyr::bind_rows(obs, bg) |>
-  dplyr::select(-dplyr::all_of(c("eventDate", "Year", "basisOfRecord"))) |>
+  dplyr::select(-dplyr::all_of(c("eventDate", "Year", "basisOfRecord", "month"))) |>
   # dplyr::mutate(month = factor(month, levels = seq(1, 12))) |>
   na.omit() |>
   dplyr::mutate(class = factor(class, levels = c("presence", "background"))) 

@@ -1,12 +1,12 @@
 yamls = list.files(path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_reports",
-                   pattern = "^c[1-2]1\\.[0-1]0036[0-4].01_12\\.yaml$",
+                   pattern = "^c[1-2][2-3]\\.[0-1]0086[0-4].01_12\\.yaml$",
                    full.names = TRUE)
 
 # yamls = list.files(path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_reports", 
 #                    pattern = "^c[1-2][2-3]\\.000[2,3,4]6[0-4].01_12.yaml$",
 #                    full.names = TRUE)
 
-script = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_reports/compiled_report_sharks.R"
+script = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_reports/compiled_report_seals.R"
 
 for (yaml in yamls) {
   cmd = sprintf("Rscript %s --config %s", script, yaml)
