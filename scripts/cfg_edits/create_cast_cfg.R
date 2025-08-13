@@ -1,4 +1,4 @@
-files = list.files(path = "workflows/tidy_workflow", pattern = "^t11\\.[0-1]0096.\\d+\\.yaml$", full.names = TRUE)
+files = list.files(path = "workflows/tidy_workflow", pattern = "^t11\\.[0-1]0056.\\d+\\.yaml$", full.names = TRUE)
 
 create_cast_cfg = function(file,
                            template_file = "workflows/tidy_cast/t11.000500.01.yaml") {
@@ -70,7 +70,7 @@ create_cast_cfg = function(file,
         if (substr(cast_vpars["minor"], 4, 4) %in% c(5, 6)) {
           cfg$seal_bg_ratio = "one_to_two"
           cfg$hseal_model_type = "bt"
-          cfg$gseal_model_type = "rf"
+          cfg$gseal_model_type = "bt"
         }
       }
       

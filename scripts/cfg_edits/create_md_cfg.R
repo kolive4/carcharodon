@@ -2,7 +2,7 @@ suppressPackageStartupMessages({
   library(charlier)
 })
 
-files = list.files(path = "workflows/tidy_reports", pattern = "^c[1-2]1\\.[0-1]0096[0-4].01_12.yaml$", full.names = TRUE)
+files = list.files(path = "workflows/tidy_reports", pattern = "^c[1-2]1\\.[0-1]0056[0-4].01_12.yaml$", full.names = TRUE)
 
 create_md_cfg = function(report_file,
                          template_file = "workflows/tidy_md/m00.000000.yaml") {
@@ -65,7 +65,9 @@ create_md_cfg = function(report_file,
     "04" = "seal specific v2 (sss, dfs, month, mld)",
     "05" = "all covariates (u and v become vel_mag) and seals",
     "06" = "non-seal (sst, tbtm, log depth, sbtm, seals, vel_mag, xbtm)",
-    "07" = "shark specific v2 (sst, tbtm, sbtm, log depth, and seals)"
+    "07" = "shark specific v2 (sst, tbtm, sbtm, log depth, and seals)",
+    "08" = "seal specific v3 (sss, mld, dfs)",
+    "09" = "shark specific v3 (sst, depth, month, and seals)"
   )
   covariates_code = substr(md_minor, 3, 4)
   
