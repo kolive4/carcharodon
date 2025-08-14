@@ -56,7 +56,7 @@ if (stringr::str_sub(vpars["major"], start = 2, end = 2) %in% c(1,2)) {
 
 obs = read_brickman_points(file = obs_bg) |>
   sf::st_as_sf() |>
-  dplyr::filter(id == 1) |>
+  dplyr::filter(id == 1, basisOfRecord %in% cfg$basisOfRecord) |>
   dplyr::mutate(class = "presence") |>
   dplyr::filter(month %in% as.numeric(seq(from = 1, to = 12))) 
 

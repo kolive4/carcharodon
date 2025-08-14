@@ -48,6 +48,7 @@ create_report_cfg = function(cast_file,
   cfg$gather_data_path = cast_cfg$gather_data_path
   cfg$thinned_data_path = cast_cfg$thinned_data_path
   cfg$scenario = scenario_map[[as.character(scenario_code)]]
+  cfg$basisOfRecord = cast_cfg$obs_filter$basisOfRecord
   
   charlier::write_config(cfg, output_file_path)
 }
