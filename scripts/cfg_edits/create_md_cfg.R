@@ -2,7 +2,7 @@ suppressPackageStartupMessages({
   library(charlier)
 })
 
-files = list.files(path = "workflows/tidy_reports", pattern = "^c[1-2]1\\.[0-1]0056[0-4].01_12.yaml$", full.names = TRUE)
+files = list.files(path = "workflows/tidy_reports", pattern = "^c[1-2]1\\.[0-1][1,2]036[0-4].01_12.yaml$", full.names = TRUE)
 
 create_md_cfg = function(report_file,
                          template_file = "workflows/tidy_md/m00.000000.yaml") {
@@ -37,25 +37,32 @@ create_md_cfg = function(report_file,
   thin_map_seals = list(
     "0" = "Thinned observations"
   )
-
+  
   ratio_map = list(
-  	"0" = "All pseudo-absence/background points",
-  	"1" = "1:2 observation:pseudo-absence ratio"
+    "0" = "All pseudo-absence/background points",
+    "1" = "1:2 observation:pseudo-absence ratio"
   )
   ratio_code = substr(thin_minor, 5, 5)
   
   species_map = list(
-  	"1" = "White shark (Carcharodon carcharias)",
-  	"2" = "Gray seal (Halichoerus grypus)",
-  	"3" = "Harbor seal (Phoca vitulina)"
+    "1" = "White shark (Carcharodon carcharias)",
+    "2" = "Gray seal (Halichoerus grypus)",
+    "3" = "Harbor seal (Phoca vitulina)"
   )
   species_code = substr(md_major, nchar(md_major), nchar(md_major))
   
   extent_map = list(
-  	"0" = "Full extent",
-  	"1" = "Cropped to 750 m isobath"
+    "0" = "Full extent",
+    "1" = "Cropped to 750 m isobath"
   )
   extent_code = substr(md_minor, 1, 1)
+  
+  bor_map = list(
+    "0" = "All observations",
+    "1" = "Satellite observations (PSAT, SPOT)",
+    "2" = "Visual observations (OBIS, iNaturalist, curated lit.)"
+  )
+  bor_code = substr(md_minor, 2, 2)
   
   covariates_map = list(
     "00" = "all covariates",
@@ -90,11 +97,12 @@ create_md_cfg = function(report_file,
     thin_message = thin_map_sharks[[as.character(thin_code)]]
   }
   cfg$message = list(species = species_map[[as.character(species_code)]], 
-  					   thin_message = thin_message,
-  					   obs_bg_ratio = ratio_map[[as.character(ratio_code)]],
-					   spat_extent = extent_map[[as.character(extent_code)]], 
-					   covs = covariates_map[[as.character(covariates_code)]], 
-					   metrics = metrics_map[[as.character(metrics_code)]])
+                     thin_message = thin_message,
+                     obs_bg_ratio = ratio_map[[as.character(ratio_code)]],
+                     spat_extent = extent_map[[as.character(extent_code)]], 
+                     covs = covariates_map[[as.character(covariates_code)]], 
+                     metrics = metrics_map[[as.character(metrics_code)]],
+                     bor = bor_map[[as.character(bor_code)]])
   cfg$t_wf_version = report_cfg$tidy_w_vers
   cfg$t_rep_now_version = paste0(report_major, ".", substr(report_minor, 1, nchar(report_minor)-1), "0.01_12")
   cfg$t_rep_fore_version = paste0(report_major, ".", substr(report_minor, 1, nchar(report_minor)-1), "4.01_12")
@@ -106,6 +114,3 @@ create_md_cfg = function(report_file,
 }
 
 lapply(files, create_md_cfg, template_file = "workflows/tidy_md/m00.000000.yaml")
-
-
-

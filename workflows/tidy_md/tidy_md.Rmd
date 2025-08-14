@@ -35,7 +35,8 @@ cat(paste0(
   "- Ratio: ", cfg$message$obs_bg_ratio, "\n",
   "- Spatial extent: ", cfg$message$spat_extent, "\n",
   "- Covariates used: ", cfg$message$covs, "\n",
-  "- Metrics: ", cfg$message$metrics, "\n"
+  "- Metrics: ", cfg$message$metrics, "\n",
+  "- Observations: ", cfg$message$bor, "\n"
 ))
 ```
 

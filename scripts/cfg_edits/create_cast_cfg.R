@@ -1,4 +1,4 @@
-files = list.files(path = "workflows/tidy_workflow", pattern = "^t11\\.[0-1]0056.\\d+\\.yaml$", full.names = TRUE)
+files = list.files(path = "workflows/tidy_workflow", pattern = "^t11\\.[0-1][1,2]036.\\d+\\.yaml$", full.names = TRUE)
 
 create_cast_cfg = function(file,
                            template_file = "workflows/tidy_cast/t11.000500.01.yaml") {
