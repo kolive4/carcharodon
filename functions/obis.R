@@ -378,13 +378,16 @@ reassign_coords = function(obs, mask_path, lut_path) {
 #' 
 #' @param raw raw data file with institutionCode included
 #' @param thinned thinned file or sf object with occurrenceID included
+#' @param shark logical, if TRUE then thinned object will be an sf object without pres/bg(1/0)
 #' @return the counts of observations associated with that institutionCode
 match_institution = function(raw, 
                              thinned, 
+                             shark,
                              export_path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/data/obis") {
   if (FALSE) {
-    raw = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/data/obis/phoca_vitulina-raw.csv.gz"
-    thinned = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_thin/versions/t03/t03.00000/thinned_obs_bg.gpkg"
+    raw = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/data/obis/carcharodon_carcharias-raw.csv.gz"
+    thinned = obis #"/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/get_data_workflow/versions/t01/t01.104/thinned_obs_bg.gpkg"
+    shark = TRUE
     export_path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/data/obis"
   }
   species_name = function(x = "halichoerus_grypus-raw.csv.gz"){
@@ -403,8 +406,13 @@ match_institution = function(raw,
   } else {
     stop("Input must be a file path or an sf object.")
   }
-  t = t |>
-    dplyr::filter(id == 1)
+  if(shark == FALSE) {
+    t = t |>
+      dplyr::filter(id == 1)
+  } else {
+    t
+  }
+  
   
   l = unique(t$occurrenceID) |>
     na.omit()
@@ -422,7 +430,7 @@ match_institution = function(raw,
 #' @param x raw string of citation
 #' @return just JSON portion of raw citation string
 truncate_json = function(x) {
-  match = str_locate(x, "\\}\\]")[1, 2]
+  match = stringr::str_locate(x, "\\}\\]")[1, 2]
   if (is.na(match)) return(NA_character_)
   substr(x, 1, match)
 }
@@ -454,7 +462,7 @@ clean_and_format_citations <- function(cite_raw) {
       journal,
       if (issue != "") paste0(", ", issue) else "",
       if (link != "") paste0(". ", link) else ""
-    ) %>% str_squish()
+    ) %>% stringr::str_squish()
   })
   
   paste(cleaned, collapse = "; ")

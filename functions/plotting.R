@@ -12,7 +12,7 @@ geom_coastline = function(coast = rnaturalearth::ne_coastline(scale = "large", r
     st_as_sf(coords = c("Longitude", "Latitude"), crs = 4326)
   
   x = list(
-    ggplot2::geom_sf(data = sf::st_crop(coast, bb), aes(), colour = color),
+    ggplot2::geom_sf(data = sf::st_crop(sf::st_geometry(coast), bb), aes(), colour = color),
     ggplot2::geom_sf_label(data = maine_coords, aes(label = name, geometry = geometry)) 
   )
   

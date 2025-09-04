@@ -17,7 +17,7 @@ args = argparser::arg_parser("thinning observation and background data",
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_thin/v01.00010.yaml",
+                          default = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_thin/v01.10011.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -42,6 +42,8 @@ if (!dir.exists(vfigure_path))
 mask = stars::read_stars(file.path(cfg$data_path, cfg$mask_name)) |>
   rlang::set_names("mask")
 
+shark_box = cofbb::get_bb("nefsc_carcharodon", form = "sf")
+
 obs_bg = read_sf(file.path(cfg$gather_data_path, "brickman_covar_obs_bg.gpkg")) 
 
 thin_obs = obs_bg |>
@@ -60,10 +62,31 @@ if(!is.null(cfg$bg_x)) {
 thin_obs_bg = dplyr::bind_rows(thin_obs, thin_bg) |>
   write_sf(file.path(vpath, "thinned_obs_bg.gpkg"))
 
+obs_thinned = thin_obs_bg |>
+  dplyr::filter(id == 1)
+
+obs_figures = group_by(obs_thinned, basisOfRecord) |>
+  dplyr::group_map(function(tbl, key){
+    plot = ggplot() +
+      geom_coastline(bb = shark_box, color = "red") +
+      geom_sf(data = tbl) +
+      geom_sf(data = obs_bg |>
+                dplyr::filter(basisOfRecord == key$basisOfRecord) |>
+                dplyr::filter(tagging_point == TRUE), size = 5, shape = 25, fill = "black", color = "green",) +
+      labs(title = key$basisOfRecord,
+           x = "Longitude",
+           y = "Latitude") +
+      theme_classic(base_size = 18)
+    # return(plot)
+    ggsave(filename = file.path(vfigure_path, paste0(key$basisOfRecord, "_thin_occs.png")),
+           bg = "transparent", width = 11, height = 8.5, units = "in", dpi = 300)
+  })
+
 obs_obis = thin_obs_bg |>
   dplyr::filter(basisOfRecord == "OBIS")
 
 thin_obs_inst = match_institution(raw = file.path(cfg$root_path, cfg$data_path, cfg$obis_path, cfg$raw_file),
+                                  shark = cfg$shark,
                                   thinned = obs_obis)
 
 exp_thin_cite = thin_obs_inst |>

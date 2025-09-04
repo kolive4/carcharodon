@@ -32,7 +32,7 @@ args = argparser::arg_parser("tidymodels/tidysdm modeling and forecasting for wh
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_workflow/t11.00070.00.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_workflow/t11.10096.00.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -142,7 +142,7 @@ model_glm = parsnip::logistic_reg(
   mode = "classification"
 )
 
-model_gam = tidysdm::sdm_spec_gam()
+model_gam = tidysdm::sdm_spec_gam(adjust_deg_free = 4)
 
 ws_models <-
   workflow_set(

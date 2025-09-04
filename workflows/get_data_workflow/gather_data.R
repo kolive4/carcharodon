@@ -25,7 +25,7 @@ args = argparser::arg_parser("assembling observation and background data",
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/get_data_workflow/v01.004.yaml",
+                          default = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/get_data_workflow/v01.104.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -70,7 +70,12 @@ curated$Year = as.numeric(curated$Year)
 curated_plot = ggplot() +
   geom_coastline(bb = shark_box, color = "red") +
   geom_sf(data = curated, aes(shape = basisOfRecord), fill = "white", color = "black", size = 2.5) + 
-  theme_void() 
+  annotate("text", x = -66, y = 39, label = paste0("# of Observations: ", nrow(curated))) +
+  theme_classic() +
+  labs(title = "Curated Literature",
+       x = "Longitude",
+       y = "Latitude") +
+  theme(legend.position = "none")
 if (!is.null(cfg$contour_name)) {
   curated_plot = curated_plot +
     geom_sf(data = mask_contour, color = "red")
@@ -90,11 +95,29 @@ psat = read.csv(file.path(cfg$data_path, "satellite/Skomal_PSAT_data.csv")) |>
   dplyr::mutate(hhmm = format(date_time, "%H:%M")) |>
   dplyr::mutate(Year = format(date_time, "%Y")) |>
   dplyr::arrange(shark_id, date_time) |>
+  dplyr::group_by(shark_id) |>
+  dplyr::mutate(tagging_point = row_number() == 1) |>
+  dplyr::ungroup() |>
   dplyr::select(-Date) |>
-  dplyr::mutate(basisOfRecord = "PSAT")
+  dplyr::mutate(basisOfRecord = "PSAT") |>
+  sf::st_crop(mask)
 psat$eventDate = as.Date(psat$date_time, format = "%m/%d/%y")
 psat$month = as.numeric(format(psat$eventDate, "%m"))
 psat$Year = as.numeric(format(psat$eventDate, "%Y"))
+
+psat_plot = ggplot() +
+  geom_coastline(bb = shark_box, color = "red") +
+  geom_sf(data = psat, aes(shape = tagging_point, color = shark_id, size = tagging_point)) + 
+  theme_void() 
+if (!is.null(cfg$contour_name)) {
+  psat_plot = psat_plot +
+    geom_sf(data = mask_contour, color = "red")
+  
+}
+png(filename = file.path(vpath, "figures", paste0(cfg$version, "_psat_occs.png")), 
+    bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
+psat_plot
+ok = dev.off()
 
 spot = read.csv(file.path(cfg$data_path, "satellite/Skomal_SPOT_data.csv")) |>
   st_as_sf(coords = c("Longitude", "Latitude"), crs = 4326) |>
@@ -104,11 +127,29 @@ spot = read.csv(file.path(cfg$data_path, "satellite/Skomal_SPOT_data.csv")) |>
   dplyr::mutate(hhmm = format(date_time, "%H:%M")) |>
   dplyr::mutate(Year = format(date_time, "%Y")) |>
   dplyr::arrange(shark_id, date_time) |>
+  dplyr::group_by(shark_id) |>
+  dplyr::mutate(tagging_point = row_number() == 1) |>
+  dplyr::ungroup() |>
   dplyr::select(-Date) |>
-  dplyr::mutate(basisOfRecord = "SPOT")
+  dplyr::mutate(basisOfRecord = "SPOT") |>
+  sf::st_crop(mask)
 spot$eventDate = as.Date(spot$date_time, format = "%m/%d/%y")
 spot$month = as.numeric(format(spot$eventDate, "%m"))
 spot$Year = as.numeric(format(spot$eventDate, "%Y"))
+
+spot_plot = ggplot() +
+  geom_coastline(bb = shark_box, color = "red") +
+  geom_sf(data = spot, aes(shape = tagging_point, color = shark_id, size = tagging_point)) + 
+  theme_void() 
+if (!is.null(cfg$contour_name)) {
+  spot_plot = spot_plot +
+    geom_sf(data = mask_contour, color = "red")
+  
+}
+png(filename = file.path(vpath, "figures", paste0(cfg$version, "_spot_occs.png")), 
+    bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
+spot_plot
+ok = dev.off()
 
 satellite = bind_rows(psat, spot)
 satellite_plot = ggplot() +
@@ -125,6 +166,32 @@ png(filename = file.path(vpath, "figures", paste0(cfg$version, "_satellite_occs.
 satellite_plot
 ok = dev.off()
 
+satellite_grid = satellite |>
+  sf::st_make_grid(n = c(15,15), square = FALSE)
+satellite_grid.sf = satellite_grid |>
+  sf::st_sf() |>
+  mutate(grid_id = 1:length(lengths(satellite_grid)))
+satellite_grid.sf$n_occs = lengths(sf::st_intersects(satellite_grid.sf, satellite))
+satellite_count = dplyr::filter(satellite_grid.sf, n_occs > 0)
+
+satellite_hexplot = ggplot() +
+  geom_sf(data = satellite_count, aes(fill = n_occs)) +
+  scale_fill_viridis_b(name = "Number of Presences", 
+                       breaks = seq(0, max(satellite_count$n_occs), 250)) +
+  geom_sf(data = satellite |> dplyr::filter(tagging_point == TRUE), shape = 25, fill = "black", color = "green", size = 4) +
+  geom_coastline(bb = shark_box, color = "red") +
+  labs(title = "Satellite Heatmap",
+       x = "Longitude",
+       y = "Latitude") +
+  guides(fill = guide_colorbar(
+    barheight = unit(3, "in")
+  )) +
+  theme_classic(base_size = 18)
+png(filename = file.path(vpath, "figures", paste0(cfg$version, "_satellite_hex.png")), 
+    bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
+satellite_hexplot
+ok = dev.off()
+
 inat_removed_cols = c("uuid", "observed_on_string", "url", "image_url", "sound_url", "tag_list", "captive_cultivated", "oauth_application_id", "private_place_guess", "private_latitude", "private_longitude", "geoprivacy", "taxon_geoprivacy", "coordinates_obscured", "species_guess")
 inat = read.csv(file.path(cfg$data_path, cfg$inat_file)) |>
   st_as_sf(coords = c("longitude", "latitude"), crs = 4326) |>
@@ -138,7 +205,12 @@ inat$Year = as.numeric(format(inat$eventDate, "%Y"))
 inat_plot = ggplot() +
   geom_coastline(bb = shark_box, color = "red") +
   geom_sf(data = inat, aes(shape = basisOfRecord), fill = "white", color = "black", size = 2.5) + 
-  theme_void() 
+  annotate("text", x = -66, y = 39, label = paste0("# of Observations: ", nrow(inat))) +
+  theme_classic() +
+  labs(title = "iNaturalist",
+       x = "Longitude",
+       y = "Latitude") +
+  theme(legend.position = "none") 
 if (!is.null(cfg$contour_name)) {
   inat_plot = inat_plot +
     geom_sf(data = mask_contour, color = "red")
@@ -177,10 +249,48 @@ wshark <- wshark |>
 obis = wshark |>
   dplyr::filter(basisOfRecord == "OBIS")
 
+obis_inst = match_institution(raw = file.path(cfg$data_path, "obis/carcharodon_carcharias-raw.csv"),
+                              thinned = obis,
+                              shark = TRUE)
+
+exp_thin_cite = obis_inst |>
+  dplyr::mutate(cleanedCitation = purrr::map_chr(bibliographicCitation, clean_and_format_citations)) |>
+  dplyr::select(datasetName, n, cleanedCitation) |>
+  dplyr::rename(c(Count = n,
+                  `Dataset Name` = datasetName,
+                  `Citation` = cleanedCitation)) |>
+  readr::write_csv(file.path(vpath, "obs_citations.csv"))
+
+obs_remark = c("Visual; shore", "Visual; plane", "Visual; boat")
+
+obis_inst = obis_inst |>
+  dplyr::mutate(figdatasetName = stringr::str_wrap(datasetName, width = 35)) |>
+  dplyr::filter(occurrenceRemarks %in% obs_remark) |>
+  dplyr::mutate(cleanedCitation = purrr::map_chr(bibliographicCitation, clean_and_format_citations)) |>
+  dplyr::rename(Count = n)
+
+obis_source = ggplot(data = obis_inst) +
+  geom_col(aes(x = occurrenceRemarks, y = Count, fill = figdatasetName)) +
+  scale_fill_viridis_d(name = "Dataset") +
+  labs(x = "Observation Method",
+       y = "Count") +
+  theme_classic() +
+  theme(legend.key.spacing.y = unit(10, "pt"))
+
+png(file.path(vpath, paste0(cfg$version, "obs_source.png")), 
+    bg = "white", width = 11, height = 8.5, units = "in", res = 300)
+plot(obis_source)
+ok = dev.off()
+
 obis_plot = ggplot() +
   geom_coastline(bb = shark_box, color = "red") +
   geom_sf(data = obis, aes(shape = basisOfRecord), fill = "white", color = "black", size = 2.5) + 
-  theme_void() 
+  annotate("text", x = -66, y = 39, label = paste0("# of Observations: ", nrow(obis))) +
+  theme_classic() +
+  labs(title = "Ocean Biodiversity Information System (OBIS)",
+       x = "Longitude",
+       y = "Latitude") +
+  theme(legend.position = "none")
 if (!is.null(cfg$contour_name)) {
   obis_plot = obis_plot +
     geom_sf(data = mask_contour, color = "red")
