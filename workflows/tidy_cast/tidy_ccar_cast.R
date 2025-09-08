@@ -191,7 +191,7 @@ rf_pred_plot = ggplot() +
                     name = cfg$graphics$ggtitle, 
                     limits = c(0, 1), 
                     n.breaks = 11) +
-  geom_coastline(bb = cofbb::get_bb("nefsc_carcharodon", form = "bb")) +
+  geom_coastline(bb = cofbb::get_bb("nefsc_carcharodon", form = "bb"), linewidth = 0.3, color = "white") +
   theme_void() 
 if(cfg$graphics$add_pres_pts == TRUE) {
   rf_pred_plot = rf_pred_plot +
@@ -209,7 +209,7 @@ if(cfg$graphics$add_pres_pts == TRUE) {
 }
 if (cfg$graphics$plot_contour) {
   rf_pred_plot = rf_pred_plot +
-    geom_sf(data = mask_contour, color = "white")
+    geom_sf(data = mask_contour, color = "white", linewidth = 0.3)
 }
 
 png(filename = file.path(vpath, sprintf("%s_rf_prediction.png", cfg$version)), 
@@ -230,7 +230,7 @@ bt_pred_plot = ggplot() +
                     name = cfg$graphics$ggtitle, 
                     limits = c(0, 1), 
                     n.breaks = 11) +
-  geom_coastline(bb = cofbb::get_bb("nefsc_carcharodon", form = "bb")) +
+  geom_coastline(bb = cofbb::get_bb("nefsc_carcharodon", form = "bb"), linewidth = 0.3, color = "white") +
   theme_void() 
 if(cfg$graphics$add_pres_pts == TRUE) {
   rf_pred_plot = rf_pred_plot +
@@ -248,7 +248,7 @@ if(cfg$graphics$add_pres_pts == TRUE) {
 }
 if (cfg$graphics$plot_contour) {
   bt_pred_plot = bt_pred_plot +
-    geom_sf(data = mask_contour, color = "white")
+    geom_sf(data = mask_contour, linewidth = 0.3, color = "white")
 }
 png(filename = file.path(vpath, sprintf("%s_bt_prediction.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
@@ -268,7 +268,7 @@ maxent_pred_plot = ggplot() +
                     name = cfg$graphics$ggtitle, 
                     limits = c(0, 1), 
                     n.breaks = 11) +
-  geom_coastline(bb = cofbb::get_bb("nefsc_carcharodon", form = "bb")) +
+  geom_coastline(bb = cofbb::get_bb("nefsc_carcharodon", form = "bb"), linewidth = 0.3, color = "white") +
   theme_void() 
 if(cfg$graphics$add_pres_pts == TRUE) {
   rf_pred_plot = rf_pred_plot +
@@ -286,7 +286,7 @@ if(cfg$graphics$add_pres_pts == TRUE) {
 }
 if (cfg$graphics$plot_contour) {
   maxent_pred_plot = maxent_pred_plot +
-    geom_sf(data = mask_contour, color = "white")
+    geom_sf(data = mask_contour, linewidth = 0.3, color = "white")
 }
 png(filename = file.path(vpath, sprintf("%s_maxent_prediction.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
@@ -306,7 +306,7 @@ glm_pred_plot = ggplot() +
                     name = cfg$graphics$ggtitle, 
                     limits = c(0, 1), 
                     n.breaks = 11) +
-  geom_coastline(bb = cofbb::get_bb("nefsc_carcharodon", form = "bb")) +
+  geom_coastline(bb = cofbb::get_bb("nefsc_carcharodon", form = "bb"), linewidth = 0.3, color = "white") +
   theme_void() 
 if(cfg$graphics$add_pres_pts == TRUE) {
   rf_pred_plot = rf_pred_plot +
@@ -324,7 +324,7 @@ if(cfg$graphics$add_pres_pts == TRUE) {
 }
 if (cfg$graphics$plot_contour) {
   glm_pred_plot = glm_pred_plot +
-    geom_sf(data = mask_contour, color = "white")
+    geom_sf(data = mask_contour, linewidth = 0.3, color = "white")
 }
 png(filename = file.path(vpath, sprintf("%s_glm_prediction.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
@@ -344,7 +344,7 @@ gam_pred_plot = ggplot() +
                     name = cfg$graphics$ggtitle, 
                     limits = c(0, 1), 
                     n.breaks = 11) +
-  geom_coastline(bb = cofbb::get_bb("nefsc_carcharodon", form = "bb")) +
+  geom_coastline(bb = cofbb::get_bb("nefsc_carcharodon", form = "bb"), linewidth = 0.3, color = "white") +
   theme_void() 
 if(cfg$graphics$add_pres_pts == TRUE) {
   rf_pred_plot = rf_pred_plot +
@@ -362,7 +362,7 @@ if(cfg$graphics$add_pres_pts == TRUE) {
 }
 if (cfg$graphics$plot_contour) {
   gam_pred_plot = gam_pred_plot +
-    geom_sf(data = mask_contour, color = "white")
+    geom_sf(data = mask_contour, linewidth = 0.3, color = "white")
 }
 png(filename = file.path(vpath, sprintf("%s_gam_prediction.png", cfg$version)), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
