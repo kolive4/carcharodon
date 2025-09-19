@@ -32,7 +32,7 @@ args = argparser::arg_parser("tidymodels/tidysdm modeling and forecasting for wh
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_workflow/t11.10096.00.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_workflow/t11.10106.00.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -165,7 +165,8 @@ ws_models <-
   # )
   workflowsets::update_workflow_model("simple_gam",
                                       spec = sdm_spec_gam(),
-                                      formula = tidysdm::gam_formula(rec))
+                                      formula = tidysdm::gam_formula(rec)
+)
 
 m = rlang::syms(cfg$metrics)
 ws_metrics = eval(rlang::expr(yardstick::metric_set(!!!m)))
@@ -212,6 +213,11 @@ p_rf = predict(final_rf_workflow, rsample::testing(split), type = "prob") |>
                 class = testing(split)$class |>
                   factor(levels = c("presence", "background"))) |>
   readr::write_csv(file = file.path(vpath, paste0(cfg$version, "_rf_pred.csv")))
+
+perdev_ex_rf = perdev_ex(probs = p_rf$.pred_presence, truth = p_rf$class) |>
+  as_tibble() |>
+  set_names("% dev. explained") |>
+  readr::write_csv(file.path(vpath, paste0(cfg$version, "_rf_perdevex.csv")))
 
 cm_rf = yardstick::conf_mat(p_rf, truth = class, estimate = .pred_class) |>
   write_RDS(file = file.path(vpath, paste0(cfg$version, "_rf_conf_mat.rds")))
@@ -267,6 +273,11 @@ p_bt = predict(final_bt_workflow, rsample::testing(split), type = "prob") |>
                 class = testing(split)$class |>
                   factor(levels = c("presence", "background"))) |>
   readr::write_csv(file = file.path(vpath, paste0(cfg$version, "_bt_pred.csv")))
+
+perdev_ex_bt = perdev_ex(probs = p_bt$.pred_presence, truth = p_bt$class) |>
+  as_tibble() |>
+  set_names("% dev. explained") |>
+  readr::write_csv(file.path(vpath, paste0(cfg$version, "_bt_perdevex.csv")))
 
 cm_bt = yardstick::conf_mat(p_bt, truth = class, estimate = .pred_class) |>
   write_RDS(file = file.path(vpath, paste0(cfg$version, "_bt_conf_mat.rds")))
@@ -325,6 +336,11 @@ p_maxent = predict(final_maxent_workflow, rsample::testing(split), type = "prob"
                   factor(levels = c("presence", "background"))) |>
   readr::write_csv(file = file.path(vpath, paste0(cfg$version, "_maxent_pred.csv")))
 
+perdev_ex_maxent = perdev_ex(probs = p_maxent$.pred_presence, truth = p_maxent$class) |>
+  as_tibble() |>
+  set_names("% dev. explained") |>
+  readr::write_csv(file.path(vpath, paste0(cfg$version, "_maxent_perdevex.csv")))
+
 cm_maxent = yardstick::conf_mat(p_maxent, truth = class, estimate = .pred_class) |>
   write_RDS(file = file.path(vpath, paste0(cfg$version, "_maxnet_conf_mat.rds")))
 autoplot(cm_maxent, type = "heatmap")
@@ -381,6 +397,11 @@ p_gam = predict(final_gam_workflow, rsample::testing(split), type = "prob") |>
                   factor(levels = c("presence", "background"))) |>
   readr::write_csv(file = file.path(vpath, paste0(cfg$version, "_gam_pred.csv")))
 
+perdev_ex_gam = perdev_ex(probs = p_gam$.pred_presence, truth = p_gam$class) |>
+  as_tibble() |>
+  set_names("% dev. explained") |>
+  readr::write_csv(file.path(vpath, paste0(cfg$version, "_gam_perdevex.csv")))
+
 cm_gam = yardstick::conf_mat(p_gam, truth = class, estimate = .pred_class) |>
   write_RDS(file = file.path(vpath, paste0(cfg$version, "_maxnet_conf_mat.rds")))
 autoplot(cm_gam, type = "heatmap")
@@ -436,6 +457,11 @@ p_glm = predict(final_glm_workflow, rsample::testing(split), type = "prob") |>
                 class = testing(split)$class |>
                   factor(levels = c("presence", "background"))) |>
   readr::write_csv(file = file.path(vpath, paste0(cfg$version, "_glm_pred.csv")))
+
+perdev_ex_glm = perdev_ex(probs = p_glm$.pred_presence, truth = p_glm$class) |>
+  as_tibble() |>
+  set_names("% dev. explained") |>
+  readr::write_csv(file.path(vpath, paste0(cfg$version, "_glm_perdevex.csv")))
 
 cm_glm = yardstick::conf_mat(p_glm, truth = class, estimate = .pred_class) |>
   write_RDS(file = file.path(vpath, paste0(cfg$version, "_maxnet_conf_mat.rds")))

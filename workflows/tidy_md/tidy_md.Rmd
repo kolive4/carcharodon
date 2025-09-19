@@ -15,7 +15,7 @@ source("/mnt/ecocast/projects/koliveira/subprojects/carcharodon/setup.R")
 cfg = charlier::read_config(params$cfg_file)
 vpars = charlier::parse_version(cfg$version)
 if (FALSE) {
-  cfg = charlier::read_config("/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_md/m21.10076.yaml")
+  cfg = charlier::read_config("/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_md/m21.10096.yaml")
 }
 
 ```
@@ -121,6 +121,18 @@ embed_fig(list(glm_now, glm_fore), labels = c("Nowcast", "Forecast: RCP 8.5 2075
 ## Metrics
 
 ```{r metrics, echo=FALSE, message=FALSE}
+model_types = c("rf", "bt", "maxent", "gam", "glm")
+preds = setNames(lapply(model_types, function(type){
+  readr::read_csv(file.path(cfg$root_path, "tidy_workflow/versions", parsed_wf_v["major"], parsed_wf_v["minor"], cfg$t_wf_version, paste0(cfg$t_wf_version, "_", type, "_pred.csv")), show_col_types = FALSE)
+}), model_types)
+
+perdevex = lapply(preds, function(df) {
+  perdev_ex(probs = df$.pred_presence, truth = df$class)
+})
+
+pdevs_tbl = enframe(perdevex, name = "model_type", value = "percent_deviance_explained") |>
+  mutate(percent_deviance_explained = as.numeric(percent_deviance_explained))
+
 rf_metrics = readr::read_csv(file.path(cfg$root_path, "tidy_workflow/versions", parsed_wf_v["major"], parsed_wf_v["minor"], cfg$t_wf_version, paste0(cfg$t_wf_version, "_rf_final_metrics.csv")), show_col_types = FALSE) |> 
   dplyr::select(c(".metric", ".estimate")) |>
   tidyr::pivot_wider(names_from = .metric,
@@ -147,7 +159,8 @@ glm_metrics = readr::read_csv(file.path(cfg$root_path, "tidy_workflow/versions",
                      values_from = .estimate)
 
 all_metrics = dplyr::bind_rows(list(rf = rf_metrics, bt = bt_metrics, maxnet = maxnet_metrics, gam = gam_metrics, glm = glm_metrics),
-                               .id = "model_type")
+                               .id = "model_type") |>
+  left_join(pdevs_tbl, by = "model_type")
 knitr::kable(all_metrics, caption = "Metrics by model type")
 ```
 

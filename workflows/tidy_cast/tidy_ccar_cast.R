@@ -30,7 +30,7 @@ args = argparser::arg_parser("tidymodels/tidysdm casting for white shark habitat
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_cast/t21.110360.08.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_cast/t21.100960.08.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 

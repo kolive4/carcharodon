@@ -20,7 +20,7 @@ args = argparser::arg_parser("a tool to cast monthly predictions into one figure
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_difference/d01.00030.01_12.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_difference/d01.00000.01_12.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -100,41 +100,41 @@ r = dplyr::group_by(tib, model_name) |>
       rlang::set_names("b")
     d = b - a
     names(d) = "dif"
-    z = tibble(model_name = tbl$model_name[1], version = tbl$version[1], a = list(a), b = list(b), dif = list(d)) 
+    z = tibble(model_name = tbl$model_name[1], a_version = tbl$version[1], b_version = tbl$version[length(tbl$version)], a = list(a), b = list(b), dif = list(d)) 
     return(z)
   }, .keep = TRUE) |>
   dplyr::bind_rows() |>
   readr::write_rds(file = file.path(vpath, paste0(cfg$version, "_abdif.rds")))
 
-z = rowwise(r) |>
-  group_map(
-    function(row, key){
-      
-      lapply(c("a", "b", "dif"),
-             function(what){
-               as_tibble(row$a[[1]]) |>
-                 mutate(model_name = row$model_name,
-                        version = row$version,
-                        what = what,
-                        .before = 1) |>
-                 set_names(c("model_name", "version", "what", "x", "y", "month", "value"))
-             }) |>
-        dplyr::bind_rows()
-    }) |> 
-  bind_rows()
+# z = rowwise(r) |>
+#   group_map(
+#     function(row, key){
+#       
+#       lapply(c("a", "b", "dif"),
+#              function(what){
+#                as_tibble(row$a[[1]]) |>
+#                  mutate(model_name = row$model_name,
+#                         version = row$version,
+#                         what = what,
+#                         .before = 1) |>
+#                  set_names(c("model_name", "a_version", "b_version", "what", "x", "y", "month", "value"))
+#              }) |>
+#         dplyr::bind_rows()
+#     }) |> 
+#   bind_rows()
 
-x = filter(z,
-           model_name == "bt") 
-ggplot(data = x,
-       mapping = aes(x=x, y=y))  + 
-  geom_raster(mapping = aes(fill = value)) +
-  facet_wrap(month ~ what, ncol = 3) + 
-  theme_void() +
-  coord_equal() + 
-  theme(
-    strip.background = element_blank(),
-    strip.text.x = element_blank()
-  )
+# x = filter(z,
+#            model_name == "bt") 
+# ggplot(data = x,
+#        mapping = aes(x=x, y=y))  + 
+#   geom_raster(mapping = aes(fill = value)) +
+#   facet_wrap(month ~ what, ncol = 3) + 
+#   theme_void() +
+#   coord_equal() + 
+#   theme(
+#     strip.background = element_blank(),
+#     strip.text.x = element_blank()
+#   )
 
 dif_figs = dplyr::rowwise(r) |>
   dplyr::group_map(function(row, key){
@@ -162,7 +162,7 @@ dif_figs = dplyr::rowwise(r) |>
     a_plot = ggplot() +
       geom_stars(data = row$a[[1]]) +
       facet_grid(cols = vars(month)) +
-      scale_fill_fermenter(name = expression(" Habitat Suitability"), 
+      scale_fill_fermenter(name = expression("Habitat Suitability"), 
                            palette = "BuGn",
                            limits = c(0, 1),
                            breaks = seq(0, 1, 0.15),
@@ -171,17 +171,19 @@ dif_figs = dplyr::rowwise(r) |>
                            na.value = "grey75") +
       geom_sf(data = coast) +
       labs(x = "",
-           y = "") +
-      theme_void() +
+           y = row$a_version[[1]]) +
+      theme_minimal() +
       theme(axis.text.x = element_blank(),
+            axis.ticks = element_blank(),
             axis.text.y = element_blank(),
+            panel.grid = element_blank(),
             strip.background = element_blank(),
             strip.text.x = element_blank())
     
     b_plot = ggplot() +
       geom_stars(data = row$b[[1]]) +
       facet_grid(cols = vars(month), switch = "y") +
-      scale_fill_fermenter(name = expression(" Habitat Suitability"), 
+      scale_fill_fermenter(name = expression("Habitat Suitability"), 
                            palette = "YlOrBr",
                            limits = c(0, 1),
                            breaks = seq(0, 1, 0.15),
@@ -190,23 +192,31 @@ dif_figs = dplyr::rowwise(r) |>
                            na.value = "grey75") +
       geom_sf(data = coast) +
       labs(x = "",
-           y = "") +
-      theme_void() +
+           y = row$b_version[[1]]) +
+      theme_minimal() +
       theme(axis.text.x = element_blank(),
             axis.text.y = element_blank(),
+            axis.ticks = element_blank(),
+            panel.grid = element_blank(),
             strip.background = element_rect(colour = "black", fill = "white"))
     
     sxs_plot = b_plot / a_plot / dif_plot 
     #+ plot_layout(guides = "collect") & theme(legend.position = "bottom")
-    return(sxs_plot)
+    # return(sxs_plot)
+    ggsave(filename = paste0(row$model_name, "_abdif.png"), plot = sxs_plot, 
+           path = file.path(vpath, "figures"), create.dir = TRUE,
+           width = 18, height = 5, units = "in", dpi = 300, bg = "white")
+    
   }, .keep = TRUE)
 
 
 # **** figure out a way to lapply through the lists of figures and do this
-png(file.path(vpath, paste0(cfg$version, "_rf_abdif.png")), 
-    bg = "white", width = 11, height = 8.5, units = "in", res = 300)
-plot(dif_figs[[5]])
-ok = dev.off()
+# png(file.path(vpath, paste0(cfg$version, "_rf_abdif.png")), 
+#     bg = "white", width = 18, height = 5, units = "in", res = 300)
+# plot(dif_figs[[5]])
+# ok = dev.off()
+
+
 
 
 
