@@ -113,53 +113,53 @@ load_tidy_seal = function(species = c("harbor", "gray")[1],
   if (species == "gray") {
     if (bg == "all") {
       if (scenario == "PRESENT") {
-        s_path = file.path(path, "t12/000460")
+        s_path = file.path(path, "t12/000860")
       } else if (scenario == "RCP45" && year == "2055") {
-        s_path = file.path(path, "t12/000461")
+        s_path = file.path(path, "t12/000861")
       } else if (scenario == "RCP45" && year == "2075") {
-        s_path = file.path(path, "t12/000462")
+        s_path = file.path(path, "t12/000862")
       } else if (scenario == "RCP85" && year == "2055") {
-        s_path = file.path(path, "t12/000463")
+        s_path = file.path(path, "t12/000863")
       } else if (scenario == "RCP85" && year == "2075") {
-        s_path = file.path(path, "t12/000464")
+        s_path = file.path(path, "t12/000864")
       }
     } else if (bg == "one_to_two") {
       if (scenario == "PRESENT") {
-        s_path = file.path(path, "t22/000460")
+        s_path = file.path(path, "t22/000860")
       } else if (scenario == "RCP45" && year == "2055") {
-        s_path = file.path(path, "t22/000461")
+        s_path = file.path(path, "t22/000861")
       } else if (scenario == "RCP45" && year == "2075") {
-        s_path = file.path(path, "t22/000462")
+        s_path = file.path(path, "t22/000862")
       } else if (scenario == "RCP85" && year == "2055") {
-        s_path = file.path(path, "t22/000463")
+        s_path = file.path(path, "t22/000863")
       } else if (scenario == "RCP85" && year == "2075") {
-        s_path = file.path(path, "t22/000464")
+        s_path = file.path(path, "t22/000864")
       }
     }
   } else if (species == "harbor") {
     if (bg == "all") {
       if (scenario == "PRESENT") {
-        s_path = file.path(path, "t13/000460")
+        s_path = file.path(path, "t13/000860")
       } else if (scenario == "RCP45" && year == "2055") {
-        s_path = file.path(path, "t13/000461")
+        s_path = file.path(path, "t13/000861")
       } else if (scenario == "RCP45" && year == "2075") {
-        s_path = file.path(path, "t13/000462")
+        s_path = file.path(path, "t13/000862")
       } else if (scenario == "RCP85" && year == "2055") {
-        s_path = file.path(path, "t13/000463")
+        s_path = file.path(path, "t13/000863")
       } else if (scenario == "RCP85" && year == "2075") {
-        s_path = file.path(path, "t13/000464")
+        s_path = file.path(path, "t13/000864")
       }
     } else if (bg == "one_to_two") {
       if (scenario == "PRESENT") {
-        s_path = file.path(path, "t23/000460")
+        s_path = file.path(path, "t23/000860")
       } else if (scenario == "RCP45" && year == "2055") {
-        s_path = file.path(path, "t23/000461")
+        s_path = file.path(path, "t23/000861")
       } else if (scenario == "RCP45" && year == "2075") {
-        s_path = file.path(path, "t23/000462")
+        s_path = file.path(path, "t23/000862")
       } else if (scenario == "RCP85" && year == "2055") {
-        s_path = file.path(path, "t23/000463")
+        s_path = file.path(path, "t23/000863")
       } else if (scenario == "RCP85" && year == "2075") {
-        s_path = file.path(path, "t23/000464")
+        s_path = file.path(path, "t23/000864")
       }
     }
   }

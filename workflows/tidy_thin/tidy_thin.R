@@ -82,6 +82,25 @@ obs_figures = group_by(obs_thinned, basisOfRecord) |>
            bg = "transparent", width = 11, height = 8.5, units = "in", dpi = 300)
   })
 
+obs_sat = obs_thinned |>
+  dplyr::filter(basisOfRecord %in% c("PSAT", "SPOT"))
+
+sat_metadata = readr::read_csv(file.path(cfg$root_path, cfg$data_path, "satellite/Skomal_SAT_metadata_edited.csv"), show_col_types = F) |>
+  dplyr::rename("shark.id" = "Shark ID") |>
+  dplyr::mutate(date_tagged = as.POSIXct(`Date Tagged`, format = "%m/%d/%y"))
+
+sat_summary = sat_metadata |>
+  dplyr::filter(shark.id %in% unique(obs_sat$shark_id)) |>
+  dplyr::group_by(Location) |>
+  dplyr::summarise(
+    MK10_PAT = sum(!is.na(`MK10-PAT`)),
+    MK10_AF = sum(!is.na(`MK10-AF`)),
+    Mini_PAT = sum(!is.na(MiniPat)),
+    SPOT = sum(!is.na(`SPOT PTT`)),
+    .groups = "drop"
+  ) |>
+  readr::write_csv(file.path(vpath, "sat_summary.csv"))
+
 obs_obis = thin_obs_bg |>
   dplyr::filter(basisOfRecord == "OBIS")
 

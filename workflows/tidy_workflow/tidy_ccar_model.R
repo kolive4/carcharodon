@@ -120,8 +120,8 @@ model_rf = parsnip::rand_forest(
   mode = "classification",
   engine = "ranger",
   mtry = tune(),
-  trees = NULL,
-  min_n = NULL
+  trees = tune(),
+  min_n = tune()
 ) 
 
 model_bt = parsnip::boost_tree(
@@ -129,11 +129,11 @@ model_bt = parsnip::boost_tree(
   engine = "xgboost",
   mtry = tune(),
   trees = tune(),
-  min_n = NULL,
+  min_n = tune(),
   tree_depth = tune(),
   learn_rate = tune(),
   loss_reduction = tune(),
-  sample_size = NULL,
+  sample_size = tune(),
   stop_iter = tune()
 )
 

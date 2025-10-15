@@ -18,6 +18,7 @@ suppressPackageStartupMessages({
   library(twinkle)
   library(purrr)
   library(ggplot2)
+  library(patchwork)
 })
 
 args = argparser::arg_parser("assembling observation and background data",
@@ -69,9 +70,10 @@ curated$Year = as.numeric(curated$Year)
 
 curated_plot = ggplot() +
   geom_coastline(bb = shark_box, color = "red") +
-  geom_sf(data = curated, aes(shape = basisOfRecord), fill = "white", color = "black", size = 2.5) + 
-  annotate("text", x = -66, y = 39, label = paste0("# of Observations: ", nrow(curated))) +
-  theme_classic() +
+  geom_sf(data = curated |>
+            st_crop(mask), aes(shape = basisOfRecord), fill = "white", color = "black", size = 2.5) + 
+  annotate("text", x = -68, y = 39, label = paste0("# of Observations: ", nrow(curated))) +
+  theme_classic(base_size = 18) +
   labs(title = "Curated Literature",
        x = "Longitude",
        y = "Latitude") +
@@ -132,7 +134,8 @@ spot = read.csv(file.path(cfg$data_path, "satellite/Skomal_SPOT_data.csv")) |>
   dplyr::ungroup() |>
   dplyr::select(-Date) |>
   dplyr::mutate(basisOfRecord = "SPOT") |>
-  sf::st_crop(mask)
+  sf::st_crop(mask) |>
+  dplyr::filter(Location.Quality != "Z")
 spot$eventDate = as.Date(spot$date_time, format = "%m/%d/%y")
 spot$month = as.numeric(format(spot$eventDate, "%m"))
 spot$Year = as.numeric(format(spot$eventDate, "%Y"))
@@ -177,15 +180,13 @@ satellite_count = dplyr::filter(satellite_grid.sf, n_occs > 0)
 satellite_hexplot = ggplot() +
   geom_sf(data = satellite_count, aes(fill = n_occs)) +
   scale_fill_viridis_b(name = "Number of Presences", 
-                       breaks = seq(0, max(satellite_count$n_occs), 250)) +
+                       breaks = seq(0, max(satellite_count$n_occs), 250),
+                       labels = c("0", "", "500", "", "1000", "", "1500", "", "2000", "", "2500")) +
   geom_sf(data = satellite |> dplyr::filter(tagging_point == TRUE), shape = 25, fill = "black", color = "green", size = 4) +
   geom_coastline(bb = shark_box, color = "red") +
   labs(title = "Satellite Heatmap",
        x = "Longitude",
        y = "Latitude") +
-  guides(fill = guide_colorbar(
-    barheight = unit(3, "in")
-  )) +
   theme_classic(base_size = 18)
 png(filename = file.path(vpath, "figures", paste0(cfg$version, "_satellite_hex.png")), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
@@ -204,9 +205,10 @@ inat$Year = as.numeric(format(inat$eventDate, "%Y"))
 
 inat_plot = ggplot() +
   geom_coastline(bb = shark_box, color = "red") +
-  geom_sf(data = inat, aes(shape = basisOfRecord), fill = "white", color = "black", size = 2.5) + 
-  annotate("text", x = -66, y = 39, label = paste0("# of Observations: ", nrow(inat))) +
-  theme_classic() +
+  geom_sf(data = inat |>
+            st_crop(mask), aes(shape = basisOfRecord), fill = "white", color = "black", size = 2.5) + 
+  annotate("text", x = -68, y = 39, label = paste0("# of Observations: ", nrow(inat))) +
+  theme_classic(base_size = 18) +
   labs(title = "iNaturalist",
        x = "Longitude",
        y = "Latitude") +
@@ -284,9 +286,10 @@ ok = dev.off()
 
 obis_plot = ggplot() +
   geom_coastline(bb = shark_box, color = "red") +
-  geom_sf(data = obis, aes(shape = basisOfRecord), fill = "white", color = "black", size = 2.5) + 
-  annotate("text", x = -66, y = 39, label = paste0("# of Observations: ", nrow(obis))) +
-  theme_classic() +
+  geom_sf(data = obis|>
+            st_crop(mask), aes(shape = basisOfRecord), fill = "white", color = "black", size = 2.5) + 
+  annotate("text", x = -68, y = 39, label = paste0("# of Observations: ", nrow(obis))) +
+  theme_classic(base_size = 18) +
   labs(title = "Ocean Biodiversity Information System (OBIS)",
        x = "Longitude",
        y = "Latitude") +
@@ -357,6 +360,19 @@ non_sat
 png(filename = file.path(vpath, "figures", paste0(cfg$version, "_non_sat_occs.png")), 
     bg = "transparent", width = 11, height = 8.5, units = "in", res = 300)
 non_sat
+ok = dev.off()
+
+manuscript_occs = (obis_plot / inat_plot / curated_plot / satellite_hexplot & labs(x = NULL, y = NULL)) + 
+  plot_layout(widths = 1, 
+              guides = "keep") +
+  plot_annotation(tag_levels = "a", tag_suffix = ")") &
+  # labs(x = "Longitude",
+  #      y = "Latitude") &
+  # plot_layout(guides = "collect") &
+  theme(plot.tag.position = c(0.03, 0.98))
+png(filename = file.path(vpath, "figures", paste0(cfg$version, "_manuscript_occs.png")), 
+    bg = "transparent", width = 10, height = 22, units = "in", res = 300)
+manuscript_occs
 ok = dev.off()
   
 
