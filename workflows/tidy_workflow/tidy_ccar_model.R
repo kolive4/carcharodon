@@ -142,7 +142,10 @@ model_glm = parsnip::logistic_reg(
   mode = "classification"
 )
 
-model_gam = tidysdm::sdm_spec_gam(adjust_deg_free = 4)
+model_gam = tidysdm::sdm_spec_gam(
+  select_features = TRUE,
+  adjust_deg_free = 4
+)
 
 ws_models <-
   workflow_set(
