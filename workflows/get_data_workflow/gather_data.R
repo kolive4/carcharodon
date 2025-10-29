@@ -19,6 +19,7 @@ suppressPackageStartupMessages({
   library(purrr)
   library(ggplot2)
   library(patchwork)
+  library(ggnewscale)
 })
 
 args = argparser::arg_parser("assembling observation and background data",
@@ -52,6 +53,7 @@ shark_box = cofbb::get_bb(cfg$bbox_name, form = "sf")
 
 mask = stars::read_stars(file.path(cfg$data_path, cfg$mask_name)) |>
   rlang::set_names("mask")
+mask$mask = as.factor(mask$mask)
 
 if (!is.null(cfg$contour_name)) {
   mask_contour = sf::read_sf(file.path(cfg$data_path, cfg$contour_name))
@@ -69,6 +71,8 @@ curated = read.csv(file.path(cfg$data_path, "historical/curated_literature2.csv"
 curated$Year = as.numeric(curated$Year)
 
 curated_plot = ggplot() +
+  geom_stars(data = mask) +
+  scale_fill_manual(values = c("1" = "white", "0" = "gray")) +
   geom_coastline(bb = shark_box, color = "red") +
   geom_sf(data = curated |>
             st_crop(mask), aes(shape = basisOfRecord), fill = "white", color = "black", size = 2.5) + 
@@ -80,7 +84,7 @@ curated_plot = ggplot() +
   theme(legend.position = "none")
 if (!is.null(cfg$contour_name)) {
   curated_plot = curated_plot +
-    geom_sf(data = mask_contour, color = "red")
+    geom_sf(data = mask_contour, color = "red") 
   
 }
 curated_plot
@@ -108,6 +112,8 @@ psat$month = as.numeric(format(psat$eventDate, "%m"))
 psat$Year = as.numeric(format(psat$eventDate, "%Y"))
 
 psat_plot = ggplot() +
+  geom_stars(data = mask) +
+  scale_fill_manual(values = c("1" = "white", "0" = "gray")) +
   geom_coastline(bb = shark_box, color = "red") +
   geom_sf(data = psat, aes(shape = tagging_point, color = shark_id, size = tagging_point)) + 
   theme_void() 
@@ -141,6 +147,8 @@ spot$month = as.numeric(format(spot$eventDate, "%m"))
 spot$Year = as.numeric(format(spot$eventDate, "%Y"))
 
 spot_plot = ggplot() +
+  geom_stars(data = mask) +
+  scale_fill_manual(values = c("1" = "white", "0" = "gray")) +
   geom_coastline(bb = shark_box, color = "red") +
   geom_sf(data = spot, aes(shape = tagging_point, color = shark_id, size = tagging_point)) + 
   theme_void() 
@@ -156,6 +164,8 @@ ok = dev.off()
 
 satellite = bind_rows(psat, spot)
 satellite_plot = ggplot() +
+  geom_stars(data = mask) +
+  scale_fill_manual(values = c("1" = "white", "0" = "gray")) +
   geom_coastline(bb = shark_box, color = "red") +
   geom_sf(data = satellite, aes(shape = basisOfRecord, color = shark_id), size = 2.5) + 
   theme_void() 
@@ -178,6 +188,9 @@ satellite_grid.sf$n_occs = lengths(sf::st_intersects(satellite_grid.sf, satellit
 satellite_count = dplyr::filter(satellite_grid.sf, n_occs > 0)
 
 satellite_hexplot = ggplot() +
+  geom_stars(data = mask, show.legend = FALSE) +
+  scale_fill_manual(values = c("1" = "white", "0" = "gray")) +
+  ggnewscale::new_scale_fill() +
   geom_sf(data = satellite_count, aes(fill = n_occs)) +
   scale_fill_viridis_b(name = "Number of Presences", 
                        breaks = seq(0, max(satellite_count$n_occs), 250),
@@ -204,6 +217,8 @@ inat$month = as.numeric(format(inat$eventDate, "%m"))
 inat$Year = as.numeric(format(inat$eventDate, "%Y"))
 
 inat_plot = ggplot() +
+  geom_stars(data = mask, show.legend = FALSE) +
+  scale_fill_manual(values = c("1" = "white", "0" = "gray")) +
   geom_coastline(bb = shark_box, color = "red") +
   geom_sf(data = inat |>
             st_crop(mask), aes(shape = basisOfRecord), fill = "white", color = "black", size = 2.5) + 
@@ -285,6 +300,8 @@ plot(obis_source)
 ok = dev.off()
 
 obis_plot = ggplot() +
+  geom_stars(data = mask, show.legend = FALSE) +
+  scale_fill_manual(values = c("1" = "white", "0" = "gray")) +
   geom_coastline(bb = shark_box, color = "red") +
   geom_sf(data = obis|>
             st_crop(mask), aes(shape = basisOfRecord), fill = "white", color = "black", size = 2.5) + 
@@ -329,6 +346,8 @@ shark_yr_hist = ggplot2::ggplot() +
 shark_yr_hist
 
 occs = ggplot() +
+  geom_stars(data = mask, show.legend = FALSE) +
+  scale_fill_manual(values = c("1" = "white", "0" = "gray")) +
   geom_coastline(bb = shark_box) +
   geom_sf(data = wshark, aes(shape = basisOfRecord), fill = "white", color = "black", size = 2.5) + 
   geom_coastline(bb = cofbb::get_bb("nefsc_carcharodon", form = "bb"), color = "red") +
@@ -346,6 +365,8 @@ ok = dev.off()
 
 non_sat_BOR = c("OBIS", "curated", "iNaturalist")
 non_sat = ggplot() +
+  geom_stars(data = mask, show.legend = FALSE) +
+  scale_fill_manual(values = c("1" = "white", "0" = "gray")) +
   geom_coastline(bb = shark_box) +
   geom_sf(data = dplyr::filter(wshark, basisOfRecord %in% non_sat_BOR), 
           aes(shape = basisOfRecord), fill = "white", color = "black", size = 2.5) + 
