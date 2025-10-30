@@ -327,6 +327,8 @@ wshark = wshark |>
   dplyr::filter(wshark.mask$mask == 1) |>
   sf::write_sf(file.path(cfg$data_path, "obis", "shark_occs.gpkg"))
 
+# z = read_sf(file.path(cfg$data_path, "obis", "shark_occs.gpkg"))
+
 shark_mon_hist = ggplot2::ggplot() +
   ggplot2::geom_bar(data = wshark,
            ggplot2::aes(x = as.factor(month), fill = basisOfRecord)) +
@@ -533,6 +535,8 @@ wshark = wshark |>
                    shark_hseal
                    ) |>
   write_sf(file.path(cfg$data_path, "covars", "brickman_covars_shark_occs.gpkg"))
+
+z = read_sf(file.path(cfg$data_path, "covars", "brickman_covars_shark_occs.gpkg"))
   
 # option to the above would be to thin all of the observation data regardless of observation type
 # wshark |>

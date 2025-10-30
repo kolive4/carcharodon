@@ -32,7 +32,7 @@ args = argparser::arg_parser("tidymodels/tidysdm modeling and forecasting for wh
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_workflow/t11.10106.00.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_workflow/t11.10096.20.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 

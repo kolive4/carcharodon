@@ -1,5 +1,5 @@
 yamls = list.files(path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_cast", 
-           pattern = "^t[1-2]1\\.10116[0-4]\\.\\d+\\.yaml$",
+           pattern = "^t[1-2]1\\.101[2,3]6[0-4]\\.\\d+\\.yaml$",
            #pattern = glob2rx("t[1-2][2-3].0003[0-5][0-4].*.yaml"),
            full.names = TRUE)
   

@@ -20,7 +20,7 @@ args = argparser::arg_parser("a tool to cast monthly predictions into one figure
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_difference/d01.99120.01_12.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_difference/d01.19000.01_12.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -106,35 +106,6 @@ r = dplyr::group_by(tib, model_name) |>
   dplyr::bind_rows() |>
   readr::write_rds(file = file.path(vpath, paste0(cfg$version, "_abdif.rds")))
 
-# z = rowwise(r) |>
-#   group_map(
-#     function(row, key){
-#       
-#       lapply(c("a", "b", "dif"),
-#              function(what){
-#                as_tibble(row$a[[1]]) |>
-#                  mutate(model_name = row$model_name,
-#                         version = row$version,
-#                         what = what,
-#                         .before = 1) |>
-#                  set_names(c("model_name", "a_version", "b_version", "what", "x", "y", "month", "value"))
-#              }) |>
-#         dplyr::bind_rows()
-#     }) |> 
-#   bind_rows()
-
-# x = filter(z,
-#            model_name == "bt") 
-# ggplot(data = x,
-#        mapping = aes(x=x, y=y))  + 
-#   geom_raster(mapping = aes(fill = value)) +
-#   facet_wrap(month ~ what, ncol = 3) + 
-#   theme_void() +
-#   coord_equal() + 
-#   theme(
-#     strip.background = element_blank(),
-#     strip.text.x = element_blank()
-#   )
 
 dif_figs = dplyr::rowwise(r) |>
   dplyr::group_map(function(row, key){
@@ -209,12 +180,6 @@ dif_figs = dplyr::rowwise(r) |>
     
   }, .keep = TRUE)
 
-
-# **** figure out a way to lapply through the lists of figures and do this
-# png(file.path(vpath, paste0(cfg$version, "_rf_abdif.png")), 
-#     bg = "white", width = 18, height = 5, units = "in", res = 300)
-# plot(dif_figs[[5]])
-# ok = dev.off()
 
 
 
