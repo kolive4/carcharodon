@@ -14,16 +14,24 @@ copy_amend_wf_cfg = function(wf_version,
 
   cov_map <- list(
     "03" = list(dynamic_names = c("brick_sst", "brick_tbtm", "brick_sss", "brick_sbtm", 
-                                  "brick_mld", "vel_mag", "brick_xbtm"),
+                                  "brick_mld", "vel_mag", "brick_xbtm", "daylength"),
                 static_names = c("log_depth", "dfs", "month")),
     "05" = list(dynamic_names = c("brick_sst", "brick_tbtm", "brick_sss", "brick_sbtm", 
-                                  "brick_mld", "vel_mag", "brick_xbtm", "gseal", "hseal"),
+                                  "brick_mld", "vel_mag", "brick_xbtm", "gseal", "hseal", "daylength"),
                 static_names = c("log_depth", "dfs", "month")),
     "06" = list(dynamic_names = c("brick_sst", "brick_tbtm", "brick_sbtm", 
-                                  "vel_mag", "brick_xbtm", "gseal", "hseal"),
+                                  "vel_mag", "brick_xbtm", "gseal", "hseal", "daylength"),
                 static_names = "log_depth"),
-    "07" = list(dynamic_names = c("brick_sst", "brick_tbtm", "brick_sbtm", "gseal", "hseal"),
-                static_names = "log_depth")
+    "07" = list(dynamic_names = c("brick_sst", "brick_tbtm", "brick_sbtm", "gseal", "hseal", "daylength"),
+                static_names = "log_depth"),
+    "09" = list(dynamic_names = c("brick_sst", "gseal", "hseal", "daylength"),
+                static_names = c("log_depth", "month")),
+    "11" = list(dynamic_names = c("brick_sst", "daylength"),
+                static_names = c("log_depth", "month")),
+    "12" = list(dynamic_names = c("brick_sst", "gseal", "daylength"),
+                static_names = c("log_depth", "month")),
+    "13" = list(dynamic_names = c("brick_sst", "hseal", "daylength"),
+                static_names = c("log_depth", "month"))
   )
   
   tidy_thin_map = list(
@@ -78,17 +86,17 @@ copy_amend_wf_cfg = function(wf_version,
 
 # Generate valid version combinations
 prefix = "t11"
-first_digit = 0:1
-hundreds = "00"
-three_five = c("3","5")
-last_digit = 0:6
+first_digit = 1
+hundreds = "0"
+version = c("03","05", "09", "11", "12", "13")
+metrics = 6
 suffix <- c("00", "20")
 
 # Create all combinations
 grid = expand.grid(
   a = first_digit,
-  b = three_five,
-  c = last_digit,
+  b = version,
+  c = metrics,
   d = suffix,
   stringsAsFactors = FALSE
 )

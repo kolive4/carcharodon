@@ -82,6 +82,22 @@ data = dplyr::bind_rows(obs, bg) |>
   na.omit() |>
   dplyr::mutate(class = factor(class, levels = c("presence", "background")))
 
+covars = data |>
+  sf::st_drop_geometry() |>
+  dplyr::select(-class)
+
+pairs(covars)
+png(filename = file.path(vpath, sprintf("%s_corr_covars.png", cfg$version)), 
+    bg = "white", width = 11, height = 8.5, units = "in", res = 300)
+pairs(covars)
+ok = dev.off()
+
+vars_uncor <- filter_collinear(covars,
+                               cutoff = 0.7,
+                               method = "cor_caret"
+)
+vars_uncor
+
 split = rsample::initial_split(data,
                           prop = 4/5,
                           strata = class)

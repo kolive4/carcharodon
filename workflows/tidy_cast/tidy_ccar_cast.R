@@ -124,6 +124,10 @@ if ("hseal" %in% c(cfg$dynamic_names, cfg$static_names)) {
   # stars::st_set_dimensions("band", values = NULL, refsys = NA_real_)
   var_list[["hseal"]] = hseal
 }
+if ("daylength" %in% c(cfg$dynamic_names, cfg$static_names)) {
+  daylength = read_daylength(band_as_time = FALSE)
+  var_list[["daylength"]] = daylength
+}
 
 dynamic_preds = twinkle::bind_attrs(var_list) |>
   set_names(cfg$dynamic_names)

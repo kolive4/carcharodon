@@ -324,10 +324,17 @@ ok = dev.off()
 wshark.mask = st_extract(mask, wshark)
 
 wshark = wshark |>
-  dplyr::filter(wshark.mask$mask == 1) |>
-  sf::write_sf(file.path(cfg$data_path, "obis", "shark_occs.gpkg"))
+  dplyr::filter(wshark.mask$mask == 1)
 
-# z = read_sf(file.path(cfg$data_path, "obis", "shark_occs.gpkg"))
+lat = sf::st_coordinates(wshark)[,2]
+sol_doy = sprintf("%0.4i-%0.2i-%s", wshark$Year, wshark$month, "15") |>
+  as.Date(format = "%Y-%m-%d")
+  
+wshark = wshark |>
+  dplyr::mutate(lat = lat,
+                sol_doy = sol_doy,
+                daylength = geosphere::daylength(lat = .data$lat, doy = .data$sol_doy)) |>
+  sf::write_sf(file.path(cfg$data_path, "obis", "shark_occs.gpkg"))
 
 shark_mon_hist = ggplot2::ggplot() +
   ggplot2::geom_bar(data = wshark,
@@ -530,6 +537,7 @@ wshark = wshark |>
   dplyr::mutate(brick_depth = shark_depth$Bathy_depth) |>
   dplyr::mutate(log_depth = log_shark_depth$Bathy_depth) |>
   dplyr::mutate(vel_mag = shark_vel_mag$vel_mag) |>
+  dplyr::select(-c(lat, sol_doy)) |>
   dplyr::bind_cols(shark_covars, 
                    shark_gseal, 
                    shark_hseal
@@ -572,7 +580,13 @@ dates = sample(date_seq, nrow(bg_brick), replace = TRUE)
 bg_brick = dplyr::mutate(bg_brick, eventDate = dates) |>
   dplyr::select(eventDate) |>
   dplyr::mutate(month = as.numeric(format(eventDate, "%m"))) |>
-  dplyr::mutate(time = as.Date(format(eventDate, "2020/%m/01"))) |>
+  dplyr::mutate(time = as.Date(format(eventDate, "2020/%m/01"))) 
+
+lat_bg = sf::st_coordinates(bg_brick)[,2]
+
+bg_brick = bg_brick |>
+  dplyr::mutate(lat = lat_bg,
+                daylength = geosphere::daylength(lat = .data$lat, doy = .data$eventDate)) |>
   write_sf(file.path(vpath, "bg_brick.gpkg"))
 
 if (cfg$which_fish == "SPRING") {
@@ -608,6 +622,7 @@ bg_brick = dplyr::mutate(bg_brick, brick_depth = brick_bg_depth$Bathy_depth) |>
   dplyr::mutate(bg_brick, dfs = brick_bg_dfs$dfs) |>
   dplyr::mutate(bg_brick, log_depth = brick_bg_log_depth$Bathy_depth) |>
   dplyr::mutate(bg_brick, vel_mag = brick_bg_vel_mag$vel_mag) |>
+  dplyr::select(-lat) |>
   dplyr::bind_cols(brick_bg_covars,
                    brick_bg_gseal, 
                    brick_bg_hseal

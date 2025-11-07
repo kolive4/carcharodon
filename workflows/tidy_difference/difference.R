@@ -15,12 +15,12 @@ suppressPackageStartupMessages({
   library(rlang)
 })
 
-args = argparser::arg_parser("a tool to cast monthly predictions into one figure",
-                             name = "compiled_report.R",
+args = argparser::arg_parser("a tool to show difference models",
+                             name = "difference.R",
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_difference/d01.19000.01_12.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_difference/d01.991200.05_11.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 
@@ -29,7 +29,7 @@ for (f in list.files(cfg$source_path, pattern = "^.*\\.R$", full.names = TRUE)){
   source(f)
 }
 vpars = charlier::parse_version(cfg$version)
-vpath = file.path(cfg$root_path, cfg$diff_path, "versions", vpars[["major"]], vpars[["minor"]])
+vpath = file.path(cfg$root_path, cfg$diff_path, "versions", vpars[["major"]], vpars[["minor"]], vpars[["release"]])
 if (!dir.exists(vpath)) 
   dir.create(vpath, showWarnings = FALSE, recursive = TRUE)
 
@@ -74,7 +74,11 @@ parse_filenames = function(files) {
       strsplit(".", fixed = TRUE) |>
       getElement(1)
     version = paste(version[1:2], collapse = ".") 
-    dplyr::tibble(model_name = model_name, model_num = model_num, month = month, version = version, filename = file)
+    dplyr::tibble(model_name = model_name, 
+                  model_num = model_num, 
+                  month = month, 
+                  version = version, 
+                  filename = file)
   }) |>
     dplyr::bind_rows()
 }
@@ -84,6 +88,10 @@ a_tib = parse_filenames(a_files) |>
 b_tib = parse_filenames(b_files) |>
   dplyr::mutate(group = "b", .before = 1)
 tib = bind_rows(a_tib, b_tib)
+if(exists("months", cfg)){
+  tib = dplyr::filter(tib, month %in% cfg$months)
+  month.abb = month.abb[cfg$months]
+} 
 
 r = dplyr::group_by(tib, model_name) |>
   dplyr::group_map(function(tbl, key){
@@ -100,71 +108,111 @@ r = dplyr::group_by(tib, model_name) |>
       rlang::set_names("b")
     d = b - a
     names(d) = "dif"
-    z = tibble(model_name = tbl$model_name[1], a_version = tbl$version[1], b_version = tbl$version[length(tbl$version)], a = list(a), b = list(b), dif = list(d)) 
+    z = tibble(model_name = tbl$model_name[1], 
+               a_version = tbl$version[1], 
+               b_version = tbl$version[length(tbl$version)], 
+               a = list(a), 
+               b = list(b), 
+               dif = list(d)) 
     return(z)
   }, .keep = TRUE) |>
   dplyr::bind_rows() |>
   readr::write_rds(file = file.path(vpath, paste0(cfg$version, "_abdif.rds")))
-
-
+           
 dif_figs = dplyr::rowwise(r) |>
   dplyr::group_map(function(row, key){
-    dif_plot = ggplot() +
-      geom_stars(data = row$dif[[1]]) +
-      facet_grid(cols = vars(month)) +
-      scale_fill_steps2(name = expression(paste(Delta, " Habitat Suitability")), 
-                        low = "#01665E",
-                        midpoint = 0,
-                        mid = "white",
-                        high = "#8C510A",
-                        limits = c(-1, 1),
-                        labels = scales::label_number(accuracy = 0.01),
-                        breaks = seq(-1, 1, length.out = 10),
-                        na.value = "grey75") +
-      geom_sf(data = coast) +
-      labs(x = "",
-           y = "") +
-      theme_void() +
-      theme(axis.text.x = element_blank(),
-            axis.text.y = element_blank(),
-            strip.background = element_blank(),
-            strip.text.x = element_blank())
-    
-    a_plot = ggplot() +
-      geom_stars(data = row$a[[1]]) +
-      facet_grid(cols = vars(month)) +
-      scale_fill_fermenter(name = expression("Habitat Suitability"), 
-                           palette = "BuGn",
-                           limits = c(0, 1),
-                           breaks = seq(0, 1, 0.15),
-                           type = "seq", 
-                           direction = 1,
-                           na.value = "grey75") +
-      geom_sf(data = coast) +
-      labs(x = "",
-           y = row$a_version[[1]]) +
-      theme_minimal() +
+    ab_breaks = seq(0, 1, 0.15)
+    ab_labels = c("0", "", "0.30", "","0.60", "", "0.9")
+    dif_breaks = c(-1, -0.90, -0.75, -0.60, -0.45, -0.30, -0.15, 0, 0.15, 0.30, 0.45, 0.60, 0.75, 0.9, 1)
+    dif_labels = c("", "-0.90", "", "-0.60", "", "-0.30", "", "0", "", "0.30", "","0.60", "", "0.9", "")
+    dif_colors = c("#006D2C",
+               "#238B45",
+               "#41AE76", 
+               "#66C2A4", 
+               "#99D8C9", 
+               "#CCECE6", 
+               "#E5F5F9", 
+               "#FFF7BC", 
+               "#FEE391", 
+               "#FEC44F", 
+               "#FE9929", 
+               "#EC7014", 
+               "#CC4C02", 
+               "#993404")
+    basic_theme = function(){
       theme(axis.text.x = element_blank(),
             axis.ticks = element_blank(),
             axis.text.y = element_blank(),
             panel.grid = element_blank(),
             strip.background = element_blank(),
             strip.text.x = element_blank())
+    }
+    
+    
+    dif_plot = ggplot() +
+      geom_stars(data = row$dif[[1]]) +
+      facet_grid(cols = vars(month)) +
+      # scale_fill_steps2(name = "Δ Habitat\nSuitability", 
+      #                   low = "#01665E",
+      #                   midpoint = 0,
+      #                   mid = "white",
+      #                   high = "#8C510A",
+      #                   limits = c(-1, 1),
+      #                   labels = scales::label_number(accuracy = 0.01),
+      #                   breaks = seq(-1, 1, length.out = 10),
+      #                   na.value = "black") +
+      scale_fill_stepsn(
+        name = "Δ Habitat\nSuitability",
+        breaks = dif_breaks,
+        labels = dif_labels,
+        colors = dif_colors,
+        limits = c(-1, 1),
+        na.value = "black"
+      ) +
+      geom_sf(data = coast) +
+      labs(x = "",
+           y = "b - a") +
+      theme_minimal() +
+      scale_x_continuous(expand = c(0,0)) +
+      scale_y_continuous(expand = c(0,0)) +
+      basic_theme()
+    
+    a_plot = ggplot() +
+      geom_stars(data = row$a[[1]]) +
+      facet_grid(cols = vars(month)) +
+      scale_fill_fermenter(name = expression("Habitat\nSuitability"), 
+                           palette = "BuGn",
+                           limits = c(0, 1),
+                           breaks = ab_breaks,
+                           labels = ab_labels,
+                           type = "seq", 
+                           direction = 1,
+                           na.value = "black") +
+      geom_sf(data = coast) +
+      labs(x = "",
+           y = "a") +
+      theme_minimal() +
+      scale_x_continuous(expand = c(0,0)) +
+      scale_y_continuous(expand = c(0,0)) +
+      basic_theme()
     
     b_plot = ggplot() +
       geom_stars(data = row$b[[1]]) +
       facet_grid(cols = vars(month), switch = "y") +
-      scale_fill_fermenter(name = expression("Habitat Suitability"), 
+      scale_fill_fermenter(name = expression("Habitat\nSuitability"), 
                            palette = "YlOrBr",
                            limits = c(0, 1),
-                           breaks = seq(0, 1, 0.15),
+                           breaks = ab_breaks,
+                           labels = ab_labels,
                            type = "seq", 
                            direction = 1,
-                           na.value = "grey75") +
+                           na.value = "black") +
       geom_sf(data = coast) +
       labs(x = "",
-           y = row$b_version[[1]]) +
+           y = "b") +
       theme_minimal() +
+      scale_x_continuous(expand = c(0,0)) +
+      scale_y_continuous(expand = c(0,0)) +
       theme(axis.text.x = element_blank(),
             axis.text.y = element_blank(),
             axis.ticks = element_blank(),
@@ -176,7 +224,7 @@ dif_figs = dplyr::rowwise(r) |>
     # return(sxs_plot)
     ggsave(filename = paste0(row$model_name, "_abdif.png"), plot = sxs_plot, 
            path = file.path(vpath, "figures"), create.dir = TRUE,
-           width = 18, height = 5, units = "in", dpi = 300, bg = "white")
+           width = 1.39 * (length(month.abb) + 1), height = 5.5, units = "in", dpi = 300, bg = "white")
     
   }, .keep = TRUE)
 

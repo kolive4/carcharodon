@@ -1,5 +1,5 @@
 yamls = list.files(path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_difference",
-                   pattern = "^d01\\.99[0,1,2][0,1,2]0.01_12\\.yaml$",
+                   pattern = "^d01\\.991200.*\\.yaml$",
                    full.names = TRUE)
 
 # yamls = list.files(path = "/mnt/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_reports", 
