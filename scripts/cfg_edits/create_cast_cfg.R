@@ -1,9 +1,9 @@
-files = list.files(path = "workflows/tidy_workflow", pattern = "^t11\\.101[1,2,3]6.\\d+\\.yaml$", full.names = TRUE)
+files = list.files(path = "workflows/tidy_workflow", pattern = "^t31\\.10[0,1][1,2,3,9]6.\\d+\\.yaml$", full.names = TRUE)
 
 create_cast_cfg = function(file,
                            template_file = "workflows/tidy_cast/t11.000500.01.yaml") {
   if (FALSE) {
-    file = files[2]
+    file = files[1]
   }
   scenarios = 0:4
   months = sprintf("%02d", 1:12)
@@ -23,10 +23,13 @@ create_cast_cfg = function(file,
   
   if (vpars["release"] == 20) {
     x = unname(vpars["major"])
-    substr(x, start = 2, stop = 2) <- "2"
+    substr(x, start = 2, stop = 2) <- "4"
     cast_cfg_major = x
   } else {
-    cast_cfg_major = vpars["major"]
+    # cast_cfg_major = vpars["major"]
+    x = unname(vpars["major"])
+    substr(x, start = 2, stop = 2) <- "3"
+    cast_cfg_major = x
   }
   
   base = paste0(cast_cfg_major, ".", vpars["minor"])

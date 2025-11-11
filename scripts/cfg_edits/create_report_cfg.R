@@ -3,13 +3,13 @@ suppressPackageStartupMessages({
 })
 
 files = list.files(path = "workflows/tidy_cast", 
-                   pattern = "^t[1-2]1\\.101[2,3]6[0-4].01.yaml$",
+                   pattern = "^t[1-4]1\\.10[0,1][1,2,3,9]6[0-4].01.yaml$",
                    full.names = TRUE)
 
 create_report_cfg = function(cast_file,
                            template_file = "workflows/tidy_reports/c12.000300.01_12.yaml") {
   if (FALSE) {
-    cast_file = files[361]
+    cast_file = files[55]
     template_file = "workflows/tidy_reports/c12.000300.01_12.yaml"
   }
   
