@@ -9,7 +9,7 @@ files = list.files(path = "workflows/tidy_cast",
 create_report_cfg = function(cast_file,
                            template_file = "workflows/tidy_reports/c12.000300.01_12.yaml") {
   if (FALSE) {
-    cast_file = files[55]
+    cast_file = files[100]
     template_file = "workflows/tidy_reports/c12.000300.01_12.yaml"
   }
   
