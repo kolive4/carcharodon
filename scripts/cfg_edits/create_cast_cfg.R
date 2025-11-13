@@ -1,4 +1,4 @@
-files = list.files(path = "workflows/tidy_workflow", pattern = "^t31\\.10[0,1][1,2,3,9]6.\\d+\\.yaml$", full.names = TRUE)
+files = list.files(path = "workflows/tidy_workflow", pattern = "^t11\\.1[1,2]096.\\d+\\.yaml$", full.names = TRUE)
 
 create_cast_cfg = function(file,
                            template_file = "workflows/tidy_cast/t11.000500.01.yaml") {
@@ -21,15 +21,28 @@ create_cast_cfg = function(file,
   vpars = charlier::parse_version(wf_version)
   wf_cfg = charlier::read_config(file)
   
-  if (vpars["release"] == 20) {
+  if(substr(vpars["major"], 2, 2) == 1) {
+    if (vpars["release"] == 20) {
     x = unname(vpars["major"])
-    substr(x, start = 2, stop = 2) <- "4"
+    substr(x, start = 2, stop = 2) <- "2"
     cast_cfg_major = x
-  } else {
+    } else {
     # cast_cfg_major = vpars["major"]
     x = unname(vpars["major"])
-    substr(x, start = 2, stop = 2) <- "3"
+    substr(x, start = 2, stop = 2) <- "1"
     cast_cfg_major = x
+    }
+  } else if (substr(vpars["major"], 2, 2) == 3){
+    if (vpars["release"] == 20) {
+      x = unname(vpars["major"])
+      substr(x, start = 2, stop = 2) <- "2"
+      cast_cfg_major = x
+    } else {
+      # cast_cfg_major = vpars["major"]
+      x = unname(vpars["major"])
+      substr(x, start = 2, stop = 2) <- "1"
+      cast_cfg_major = x
+    }
   }
   
   base = paste0(cast_cfg_major, ".", vpars["minor"])

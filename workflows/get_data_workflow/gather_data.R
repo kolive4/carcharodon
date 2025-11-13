@@ -392,7 +392,7 @@ png(filename = file.path(vpath, "figures", paste0(cfg$version, "_non_sat_occs.pn
 non_sat
 ok = dev.off()
 
-manuscript_occs = (obis_plot / inat_plot / curated_plot / satellite_hexplot & labs(x = NULL, y = NULL)) + 
+manuscript_occs = ((obis_plot / inat_plot) + (curated_plot / satellite_hexplot) & labs(x = NULL, y = NULL)) + 
   plot_layout(widths = 1, 
               guides = "keep") +
   plot_annotation(tag_levels = "a", tag_suffix = ")") &
