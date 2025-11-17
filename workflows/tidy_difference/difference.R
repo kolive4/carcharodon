@@ -20,7 +20,7 @@ args = argparser::arg_parser("a tool to show difference models",
                              hide.opts = TRUE) |>
   argparser::add_argument(arg = "--config",
                           type = "character",
-                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_difference/d01.991200.05_11.yaml",
+                          default = "/mnt/s1/projects/ecocast/projects/koliveira/subprojects/carcharodon/workflows/tidy_difference/d01.991200.07_10.yaml",
                           help = "the name of the configuration file") |>
   argparser::parse_args()
 

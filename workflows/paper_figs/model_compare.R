@@ -69,7 +69,7 @@ model_comp = ggplot() +
                     labels = labels,
                     n.breaks = 11,
                     na.value = "gray40") +
-  geom_sf(data = coast, linewidth = 0.5, color = "gray70") +
+  geom_sf(data = coast, linewidth = 0.1, color = "gray70") +
   facet_wrap(~ model_type) +
   labs(x = "",
        y = "") +
